@@ -5,73 +5,52 @@ import { useState } from "react";
 import { addToast, Button, Input } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { getPaymentErrorDescription } from "@/components/pages/Store/Wallet/utils/paymentErrors";
 import { payInvoiceFromService } from "@/services/walletService";
 
 import { PaymentSentModal } from "./PaymentSentModal";
-
-const PAYMENT_ERROR_TRANSLATIONS = {
-  invoice_already_paid: "payments.send.errors.invoiceAlreadyPaid",
-  invalid_invoice: "payments.send.errors.invalidInvoice",
-  insufficient_funds: "payments.send.errors.insufficientFunds",
-  node_unavailable: "payments.send.errors.nodeUnavailable",
-  invalid_payment_response: "payments.send.errors.unknown",
-};
 
 export function SendTab({ fetchInfo, fetchTransactions }) {
   const t = useTranslations("wallet");
   const [payInvoice, setPayInvoice] = useState("");
   const [paymentResult, setPaymentResult] = useState(null);
-  const [invalidInvoice, setInvalidInvoice] = useState(false);
+  const [invoiceValidationError, setInvoiceValidationError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const validateBolt11 = (invoice) => {
-    if (!invoice || !invoice.trim()) {
-      return { valid: false, error: t("payments.send.noInvoiceToPay") };
+  const getBolt11ValidationError = (invoiceValue) => {
+    if (!invoiceValue || !invoiceValue.trim()) {
+      return t("payments.send.noInvoiceToPay");
     }
 
-    const trimmed = invoice.trim().toLowerCase();
+    const trimmedInvoice = invoiceValue.trim().toLowerCase();
     const validPrefixes = ["lnbc", "lntb", "lnbcrt"];
-    const hasValidPrefix = validPrefixes.some((prefix) => trimmed.startsWith(prefix));
+    const hasValidPrefix = validPrefixes.some((prefix) => trimmedInvoice.startsWith(prefix));
 
     if (!hasValidPrefix) {
-      return { valid: false, error: t("payments.send.invalidInvoiceFormat") };
+      return t("payments.send.invalidInvoiceFormat");
     }
 
-    if (trimmed.length < 20) {
-      return { valid: false, error: t("payments.send.invalidInvoiceFormat") };
+    if (trimmedInvoice.length < 20) {
+      return t("payments.send.invalidInvoiceFormat");
     }
 
-    return { valid: true };
-  };
-
-  const getPaymentErrorDescription = (error) => {
-    const translationKey = PAYMENT_ERROR_TRANSLATIONS[error?.code];
-
-    if (translationKey) {
-      return t(translationKey);
-    }
-
-    if (error?.message) {
-      return error.message;
-    }
-
-    return t("payments.send.errors.unknown");
+    return "";
   };
 
   const handlePayInvoice = async () => {
-    const validation = validateBolt11(payInvoice);
+    const validationError = getBolt11ValidationError(payInvoice);
 
-    if (!validation.valid) {
-      setInvalidInvoice(true);
+    if (validationError) {
+      setInvoiceValidationError(validationError);
       return;
     }
 
     try {
       setIsLoading(true);
-      const res = await payInvoiceFromService(payInvoice);
-      setPaymentResult(res);
+      const paymentResponse = await payInvoiceFromService(payInvoice);
+      setPaymentResult(paymentResponse);
       setPayInvoice("");
-      setInvalidInvoice(false);
+      setInvoiceValidationError("");
       fetchInfo?.();
       fetchTransactions?.();
       addToast({
@@ -84,7 +63,7 @@ export function SendTab({ fetchInfo, fetchTransactions }) {
       console.error(err);
       addToast({
         title: t("payments.send.paymentError"),
-        description: getPaymentErrorDescription(err),
+        description: getPaymentErrorDescription(t, err),
         variant: "solid",
         color: "danger",
       });
@@ -101,11 +80,11 @@ export function SendTab({ fetchInfo, fetchTransactions }) {
         value={payInvoice}
         onChange={(e) => {
           setPayInvoice(e.target.value);
-          setInvalidInvoice(false);
+          setInvoiceValidationError("");
         }}
         isDisabled={isLoading}
-        isInvalid={invalidInvoice}
-        errorMessage={invalidInvoice ? t("payments.send.invalidInvoiceFormat") : ""}
+        isInvalid={Boolean(invoiceValidationError)}
+        errorMessage={invoiceValidationError}
       />
       <Button
         onPress={handlePayInvoice}
@@ -121,7 +100,6 @@ export function SendTab({ fetchInfo, fetchTransactions }) {
         result={paymentResult}
         onClose={() => setPaymentResult(null)}
       />
-
     </div>
   );
 }

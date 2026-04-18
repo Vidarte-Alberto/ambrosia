@@ -46,14 +46,16 @@ class PhoenixService(
     app: ApplicationEnvironment,
     private val httpClient: HttpClient,
 ) {
+    companion object {
+        private val phoenixJson =
+            Json {
+                ignoreUnknownKeys = true
+                prettyPrint = true
+            }
+    }
+
     private val config = app.config
-    private val json =
-        Json {
-            ignoreUnknownKeys = true
-            prettyPrint = true
-        }
     private val phoenixdUrl = config.property("phoenixd-url").getString()
-    private val phoenixdPassword = config.property("phoenixd-password").getString()
     constructor(app: ApplicationEnvironment) : this(
         app,
         HttpClient(CIO) {
@@ -68,12 +70,7 @@ class PhoenixService(
                 }
             }
             install(ContentNegotiation) {
-                json(
-                    Json {
-                        ignoreUnknownKeys = true
-                        prettyPrint = true
-                    },
-                )
+                json(phoenixJson)
             }
         },
     )
@@ -437,7 +434,7 @@ class PhoenixService(
         if (rawBody.isBlank()) return null
 
         return try {
-            json
+            phoenixJson
                 .parseToJsonElement(rawBody)
                 .jsonObject["message"]
                 ?.jsonPrimitive
@@ -458,7 +455,7 @@ class PhoenixService(
         }
 
         return try {
-            json.decodeFromString<PaymentResponse>(rawBody)
+            phoenixJson.decodeFromString<PaymentResponse>(rawBody)
         } catch (_: Exception) {
             val message = extractPhoenixErrorMessage(rawBody)
             if (message != null) {

@@ -1,21 +1,21 @@
 import { httpClient } from "@/lib/http/httpClient";
 import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
-function createWalletServiceError(message, details = {}) {
+function createWalletServiceError(message, errorDetails = {}) {
   const error = new Error(message);
-  error.status = details.status;
-  error.code = details.code ?? "unknown";
-  error.source = details.source ?? "ambrosia";
+  error.status = errorDetails.status;
+  error.code = errorDetails.code ?? "unknown";
+  error.source = errorDetails.source ?? "ambrosia";
   return error;
 }
 
-function isValidPaymentResponse(body) {
+function isValidPaymentResponse(responseBody) {
   return (
-    body &&
-    typeof body.recipientAmountSat === "number" &&
-    typeof body.routingFeeSat === "number" &&
-    typeof body.paymentHash === "string" &&
-    body.paymentHash.trim() !== ""
+    responseBody &&
+    typeof responseBody.recipientAmountSat === "number" &&
+    typeof responseBody.routingFeeSat === "number" &&
+    typeof responseBody.paymentHash === "string" &&
+    responseBody.paymentHash.trim() !== ""
   );
 }
 
@@ -76,20 +76,20 @@ export async function payInvoiceFromService(invoice) {
     },
     body: JSON.stringify({ invoice: invoice.trim() }),
   });
-  const body = await parseJsonResponse(response, null);
+  const responseBody = await parseJsonResponse(response, null);
 
   if (!response.ok) {
     throw createWalletServiceError(
-      body?.message ?? "Could not process the payment",
+      responseBody?.message ?? "Could not process the payment",
       {
         status: response.status,
-        code: body?.code,
-        source: body?.source,
+        code: responseBody?.code,
+        source: responseBody?.source,
       },
     );
   }
 
-  if (!isValidPaymentResponse(body)) {
+  if (!isValidPaymentResponse(responseBody)) {
     throw createWalletServiceError(
       "Invalid payment response",
       {
@@ -100,7 +100,7 @@ export async function payInvoiceFromService(invoice) {
     );
   }
 
-  return body;
+  return responseBody;
 }
 
 export async function getIncomingTransactions() {
