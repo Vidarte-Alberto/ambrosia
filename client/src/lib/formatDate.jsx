@@ -3,7 +3,7 @@ export function parseUtcDate(dateString) {
   if (/^\d+$/.test(String(dateString))) return new Date(parseInt(dateString, 10));
   const s = String(dateString);
   if (s.includes("T") && !s.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(s)) {
-    return new Date(s + "Z");
+    return new Date(`${s}Z`);
   }
   return new Date(s);
 }
