@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useTour } from "@/hooks/tour/useTour";
 
 const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
+const WALLET_TOUR_KEY = "ambrosia:tour:wallet-channel";
 
 import { HistoryTab } from "./HistoryTab";
 import { ReceiveTab } from "./ReceiveTab";
@@ -64,6 +65,9 @@ export function Transactions({
           },
         },
       ],
+      onDestroyStarted: () => {
+        localStorage.setItem(WALLET_TOUR_KEY, "visited");
+      },
     },
     onBeforeStart: () => {
       document.getElementById("wallet-receive-amount")?.scrollIntoView({ behavior: "smooth", block: "center" });

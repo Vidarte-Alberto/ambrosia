@@ -30,11 +30,6 @@ export function useWalletTour(isAuth) {
 
   useEffect(() => {
     if (!pathname.startsWith("/store/wallet")) return;
-    if (localStorage.getItem(WALLET_TOUR_KEY) === "true") {
-      localStorage.setItem(WALLET_TOUR_KEY, "visited");
-      localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
-      localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
-    }
     if (driverRef.current) {
       driverRef.current.destroy();
       driverRef.current = null;
@@ -64,6 +59,13 @@ export function useWalletTour(isAuth) {
       allowClose: true,
       overlayOpacity: 0.5,
       nextBtnText: tourNextButton,
+      ...(isMobile && {
+        onDestroyStarted: () => {
+          localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
+          localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+          driverObj.destroy();
+        },
+      }),
       steps: isMobile
         ? [
             {
@@ -91,7 +93,6 @@ export function useWalletTour(isAuth) {
                 showButtons: ["close"],
               },
               onHighlighted: () => {
-                localStorage.setItem(WALLET_TOUR_KEY, "visited");
                 localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
                 localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
               },
