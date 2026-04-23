@@ -59,7 +59,7 @@ export function SidebarContent({
             availableNavigation.map((item, index) => (
               <NavBarButton
                 key={`${item.path}-${index}`}
-                id={withTourIds && item.label === "wallet" ? "nav-wallet" : undefined}
+                id={withTourIds ? item.tourId : undefined}
                 text={t(item.label)}
                 icon={item.icon}
                 href={item.path}
