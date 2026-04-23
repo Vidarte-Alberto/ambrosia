@@ -92,30 +92,51 @@ describe("useWalletTour", () => {
 
   describe("tour initialization", () => {
     it("does not start tour when not authenticated", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(false));
+      jest.runAllTimers();
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
-    it("starts tour when authenticated for the first time", () => {
+    it("does not start tour without WALLET_TOUR_KEY", () => {
+      renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
+      expect(mockDrive).not.toHaveBeenCalled();
+    });
+
+    it("does not start tour when WALLET_TOUR_KEY is 'visited'", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "visited");
+      renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
+      expect(mockDrive).not.toHaveBeenCalled();
+    });
+
+    it("starts tour when WALLET_TOUR_KEY is 'true' and authenticated", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(true));
       jest.runAllTimers();
       expect(mockDrive).toHaveBeenCalledTimes(1);
     });
 
-    it("does not start tour if already seen", () => {
+    it("does not call drive() before timer fires", () => {
       localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(true));
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
-    it("sets WALLET_TOUR_KEY in localStorage when starting", () => {
+    it("removes WALLET_TOUR_KEY from localStorage when timer fires", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(true));
       jest.runAllTimers();
-      expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "true");
+      expect(localStorage.getItem(WALLET_TOUR_KEY)).toBeNull();
     });
   });
 
   describe("desktop tour (>= 768px)", () => {
+    beforeEach(() => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
+    });
+
     it("creates 2 steps on desktop", () => {
       renderHook(() => useWalletTour(true));
       expect(capturedConfig.steps).toHaveLength(2);
@@ -152,7 +173,10 @@ describe("useWalletTour", () => {
   });
 
   describe("mobile tour (< 768px)", () => {
-    beforeEach(() => setMobile());
+    beforeEach(() => {
+      setMobile();
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
+    });
 
     it("creates 1 step on mobile", () => {
       renderHook(() => useWalletTour(true));
@@ -196,6 +220,7 @@ describe("useWalletTour", () => {
   describe("desktop tour (>= 768px) — onDestroyStarted", () => {
     it("does not have onDestroyStarted on desktop", () => {
       Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(true));
       expect(capturedConfig.onDestroyStarted).toBeUndefined();
     });
