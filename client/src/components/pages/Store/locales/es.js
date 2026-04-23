@@ -12,6 +12,16 @@ const storeEs = {
     orders: "Ordenes",
     reports: "Reportes",
   },
+  seedTour: {
+    title: "¡Protege tu SEED Phrase!",
+    description: "Tu <b>SEED Phrase</b> es la clave maestra de tu wallet Bitcoin. Con ella puedes recuperar todos tus fondos si pierdes acceso. <b>Escríbela en papel y guárdala en un lugar seguro, nunca la compartas.</b>",
+    clickSettings: "Ve a Configuración para ver y respaldar tu SEED Phrase.",
+    nextButton: "Ir a Configuración",
+    mobileGoToSettings: "Ir a Configuración",
+    settingsTitle: "SEED Phrase",
+    settingsDescription: "Aquí puedes ver tu SEED Phrase. Son las palabras clave que te permiten recuperar tu wallet Bitcoin. <b>Escríbelas en papel y guárdalas en un lugar seguro.</b> Nunca las guardes en formato digital ni las compartas con nadie.",
+    settingsButton: "Entendido",
+  },
   walletTour: {
     title: "¡Antes de comenzar!",
     description: "Para recibir <b>pagos con Bitcoin</b> necesitas abrir un <b>canal Lightning</b>.",
@@ -808,6 +818,10 @@ const storeEs = {
       walletTour: {
         name: "Canal de Lightning",
         description: "Aprende a crear tu canal Lightning y recibir pagos con Bitcoin.",
+      },
+      seedTour: {
+        name: "SEED Phrase",
+        description: "Aprende qué es tu SEED Phrase y cómo protegerla correctamente.",
       },
     },
   },
