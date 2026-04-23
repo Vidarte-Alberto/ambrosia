@@ -46,6 +46,11 @@ class PhoenixService(
     app: ApplicationEnvironment,
     private val httpClient: HttpClient,
 ) {
+    private data class PhoenixPaymentErrorResolution(
+        val code: String,
+        val statusCode: Int,
+    )
+
     companion object {
         private val phoenixJson =
             Json {
@@ -420,12 +425,12 @@ class PhoenixService(
         val message =
             extractPhoenixErrorMessage(rawBody)
                 ?: "$fallbackMessage: Phoenix node returned ${response.status.value}"
-        val code = classifyPhoenixPaymentError(message)
+        val errorResolution = resolvePhoenixPaymentError(message)
 
         return PhoenixServiceException(
             message = message,
-            code = code,
-            statusCode = mapPhoenixPaymentStatus(response.status.value, code),
+            code = errorResolution.code,
+            statusCode = errorResolution.statusCode,
             upstreamMessage = rawBody.ifBlank { null },
         )
     }
@@ -459,11 +464,11 @@ class PhoenixService(
         } catch (_: Exception) {
             val message = extractPhoenixErrorMessage(rawBody)
             if (message != null) {
-                val code = classifyPhoenixPaymentError(message)
+                val errorResolution = resolvePhoenixPaymentError(message)
                 throw PhoenixServiceException(
                     message = message,
-                    code = code,
-                    statusCode = mapPhoenixPaymentStatus(200, code),
+                    code = errorResolution.code,
+                    statusCode = errorResolution.statusCode,
                     upstreamMessage = rawBody,
                 )
             }
@@ -477,40 +482,61 @@ class PhoenixService(
         }
     }
 
-    private fun classifyPhoenixPaymentError(message: String): String {
+    private fun resolvePhoenixPaymentError(message: String): PhoenixPaymentErrorResolution {
         val normalizedMessage = message.lowercase()
 
         return when {
-            "already paid" in normalizedMessage || "already been paid" in normalizedMessage -> "invoice_already_paid"
+            "already paid" in normalizedMessage || "already been paid" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "invoice_already_paid",
+                    statusCode = 409,
+                )
+            }
 
-            "expired" in normalizedMessage && "invoice" in normalizedMessage -> "invoice_expired"
+            "expired" in normalizedMessage && "invoice" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "invoice_expired",
+                    statusCode = 410,
+                )
+            }
 
-            "recipient node rejected the payment" in normalizedMessage -> "recipient_rejected_payment"
+            "recipient node rejected the payment" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "recipient_rejected_payment",
+                    statusCode = 422,
+                )
+            }
 
-            "invalid" in normalizedMessage && ("invoice" in normalizedMessage || "bolt11" in normalizedMessage) -> "invalid_invoice"
+            "invalid" in normalizedMessage && ("invoice" in normalizedMessage || "bolt11" in normalizedMessage) -> {
+                PhoenixPaymentErrorResolution(
+                    code = "invalid_invoice",
+                    statusCode = 400,
+                )
+            }
 
             ("insufficient" in normalizedMessage || "not enough" in normalizedMessage) &&
-                ("fund" in normalizedMessage || "balance" in normalizedMessage || "liquidity" in normalizedMessage) -> "insufficient_funds"
+                ("fund" in normalizedMessage || "balance" in normalizedMessage || "liquidity" in normalizedMessage) -> {
+                PhoenixPaymentErrorResolution(
+                    code = "insufficient_funds",
+                    statusCode = 402,
+                )
+            }
 
-            "timeout" in normalizedMessage || "unavailable" in normalizedMessage || "connection" in normalizedMessage -> "node_unavailable"
+            "timeout" in normalizedMessage || "unavailable" in normalizedMessage || "connection" in normalizedMessage -> {
+                PhoenixPaymentErrorResolution(
+                    code = "node_unavailable",
+                    statusCode = 503,
+                )
+            }
 
-            else -> "unknown"
+            else -> {
+                PhoenixPaymentErrorResolution(
+                    code = "unknown",
+                    statusCode = 502,
+                )
+            }
         }
     }
-
-    private fun mapPhoenixPaymentStatus(
-        upstreamStatusCode: Int,
-        code: String,
-    ): Int =
-        when (code) {
-            "invoice_already_paid" -> 409
-            "invoice_expired" -> 410
-            "recipient_rejected_payment" -> 422
-            "invalid_invoice" -> 400
-            "insufficient_funds" -> 402
-            "node_unavailable" -> 503
-            else -> upstreamStatusCode
-        }
 
     /** Get seed from Phoenix */
     suspend fun getSeed(): String = AppConfig.loadPhoenixSeed()

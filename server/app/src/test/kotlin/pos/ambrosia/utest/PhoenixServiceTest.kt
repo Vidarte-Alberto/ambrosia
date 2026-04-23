@@ -459,6 +459,47 @@ class PhoenixServiceTest {
     }
 
     @Test
+    fun `payInvoice maps unknown phoenix error payload with 200 status to bad gateway`() {
+        // Arrange
+        val mockEngine =
+            MockEngine { _ ->
+                respond(
+                    content = ByteReadChannel("""{"message":"Unexpected phoenix payment failure"}"""),
+                    status = HttpStatusCode.OK,
+                    headers = headersOf(HttpHeaders.ContentType, "application/json"),
+                )
+            }
+        val mockHttpClient =
+            HttpClient(mockEngine) {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
+            }
+        val mockUrlValue: ApplicationConfigValue = mock()
+        whenever(mockUrlValue.getString()).thenReturn("http://dummy-url")
+        whenever(mockConfig.property("phoenixd-url")).thenReturn(mockUrlValue)
+        val mockPasswordValue: ApplicationConfigValue = mock()
+        whenever(mockPasswordValue.getString()).thenReturn("dummy-password")
+        whenever(mockConfig.property("phoenixd-password")).thenReturn(mockPasswordValue)
+
+        val phoenixService = PhoenixService(mockEnv, mockHttpClient)
+
+        // Act
+        val request =
+            pos.ambrosia.models.phoenix
+                .PayInvoiceRequest(invoice = "lnbc10...")
+        val exception =
+            assertFailsWith<pos.ambrosia.utils.PhoenixServiceException> {
+                runBlocking { phoenixService.payInvoice(request) }
+            }
+
+        // Assert
+        assertEquals("unknown", exception.code)
+        assertEquals(502, exception.statusCode)
+        assertEquals("Unexpected phoenix payment failure", exception.message)
+    }
+
+    @Test
     fun `payInvoice throws PhoenixServiceException on network error`() {
         // Arrange
         val mockEngine =

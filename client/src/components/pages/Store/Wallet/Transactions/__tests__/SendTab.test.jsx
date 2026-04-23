@@ -30,12 +30,12 @@ const originalWarn = console.warn;
 const originalError = console.error;
 
 beforeEach(() => {
-  console.warn = (...args) => {
+  console.warn = jest.fn((...args) => {
     if (typeof args[0] === "string" && args[0].includes("aria-label")) return;
     originalWarn.call(console, ...args);
-  };
+  });
 
-  console.error = (...args) => {
+  console.error = jest.fn((...args) => {
     if (
       typeof args[0] === "string" &&
       (args[0].includes("onAnimationComplete") ||
@@ -44,7 +44,7 @@ beforeEach(() => {
     ) return;
     if (args[0] instanceof Error && args[0].message === "API Error") return;
     originalError.call(console, ...args);
-  };
+  });
 
   jest.clearAllMocks();
   jest.spyOn(walletService, "payInvoiceFromService").mockResolvedValue({
@@ -278,6 +278,10 @@ describe("SendTab Component", () => {
 
       expect(screen.queryByText("payments.send.paymentDone")).not.toBeInTheDocument();
       expect(invoiceInput).toHaveValue("lnbc1000n1pj9h8uqpp5test");
+      expect(console.warn).toHaveBeenCalled();
+      expect(console.error).not.toHaveBeenCalledWith(expect.objectContaining({
+        code: "invoice_already_paid",
+      }));
     });
 
     it("shows translated error when invoice has expired", async () => {
@@ -335,6 +339,18 @@ describe("SendTab Component", () => {
         expect(addToast).toHaveBeenCalledWith(expect.objectContaining({
           description: "phoenixd custom failure",
         }));
+      });
+    });
+
+    it("uses console error for unexpected errors without code", async () => {
+      jest.spyOn(walletService, "payInvoiceFromService").mockRejectedValue(new Error("unexpected failure"));
+
+      renderSendTab();
+      typeInvoice(screen.getByLabelText("payments.send.payInvoiceLabel"), "lnbc1000n1pj9h8uqpp5test");
+      fireEvent.click(screen.getByText("payments.send.payLightningButton"));
+
+      await waitFor(() => {
+        expect(console.error).toHaveBeenCalled();
       });
     });
   });

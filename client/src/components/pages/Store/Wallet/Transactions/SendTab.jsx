@@ -60,7 +60,11 @@ export function SendTab({ fetchInfo, fetchTransactions }) {
         color: "success",
       });
     } catch (err) {
-      console.error(err);
+      if (err?.code) {
+        console.warn(err);
+      } else {
+        console.error(err);
+      }
       addToast({
         title: t("payments.send.paymentError"),
         description: getPaymentErrorDescription(t, err),
