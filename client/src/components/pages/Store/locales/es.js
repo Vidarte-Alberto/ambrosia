@@ -14,12 +14,12 @@ const storeEs = {
   },
   seedTour: {
     title: "¡Protege tu SEED Phrase!",
-    description: "Tu <b>SEED Phrase</b> es la clave maestra de tu wallet Bitcoin. Con ella puedes recuperar todos tus fondos si pierdes acceso. <b>Escríbela en papel y guárdala en un lugar seguro, nunca la compartas.</b>",
+    description: "Tu SEED Phrase es la <b>clave maestra</b> de tu wallet Bitcoin. Si pierdes acceso a la app, es la única forma de recuperar tus fondos.",
     clickSettings: "Ve a Configuración para ver y respaldar tu SEED Phrase.",
     nextButton: "Ir a Configuración",
     mobileGoToSettings: "Ir a Configuración",
-    settingsTitle: "SEED Phrase",
-    settingsDescription: "Aquí puedes ver tu SEED Phrase. Son las palabras clave que te permiten recuperar tu wallet Bitcoin. <b>Escríbelas en papel y guárdalas en un lugar seguro.</b> Nunca las guardes en formato digital ni las compartas con nadie.",
+    settingsTitle: "Respalda tu SEED Phrase",
+    settingsDescription: "Escribe las <b>12 palabras en orden</b> en papel y guárdalas en un lugar seguro — sin conexión a internet.",
     settingsButton: "Entendido",
   },
   walletTour: {

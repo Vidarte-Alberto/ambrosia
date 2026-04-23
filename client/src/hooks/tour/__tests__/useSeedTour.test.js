@@ -197,10 +197,14 @@ describe("useSeedTour", () => {
       expect(capturedConfig.steps[0].element).toBeUndefined();
     });
 
-    it("has onDestroyStarted on mobile to set SEED_SETTINGS_TOUR_KEY", () => {
+    it("has onDestroyStarted on mobile to destroy the driver", () => {
       renderHook(() => useSeedTour(true));
       expect(capturedConfig.onDestroyStarted).toBeDefined();
-      capturedConfig.onDestroyStarted();
+    });
+
+    it("sets SEED_SETTINGS_TOUR_KEY when timer fires on mobile", () => {
+      renderHook(() => useSeedTour(true));
+      jest.runAllTimers();
       expect(setItemSpy).toHaveBeenCalledWith(SEED_SETTINGS_TOUR_KEY, "true");
     });
   });

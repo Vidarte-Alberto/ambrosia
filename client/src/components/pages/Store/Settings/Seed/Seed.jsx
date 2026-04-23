@@ -24,6 +24,14 @@ export function Seed() {
     key: SEED_SETTINGS_TOUR_KEY,
     condition: !showAccess,
     delay: 500,
+    onBeforeStart: () => {
+      const el = document.getElementById("settings-seed-card");
+      if (el) {
+        el.style.scrollMarginTop = "80px";
+        el.scrollIntoView({ behavior: "instant", block: "start" });
+        el.style.scrollMarginTop = "";
+      }
+    },
     driverOptions: {
       allowClose: false,
       overlayOpacity: 0.5,

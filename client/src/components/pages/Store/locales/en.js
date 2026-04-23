@@ -14,12 +14,12 @@ const storeEn = {
   },
   seedTour: {
     title: "Protect your SEED Phrase!",
-    description: "Your <b>SEED Phrase</b> is the master key to your Bitcoin wallet. It lets you recover all your funds if you lose access. <b>Write it on paper and keep it somewhere safe, never share it.</b>",
+    description: "Your SEED Phrase is the <b>master key</b> to your Bitcoin wallet. If you lose access to the app, it's the only way to recover your funds.",
     clickSettings: "Go to Settings to view and back up your SEED Phrase.",
     nextButton: "Go to Settings",
     mobileGoToSettings: "Go to Settings",
-    settingsTitle: "SEED Phrase",
-    settingsDescription: "Here you can view your SEED Phrase. These are the words that let you recover your Bitcoin wallet. <b>Write them on paper and keep them in a safe place.</b> Never save them digitally or share them with anyone.",
+    settingsTitle: "Back up your SEED Phrase",
+    settingsDescription: "Write down all <b>12 words in order</b> on paper and store them somewhere safe — offline.",
     settingsButton: "Got it",
   },
   walletTour: {

@@ -53,7 +53,6 @@ export function useSeedTour(isAuth) {
       nextBtnText: tourNextButton,
       ...(isMobile && {
         onDestroyStarted: () => {
-          localStorage.setItem(SEED_SETTINGS_TOUR_KEY, "true");
           driverObj.destroy();
         },
       }),
@@ -94,6 +93,7 @@ export function useSeedTour(isAuth) {
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       localStorage.setItem(SEED_TOUR_KEY, "true");
+      if (isMobile) localStorage.setItem(SEED_SETTINGS_TOUR_KEY, "true");
       driverObj.drive();
     }, 800);
   }, [isAuth, pathname, tourTitle, tourDescription, tourClickSettings, tourNextButton, tourMobileGoToSettings]);
