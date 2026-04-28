@@ -24,10 +24,13 @@ jest.mock("@/components/hooks/useCurrency", () => ({
 
 jest.mock("@/services/bitcoinPriceService", () => {
   const satoshisToFiat = jest.fn(() => new Promise(() => {}));
+  const fiatToSatoshis = jest.fn().mockResolvedValue(5000);
   const MockedBitcoinPriceService = jest.fn().mockImplementation(() => ({
     satoshisToFiat,
+    fiatToSatoshis,
   }));
   MockedBitcoinPriceService.__mockSatoshisToFiat = satoshisToFiat;
+  MockedBitcoinPriceService.__mockFiatToSatoshis = fiatToSatoshis;
 
   return {
     __esModule: true,
@@ -36,6 +39,7 @@ jest.mock("@/services/bitcoinPriceService", () => {
 });
 
 const mockSatoshisToFiat = BitcoinPriceService.__mockSatoshisToFiat;
+const mockFiatToSatoshis = BitcoinPriceService.__mockFiatToSatoshis;
 
 const originalWarn = console.warn;
 const originalError = console.error;
@@ -58,6 +62,7 @@ beforeEach(() => {
 
   jest.clearAllMocks();
   mockSatoshisToFiat.mockImplementation(() => new Promise(() => {}));
+  mockFiatToSatoshis.mockResolvedValue(5000);
   jest.spyOn(walletService, "payInvoiceFromService").mockResolvedValue({
     recipientAmountSat: 1000,
     routingFeeSat: 5,
@@ -340,6 +345,36 @@ describe("SendTab Component", () => {
 
       const amountInput = screen.getByLabelText("payments.send.confirmModal.zeroAmountLabel");
       fireEvent.change(amountInput, { target: { value: "5000" } });
+
+      fireEvent.click(screen.getByText("payments.send.confirmModal.confirmButton"));
+
+      await waitFor(() => {
+        expect(walletService.payInvoiceFromService).toHaveBeenCalledWith("lnbc1000n1pj9h8uqpp5test", 5000);
+      });
+    });
+
+    it("handles zero-amount invoice with fiat amount", async () => {
+      jest.spyOn(walletService, "decodeInvoice").mockResolvedValue({
+        amountSat: null,
+        description: null,
+      });
+
+      renderSendTab();
+      typeInvoice(screen.getByLabelText("payments.send.payInvoiceLabel"), "lnbc1000n1pj9h8uqpp5test");
+      fireEvent.click(screen.getByText("payments.send.payLightningButton"));
+
+      await waitFor(() => {
+        expect(screen.getByText("payments.send.confirmModal.zeroAmountTitle")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("payments.send.confirmModal.fiatOption"));
+
+      const amountInput = screen.getByLabelText("payments.send.confirmModal.zeroAmountFiatLabel");
+      fireEvent.change(amountInput, { target: { value: "1.50" } });
+
+      await waitFor(() => {
+        expect(mockFiatToSatoshis).toHaveBeenCalledWith(1.5, "USD");
+      });
 
       fireEvent.click(screen.getByText("payments.send.confirmModal.confirmButton"));
 

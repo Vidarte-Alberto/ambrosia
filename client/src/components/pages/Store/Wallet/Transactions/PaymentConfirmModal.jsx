@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import {
   Button,
@@ -17,11 +17,9 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { CopyButton } from "@/components/shared/CopyButton";
-import BitcoinPriceService from "@/services/bitcoinPriceService";
 
 import { formatSats } from "../utils/formatters";
-
-const bitcoinService = new BitcoinPriceService();
+import { usePaymentAmountInput } from "./usePaymentAmountInput";
 
 export function PaymentConfirmModal({
   decodedInvoice,
@@ -33,60 +31,37 @@ export function PaymentConfirmModal({
 }) {
   const t = useTranslations("wallet");
   const { currency } = useCurrency();
-  const [customAmount, setCustomAmount] = useState("");
-  const [customAmountError, setCustomAmountError] = useState("");
-  const [fiatResult, setFiatResult] = useState(null);
-
   const isPaid = paymentResult != null;
   const amountSat = decodedInvoice?.amountSat;
   const description = decodedInvoice?.description;
   const isZeroAmount = amountSat == null;
-  const effectiveAmount = isZeroAmount ? parseInt(customAmount, 10) : amountSat;
-
-  useEffect(() => {
-    if (!isOpen || isPaid) return;
-
-    const effectiveAmountSat = isZeroAmount ? parseInt(customAmount, 10) : amountSat;
-    if (!effectiveAmountSat || effectiveAmountSat <= 0) return;
-
-    let cancelled = false;
-
-    bitcoinService
-      .satoshisToFiat(effectiveAmountSat, currency.acronym)
-      .then((fiat) => {
-        if (!cancelled) {
-          setFiatResult({ value: fiat, error: false, forAmount: effectiveAmountSat });
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFiatResult({ value: null, error: true, forAmount: effectiveAmountSat });
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isOpen, isPaid, isZeroAmount, amountSat, customAmount, currency.acronym]);
-
-  const fiatDisplay = fiatResult?.forAmount === effectiveAmount ? fiatResult.value : null;
-  const fiatIsLoading = effectiveAmount > 0 &&
-    fiatDisplay == null &&
-    !(fiatResult?.error && fiatResult?.forAmount === effectiveAmount);
-  const fiatHasError = fiatResult?.error && fiatResult?.forAmount === effectiveAmount;
+  const {
+    amountInputMode,
+    customAmountError,
+    customAmountValue,
+    effectiveAmount,
+    fiatDisplay,
+    fiatHasError,
+    fiatIsLoading,
+    fiatToSatHasError,
+    fiatToSatIsLoading,
+    handleAmountChange,
+    handleAmountModeChange,
+    getConfirmAmount,
+    isConfirmDisabled,
+  } = usePaymentAmountInput({
+    isOpen,
+    isPaid,
+    amountSat,
+    currencyAcronym: currency.acronym,
+    t,
+  });
 
   const handleConfirm = useCallback(() => {
-    if (isZeroAmount) {
-      const parsed = parseInt(customAmount, 10);
-      if (!parsed || parsed <= 0) {
-        setCustomAmountError(t("payments.send.confirmModal.zeroAmountError"));
-        return;
-      }
-      onConfirm(parsed);
-    } else {
-      onConfirm(null);
-    }
-  }, [isZeroAmount, customAmount, onConfirm, t]);
+    const confirmAmount = getConfirmAmount();
+    if (confirmAmount === undefined) return;
+    onConfirm(confirmAmount);
+  }, [getConfirmAmount, onConfirm]);
 
   const formatFiat = useCallback(
     (value) => {
@@ -168,20 +143,60 @@ export function PaymentConfirmModal({
 
               <div className="space-y-3">
                 {isZeroAmount ? (
-                  <Input
-                    type="number"
-                    label={t("payments.send.confirmModal.zeroAmountLabel")}
-                    placeholder={t("payments.send.confirmModal.zeroAmountPlaceholder")}
-                    value={customAmount}
-                    onChange={(e) => {
-                      setCustomAmount(e.target.value);
-                      setCustomAmountError("");
-                    }}
-                    isInvalid={Boolean(customAmountError)}
-                    errorMessage={customAmountError}
-                    min="1"
-                    description={t("payments.send.confirmModal.zeroAmountTitle")}
-                  />
+                  <>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        {t("payments.send.confirmModal.zeroAmountTitle")}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant={amountInputMode === "sat" ? "solid" : "bordered"}
+                          color={amountInputMode === "sat" ? "primary" : "default"}
+                          onPress={() => handleAmountModeChange("sat")}
+                        >
+                          {t("payments.send.confirmModal.satsOption")}
+                        </Button>
+                        <Button
+                          variant={amountInputMode === "fiat" ? "solid" : "bordered"}
+                          color={amountInputMode === "fiat" ? "primary" : "default"}
+                          onPress={() => handleAmountModeChange("fiat")}
+                        >
+                          {t("payments.send.confirmModal.fiatOption", { currency: currency.acronym })}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Input
+                      type="number"
+                      label={amountInputMode === "fiat"
+                        ? t("payments.send.confirmModal.zeroAmountFiatLabel", { currency: currency.acronym })
+                        : t("payments.send.confirmModal.zeroAmountLabel")}
+                      placeholder={amountInputMode === "fiat"
+                        ? t("payments.send.confirmModal.zeroAmountFiatPlaceholder")
+                        : t("payments.send.confirmModal.zeroAmountPlaceholder")}
+                      value={customAmountValue}
+                      onChange={(e) => handleAmountChange(e.target.value)}
+                      isInvalid={Boolean(customAmountError) || fiatToSatHasError}
+                      errorMessage={customAmountError || (fiatToSatHasError
+                        ? t("payments.send.confirmModal.fiatToSatsError")
+                        : "")}
+                      min="0"
+                      step={amountInputMode === "fiat" ? "0.01" : "1"}
+                    />
+
+                    {amountInputMode === "fiat" && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">
+                          {t("payments.send.confirmModal.amountLabel")}
+                        </span>
+                        <span className="font-medium">
+                          {fiatToSatIsLoading && t("payments.send.confirmModal.fiatLoading")}
+                          {fiatToSatHasError && t("payments.send.confirmModal.fiatToSatsError")}
+                          {!fiatToSatIsLoading && !fiatToSatHasError && effectiveAmount != null && `${formatSats(effectiveAmount)} sats`}
+                        </span>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="flex justify-between">
                     <span className="text-gray-500">
@@ -250,7 +265,7 @@ export function PaymentConfirmModal({
                 color="primary"
                 onPress={handleConfirm}
                 isLoading={isLoading}
-                isDisabled={isZeroAmount && !parseInt(customAmount, 10)}
+                isDisabled={isConfirmDisabled}
               >
                 {t("payments.send.confirmModal.confirmButton")}
               </Button>

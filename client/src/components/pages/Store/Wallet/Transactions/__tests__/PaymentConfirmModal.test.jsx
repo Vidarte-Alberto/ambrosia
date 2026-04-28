@@ -14,10 +14,13 @@ jest.mock("@/components/hooks/useCurrency", () => ({
 
 jest.mock("@/services/bitcoinPriceService", () => {
   const satoshisToFiat = jest.fn(() => new Promise(() => {}));
+  const fiatToSatoshis = jest.fn().mockResolvedValue(5000);
   const MockedBitcoinPriceService = jest.fn().mockImplementation(() => ({
     satoshisToFiat,
+    fiatToSatoshis,
   }));
   MockedBitcoinPriceService.__mockSatoshisToFiat = satoshisToFiat;
+  MockedBitcoinPriceService.__mockFiatToSatoshis = fiatToSatoshis;
 
   return {
     __esModule: true,
@@ -26,6 +29,7 @@ jest.mock("@/services/bitcoinPriceService", () => {
 });
 
 const mockSatoshisToFiat = BitcoinPriceService.__mockSatoshisToFiat;
+const mockFiatToSatoshis = BitcoinPriceService.__mockFiatToSatoshis;
 
 const mockPaymentResult = {
   recipientAmountSat: 1000,
@@ -53,6 +57,7 @@ describe("PaymentConfirmModal", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSatoshisToFiat.mockImplementation(() => new Promise(() => {}));
+    mockFiatToSatoshis.mockResolvedValue(5000);
   });
 
   describe("Confirm state", () => {
@@ -174,12 +179,44 @@ describe("PaymentConfirmModal", () => {
       expect(confirmButton).toBeDisabled();
     });
 
+    it("disables confirm button when sat amount is negative", () => {
+      renderModal({ decodedInvoice: { amountSat: null, description: null } });
+      const amountInput = screen.getByLabelText("payments.send.confirmModal.zeroAmountLabel");
+      fireEvent.change(amountInput, { target: { value: "-10" } });
+      const confirmButton = screen.getByText("payments.send.confirmModal.confirmButton");
+      expect(confirmButton).toBeDisabled();
+    });
+
     it("calls onConfirm with custom amount for zero-amount invoices", async () => {
       const onConfirm = jest.fn();
       renderModal({ decodedInvoice: { amountSat: null, description: null }, onConfirm });
       const amountInput = screen.getByLabelText("payments.send.confirmModal.zeroAmountLabel");
       fireEvent.change(amountInput, { target: { value: "5000" } });
       fireEvent.click(screen.getByText("payments.send.confirmModal.confirmButton"));
+      await waitFor(() => {
+        expect(onConfirm).toHaveBeenCalledWith(5000);
+      });
+    });
+
+    it("calls onConfirm with converted sats for fiat zero-amount invoices", async () => {
+      const onConfirm = jest.fn();
+      renderModal({ decodedInvoice: { amountSat: null, description: null }, onConfirm });
+
+      fireEvent.click(screen.getByText("payments.send.confirmModal.fiatOption"));
+
+      const amountInput = screen.getByLabelText("payments.send.confirmModal.zeroAmountFiatLabel");
+      fireEvent.change(amountInput, { target: { value: "1.50" } });
+
+      await waitFor(() => {
+        expect(mockFiatToSatoshis).toHaveBeenCalledWith(1.5, "USD");
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText("5,000 sats")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText("payments.send.confirmModal.confirmButton"));
+
       await waitFor(() => {
         expect(onConfirm).toHaveBeenCalledWith(5000);
       });
