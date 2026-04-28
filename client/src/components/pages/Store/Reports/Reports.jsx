@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Card, CardBody, CardHeader, addToast } from "@heroui/react";
 import { AlertCircle, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
@@ -27,6 +27,10 @@ const DEFAULT_FILTERS = {
 
 export default function Reports() {
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const filtersRef = useRef(DEFAULT_FILTERS);
+  const debounceRef = useRef(null);
+
+  useEffect(() => { filtersRef.current = filters; });
 
   const { formatAmount, loading: currencyLoading } = useCurrency();
   const { reportData, loading, error, fetchReport } = useReports();
@@ -41,43 +45,92 @@ export default function Reports() {
     [t],
   );
 
-  const validateCustomRange = useCallback(() => {
-    if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
-      showError(t("errors.invalidRange"));
-      return false;
-    }
-    if ((filters.startDate && !filters.endDate) || (!filters.startDate && filters.endDate)) {
-      showError(t("errors.bothDates"));
-      return false;
-    }
-    return true;
-  }, [filters.startDate, filters.endDate, showError, t]);
+  const validateCustomRange = useCallback(
+    (startDate, endDate) => {
+      if (startDate && endDate && startDate > endDate) {
+        showError(t("errors.invalidRange"));
+        return false;
+      }
+      if ((startDate && !endDate) || (!startDate && endDate)) {
+        showError(t("errors.bothDates"));
+        return false;
+      }
+      return true;
+    },
+    [showError, t],
+  );
 
   const generateReport = useCallback(async () => {
-    if (!filters.activePeriod && !validateCustomRange()) return;
+    const f = filtersRef.current;
+    if (!f.activePeriod && !validateCustomRange(f.startDate, f.endDate)) return;
     try {
       await fetchReport({
-        period: filters.activePeriod || undefined,
-        startDate: filters.activePeriod ? undefined : filters.startDate || undefined,
-        endDate: filters.activePeriod ? undefined : filters.endDate || undefined,
-        productName: filters.productName || undefined,
-        paymentMethod: filters.paymentMethod || undefined,
+        period: f.activePeriod || undefined,
+        startDate: f.activePeriod ? undefined : f.startDate || undefined,
+        endDate: f.activePeriod ? undefined : f.endDate || undefined,
+        productName: f.productName || undefined,
+        paymentMethod: f.paymentMethod || undefined,
       });
-      addToast({ title: t("statuses.generatedTitle"), description: t("statuses.generatedDesc"), variant: "solid", color: "success" });
     } catch {
       showError(t("statuses.errorGenerate"));
     }
-  }, [filters, fetchReport, validateCustomRange, showError, t]);
+  }, [fetchReport, validateCustomRange, showError, t]);
 
   useEffect(() => {
     fetchReport({ period: DEFAULT_FILTERS.activePeriod });
   }, [fetchReport]);
 
-  const handleFiltersChange = useCallback((patch) => {
-    setFilters((f) => ({ ...f, ...patch }));
-  }, []);
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
 
-  const handleClearFilters = useCallback(() => setFilters(DEFAULT_FILTERS), []);
+  const handleFiltersChange = useCallback(
+    (patch) => {
+      const prev = filtersRef.current;
+      const next = { ...prev, ...patch };
+      setFilters(next);
+
+      if ("activePeriod" in patch && patch.activePeriod) {
+        fetchReport({
+          period: next.activePeriod,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      } else if ("startDate" in patch || "endDate" in patch) {
+        if (next.startDate && next.endDate) {
+          if (next.startDate <= next.endDate) {
+            fetchReport({
+              startDate: next.startDate,
+              endDate: next.endDate,
+              productName: next.productName || undefined,
+              paymentMethod: next.paymentMethod || undefined,
+            });
+          } else {
+            showError(t("errors.invalidRange"));
+          }
+        }
+      } else if ("paymentMethod" in patch) {
+        fetchReport({
+          period: next.activePeriod || undefined,
+          startDate: next.activePeriod ? undefined : next.startDate || undefined,
+          endDate: next.activePeriod ? undefined : next.endDate || undefined,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      } else {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          const f = filtersRef.current;
+          fetchReport({
+            period: f.activePeriod || undefined,
+            startDate: f.activePeriod ? undefined : f.startDate || undefined,
+            endDate: f.activePeriod ? undefined : f.endDate || undefined,
+            productName: f.productName || undefined,
+            paymentMethod: f.paymentMethod || undefined,
+          });
+        }, 500);
+      }
+    },
+    [fetchReport, showError, t],
+  );
 
   const totalRevenue = useMemo(() => reportData?.totalRevenueCents ?? 0, [reportData]);
   const totalItems = useMemo(() => reportData?.totalItemsSold ?? 0, [reportData]);
@@ -114,10 +167,7 @@ export default function Reports() {
         <DateRangeCard
           filters={filters}
           onFiltersChange={handleFiltersChange}
-          onClearFilters={handleClearFilters}
-          onGenerate={generateReport}
           disabled={currencyLoading}
-          generating={loading}
         />
 
         {reportData && (

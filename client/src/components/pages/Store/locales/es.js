@@ -1031,6 +1031,13 @@ const storeEs = {
       paymentMethod: "Método de Pago",
       paymentMethodPlaceholder: "Ej. Efectivo, BTC...",
       clear: "Limpiar filtros",
+      paymentMethods: {
+        all: "Todos los métodos",
+        cash: "Efectivo",
+        btc: "Bitcoin (BTC)",
+        debitCard: "Tarjeta de Débito",
+        creditCard: "Tarjeta de Crédito",
+      },
     },
     statuses: {
       loading: "Cargando reportes...",

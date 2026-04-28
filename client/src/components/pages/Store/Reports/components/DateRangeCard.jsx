@@ -1,11 +1,20 @@
 "use client";
-import { Button, Card, CardBody, CardHeader, Input, Spinner } from "@heroui/react";
-import { Calendar, FileText, Search, X } from "lucide-react";
+import { Button, Card, CardBody, CardHeader, Input, Select, SelectItem } from "@heroui/react";
+import { Bitcoin, Banknote, CreditCard, Calendar, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const PERIODS = ["week", "month", "year"];
 
-export function DateRangeCard({ filters, onFiltersChange, onClearFilters, onGenerate, disabled, generating }) {
+// keys must match the server's payment_methods.name values (case-insensitive)
+const PAYMENT_OPTIONS = [
+  { key: "all", localeKey: "all", icon: <Search className="w-4 h-4" /> },
+  { key: "Cash", localeKey: "cash", icon: <Banknote className="w-4 h-4" /> },
+  { key: "BTC", localeKey: "btc", icon: <Bitcoin className="w-4 h-4" /> },
+  { key: "Debit Card", localeKey: "debitCard", icon: <CreditCard className="w-4 h-4" /> },
+  { key: "Credit Card", localeKey: "creditCard", icon: <CreditCard className="w-4 h-4" /> },
+];
+
+export function DateRangeCard({ filters, onFiltersChange, disabled }) {
   const t = useTranslations("reports");
 
   const handlePeriod = (p) => {
@@ -18,6 +27,11 @@ export function DateRangeCard({ filters, onFiltersChange, onClearFilters, onGene
 
   const handleChangeEnd = (e) => {
     onFiltersChange({ endDate: e.target.value, activePeriod: null });
+  };
+
+  const handlePaymentMethod = (keys) => {
+    const key = Array.from(keys)[0] ?? "all";
+    onFiltersChange({ paymentMethod: key === "all" ? "" : key });
   };
 
   return (
@@ -76,7 +90,7 @@ export function DateRangeCard({ filters, onFiltersChange, onClearFilters, onGene
             />
           </div>
 
-          {/* Text filters */}
+          {/* Text + dropdown filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
               label={t("filters.productName")}
@@ -89,53 +103,23 @@ export function DateRangeCard({ filters, onFiltersChange, onClearFilters, onGene
               classNames={{ label: "text-sm font-semibold text-deep" }}
               disabled={disabled}
             />
-            <Input
+            <Select
               label={t("filters.paymentMethod")}
-              placeholder={t("filters.paymentMethodPlaceholder")}
-              value={filters.paymentMethod}
-              onChange={(e) => onFiltersChange({ paymentMethod: e.target.value })}
+              selectedKeys={new Set([filters.paymentMethod || "all"])}
+              onSelectionChange={handlePaymentMethod}
               variant="bordered"
               size="lg"
-              startContent={<Search className="w-4 h-4 text-gray-400" />}
               classNames={{ label: "text-sm font-semibold text-deep" }}
-              disabled={disabled}
-            />
+              isDisabled={disabled}
+            >
+              {PAYMENT_OPTIONS.map(({ key, localeKey, icon }) => (
+                <SelectItem key={key} startContent={icon}>
+                  {t(`filters.paymentMethods.${localeKey}`)}
+                </SelectItem>
+              ))}
+            </Select>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button
-              onPress={onGenerate}
-              variant="solid"
-              color="primary"
-              size="lg"
-              disabled={disabled || generating}
-              className="flex-1 gradient-forest text-white h-14"
-            >
-              {generating ? (
-                <div className="flex items-center space-x-2">
-                  <Spinner size="sm" color="white" />
-                  <span>{t("dates.generating")}</span>
-                </div>
-              ) : (
-                <>
-                  <FileText className="w-5 h-5 mr-2" />
-                  {t("dates.generate")}
-                </>
-              )}
-            </Button>
-            <Button
-              onPress={onClearFilters}
-              variant="bordered"
-              color="default"
-              size="lg"
-              disabled={disabled || generating}
-              className="h-14"
-              aria-label={t("filters.clear")}
-            >
-              <X className="w-5 h-5" />
-            </Button>
-          </div>
         </div>
       </CardBody>
     </Card>

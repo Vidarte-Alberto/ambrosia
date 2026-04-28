@@ -36,17 +36,20 @@ jest.mock("../components/ReportSkeleton", () => ({
   ReportSkeleton: () => <div data-testid="report-skeleton" />,
 }));
 
-// Stub con la nueva API: filters (objeto) + onFiltersChange (patch) + onClearFilters + onGenerate
 jest.mock("../components/DateRangeCard", () => ({
-  DateRangeCard: ({ filters, onFiltersChange, onClearFilters, onGenerate }) => (
+  DateRangeCard: ({ filters, onFiltersChange }) => (
     <div data-testid="date-range-card">
-      <button data-testid="generate-btn" onClick={onGenerate}>generate</button>
-      <button data-testid="clear-btn" onClick={onClearFilters}>clear</button>
       <button
         data-testid="period-week-btn"
         onClick={() => onFiltersChange({ activePeriod: "week", startDate: "", endDate: "" })}
       >
         week
+      </button>
+      <button
+        data-testid="period-month-btn"
+        onClick={() => onFiltersChange({ activePeriod: "month", startDate: "", endDate: "" })}
+      >
+        month
       </button>
       <input
         data-testid="start-date-input"
@@ -63,11 +66,17 @@ jest.mock("../components/DateRangeCard", () => ({
         value={filters.productName}
         onChange={(e) => onFiltersChange({ productName: e.target.value })}
       />
-      <input
-        data-testid="payment-method-input"
-        value={filters.paymentMethod}
-        onChange={(e) => onFiltersChange({ paymentMethod: e.target.value })}
-      />
+      <select
+        data-testid="payment-method-select"
+        value={filters.paymentMethod || "all"}
+        onChange={(e) => onFiltersChange({ paymentMethod: e.target.value === "all" ? "" : e.target.value })}
+      >
+        <option value="all">All</option>
+        <option value="efectivo">Efectivo</option>
+        <option value="btc">Bitcoin</option>
+        <option value="tarjeta de débito">Débito</option>
+        <option value="tarjeta de crédito">Crédito</option>
+      </select>
       <span data-testid="active-period">{filters.activePeriod}</span>
     </div>
   ),
@@ -182,21 +191,6 @@ describe("Reports", () => {
     expect(screen.getAllByTestId("sale-item")).toHaveLength(2);
   });
 
-  it("muestra toast de éxito al pulsar generate", async () => {
-    mockFetchReport.mockResolvedValue(mockReport);
-    renderReports();
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("generate-btn"));
-    });
-
-    await waitFor(() => {
-      expect(addToast).toHaveBeenCalledWith(
-        expect.objectContaining({ color: "success" }),
-      );
-    });
-  });
-
   it("no muestra SalesTable cuando reportData es null", () => {
     renderReports();
 
@@ -205,7 +199,7 @@ describe("Reports", () => {
 
   // ─── manejo de errores ─────────────────────────────────────────────────────
 
-  it("muestra toast de error cuando fetchReport lanza excepción al generar", async () => {
+  it("muestra toast de error cuando fetchReport lanza excepción al refrescar", async () => {
     mockFetchReport.mockResolvedValueOnce(null); // auto-fetch ok
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
@@ -213,7 +207,7 @@ describe("Reports", () => {
 
     mockFetchReport.mockRejectedValueOnce(new Error("Network error"));
     await act(async () => {
-      fireEvent.click(screen.getByTestId("generate-btn"));
+      fireEvent.click(screen.getByTestId("refresh-btn"));
     });
 
     await waitFor(() => {
@@ -227,128 +221,36 @@ describe("Reports", () => {
     mockUseReports.mockReturnValue(makeHookReturn({ error: new Error("fail") }));
     renderReports();
 
-    // El banner de error usa AlertCircle — verificamos que está en el DOM
-    // buscando por la clase de color rojo en el card
     const redCards = document.querySelectorAll(".bg-red-50");
     expect(redCards.length).toBeGreaterThan(0);
   });
 
-  // ─── validateCustomRange ──────────────────────────────────────────────────
+  // ─── auto-fetch por período ────────────────────────────────────────────────
 
-  it("no genera reporte cuando startDate > endDate", async () => {
-    mockFetchReport.mockResolvedValueOnce(null);
+  it("auto-genera al seleccionar el período week", async () => {
     renderReports();
     await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
     jest.clearAllMocks();
 
     await act(async () => {
-      fireEvent.change(screen.getByTestId("start-date-input"), {
-        target: { value: "2024-12-31" },
-      });
-    });
-    await act(async () => {
-      fireEvent.change(screen.getByTestId("end-date-input"), {
-        target: { value: "2024-01-01" },
-      });
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("generate-btn"));
-    });
-
-    expect(mockFetchReport).not.toHaveBeenCalled();
-    expect(addToast).toHaveBeenCalledWith(
-      expect.objectContaining({ color: "danger" }),
-    );
-  });
-
-  it("no genera reporte cuando solo se proporciona startDate", async () => {
-    mockFetchReport.mockResolvedValueOnce(null);
-    renderReports();
-    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
-    jest.clearAllMocks();
-
-    await act(async () => {
-      fireEvent.change(screen.getByTestId("start-date-input"), {
-        target: { value: "2024-01-01" },
-      });
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("generate-btn"));
-    });
-
-    expect(mockFetchReport).not.toHaveBeenCalled();
-    expect(addToast).toHaveBeenCalledWith(
-      expect.objectContaining({ color: "danger" }),
-    );
-  });
-
-  it("no genera reporte cuando solo se proporciona endDate", async () => {
-    mockFetchReport.mockResolvedValueOnce(null);
-    renderReports();
-    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
-    jest.clearAllMocks();
-
-    await act(async () => {
-      fireEvent.change(screen.getByTestId("end-date-input"), {
-        target: { value: "2024-12-31" },
-      });
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("generate-btn"));
-    });
-
-    expect(mockFetchReport).not.toHaveBeenCalled();
-    expect(addToast).toHaveBeenCalledWith(
-      expect.objectContaining({ color: "danger" }),
-    );
-  });
-
-  it("genera reporte sin filtros cuando no hay period ni fechas personalizadas", async () => {
-    mockFetchReport.mockResolvedValue(null);
-    renderReports();
-    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
-    jest.clearAllMocks();
-
-    // Activar fechas para quitar el period, luego borrarlas
-    await act(async () => {
-      fireEvent.change(screen.getByTestId("start-date-input"), {
-        target: { value: "2024-01-01" },
-      });
-    });
-    await act(async () => {
-      fireEvent.change(screen.getByTestId("start-date-input"), {
-        target: { value: "" },
-      });
-    });
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("generate-btn"));
+      fireEvent.click(screen.getByTestId("period-week-btn"));
     });
 
     await waitFor(() => {
       expect(mockFetchReport).toHaveBeenCalledWith(
-        expect.objectContaining({ period: undefined, startDate: undefined, endDate: undefined }),
+        expect.objectContaining({ period: "week" }),
       );
     });
   });
 
-  // ─── handlePeriod ─────────────────────────────────────────────────────────
-
-  it("handlePeriod establece el periodo activo y limpia las fechas", async () => {
+  it("el botón de período limpia las fechas y establece activePeriod", async () => {
     renderReports();
 
     await act(async () => {
-      fireEvent.change(screen.getByTestId("start-date-input"), {
-        target: { value: "2024-01-01" },
-      });
+      fireEvent.change(screen.getByTestId("start-date-input"), { target: { value: "2024-01-01" } });
     });
     await act(async () => {
-      fireEvent.change(screen.getByTestId("end-date-input"), {
-        target: { value: "2024-01-31" },
-      });
+      fireEvent.change(screen.getByTestId("end-date-input"), { target: { value: "2024-01-31" } });
     });
 
     await act(async () => {
@@ -360,31 +262,127 @@ describe("Reports", () => {
     expect(screen.getByTestId("active-period")).toHaveTextContent("week");
   });
 
-  // ─── handleClearFilters ────────────────────────────────────────────────────
+  // ─── auto-fetch por rango custom ───────────────────────────────────────────
 
-  it("handleClearFilters restaura DEFAULT_PERIOD=month y vacía los filtros", async () => {
+  it("auto-genera cuando se completa un rango custom válido", async () => {
     renderReports();
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
 
     await act(async () => {
-      fireEvent.change(screen.getByTestId("product-name-input"), {
-        target: { value: "Widget" },
-      });
-    });
-    await act(async () => {
-      fireEvent.change(screen.getByTestId("payment-method-input"), {
-        target: { value: "BTC" },
-      });
+      fireEvent.change(screen.getByTestId("start-date-input"), { target: { value: "2024-01-01" } });
     });
 
+    expect(mockFetchReport).not.toHaveBeenCalled();
+
     await act(async () => {
-      fireEvent.click(screen.getByTestId("clear-btn"));
+      fireEvent.change(screen.getByTestId("end-date-input"), { target: { value: "2024-01-31" } });
     });
 
-    expect(screen.getByTestId("active-period")).toHaveTextContent("month");
-    expect(screen.getByTestId("product-name-input").value).toBe("");
-    expect(screen.getByTestId("payment-method-input").value).toBe("");
-    expect(screen.getByTestId("start-date-input").value).toBe("");
-    expect(screen.getByTestId("end-date-input").value).toBe("");
+    await waitFor(() => {
+      expect(mockFetchReport).toHaveBeenCalledWith(
+        expect.objectContaining({ startDate: "2024-01-01", endDate: "2024-01-31" }),
+      );
+    });
+  });
+
+  it("no auto-genera cuando solo se proporciona startDate", async () => {
+    renderReports();
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("start-date-input"), { target: { value: "2024-01-01" } });
+    });
+
+    expect(mockFetchReport).not.toHaveBeenCalled();
+  });
+
+  it("no auto-genera cuando solo se proporciona endDate", async () => {
+    renderReports();
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("end-date-input"), { target: { value: "2024-12-31" } });
+    });
+
+    expect(mockFetchReport).not.toHaveBeenCalled();
+  });
+
+  it("no genera reporte y muestra error cuando startDate > endDate", async () => {
+    renderReports();
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("start-date-input"), { target: { value: "2024-12-31" } });
+    });
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("end-date-input"), { target: { value: "2024-01-01" } });
+    });
+
+    expect(mockFetchReport).not.toHaveBeenCalled();
+    expect(addToast).toHaveBeenCalledWith(
+      expect.objectContaining({ color: "danger" }),
+    );
+  });
+
+  // ─── auto-fetch por paymentMethod dropdown ────────────────────────────────
+
+  it("auto-genera inmediatamente al seleccionar un método de pago", async () => {
+    renderReports();
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("payment-method-select"), { target: { value: "btc" } });
+    });
+
+    await waitFor(() => {
+      expect(mockFetchReport).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentMethod: "btc" }),
+      );
+    });
+  });
+
+  it("envía paymentMethod undefined al seleccionar 'all'", async () => {
+    renderReports();
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
+    await act(async () => {
+      fireEvent.change(screen.getByTestId("payment-method-select"), { target: { value: "all" } });
+    });
+
+    await waitFor(() => {
+      expect(mockFetchReport).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentMethod: undefined }),
+      );
+    });
+  });
+
+  // ─── auto-fetch debounced por text filters ─────────────────────────────────
+
+  it("auto-genera con debounce al cambiar productName", async () => {
+    jest.useFakeTimers();
+    renderReports();
+    await act(async () => { jest.runAllTimers(); });
+    await waitFor(() => expect(mockFetchReport).toHaveBeenCalledTimes(1));
+    jest.clearAllMocks();
+
+    fireEvent.change(screen.getByTestId("product-name-input"), { target: { value: "Widget" } });
+    expect(mockFetchReport).not.toHaveBeenCalled();
+
+    act(() => { jest.advanceTimersByTime(500); });
+
+    await waitFor(() => {
+      expect(mockFetchReport).toHaveBeenCalledWith(
+        expect.objectContaining({ productName: "Widget" }),
+      );
+    });
+
+    jest.useRealTimers();
   });
 
   // ─── refresh button ────────────────────────────────────────────────────────

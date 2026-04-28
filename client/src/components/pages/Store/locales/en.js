@@ -1031,6 +1031,13 @@ const storeEn = {
       paymentMethod: "Payment Method",
       paymentMethodPlaceholder: "e.g. Efectivo, BTC...",
       clear: "Clear filters",
+      paymentMethods: {
+        all: "All methods",
+        cash: "Cash",
+        btc: "Bitcoin (BTC)",
+        debitCard: "Debit Card",
+        creditCard: "Credit Card",
+      },
     },
     statuses: {
       loading: "Loading reports...",
