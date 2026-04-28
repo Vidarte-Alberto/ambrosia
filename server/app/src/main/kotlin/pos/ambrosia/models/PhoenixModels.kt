@@ -24,6 +24,15 @@ data class CreateInvoiceResponse(
     val amountSat: Long? = null,
 )
 
+@Serializable data class DecodeInvoiceRequest(
+    val invoice: String,
+)
+
+@Serializable data class DecodedInvoiceResponse(
+    val amountSat: Long?,
+    val description: String?,
+)
+
 @Serializable data class PayInvoiceRequest(
     val amountSat: Long? = null,
     val invoice: String,

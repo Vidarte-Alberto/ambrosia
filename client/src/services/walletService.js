@@ -68,13 +68,13 @@ export async function createInvoice(invoiceAmount, invoiceDesc) {
   return await parseJsonResponse(response, null);
 }
 
-export async function payInvoiceFromService(invoice) {
+export async function payInvoiceFromService(invoice, amountSat) {
   const response = await httpClient("/wallet/payinvoice", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ invoice: invoice.trim() }),
+    body: JSON.stringify({ invoice: invoice.trim(), ...(amountSat != null ? { amountSat } : {}) }),
   });
   const responseBody = await parseJsonResponse(response, null);
 
@@ -101,6 +101,20 @@ export async function payInvoiceFromService(invoice) {
   }
 
   return responseBody;
+}
+
+export async function decodeInvoice(invoice) {
+  const response = await httpClient("/wallet/decodeinvoice", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ invoice: invoice.trim() }),
+  });
+  if (!response.ok) {
+    throw new Error("Could not decode invoice");
+  }
+  return await parseJsonResponse(response, null);
 }
 
 export async function getIncomingTransactions() {

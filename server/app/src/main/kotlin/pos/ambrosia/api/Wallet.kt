@@ -20,12 +20,14 @@ import pos.ambrosia.models.WalletAuthResponse
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CsvExport
+import pos.ambrosia.models.phoenix.DecodeInvoiceRequest
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.models.phoenix.PayOnchainRequest
 import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.TokenService
+import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.getCurrentUser
@@ -89,6 +91,21 @@ fun Route.wallet(
             val request = call.receive<CreateInvoiceRequest>()
             val invoice = phoenixService.createInvoice(request)
             call.respond(HttpStatusCode.OK, invoice)
+        }
+        post("/decodeinvoice") {
+            val request = call.receive<DecodeInvoiceRequest>()
+            val decoded = Bolt11Decoder.decodeInvoice(request.invoice)
+            if (decoded != null) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    pos.ambrosia.models.phoenix.DecodedInvoiceResponse(
+                        amountSat = decoded.amountSat,
+                        description = decoded.description,
+                    ),
+                )
+            } else {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Could not decode invoice"))
+            }
         }
         post("/payinvoice") {
             val request = call.receive<PayInvoiceRequest>()
