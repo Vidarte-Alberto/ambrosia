@@ -68,19 +68,20 @@ export function PaymentSuccessContent({
           </div>
         </div>
 
-        <Divider />
+        <Divider className="mt-4" />
 
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">{t("payments.send.paymentHash")}</span>
+        <div className="space-y-2 pt-4">
+          <span className="text-sm text-gray-500">{t("payments.send.paymentHash")}</span>
+          <div className="relative rounded-xl border border-default-200 bg-default-50 p-3 pr-28">
             <CopyButton
               value={result?.paymentHash ?? ""}
               label={t("payments.send.copyButton")}
               size="sm"
+              className="absolute right-3 top-3 min-w-0 rounded-lg border-default-300 bg-white px-3 shadow-sm"
             />
-          </div>
-          <div className="bg-gray-100 rounded p-2 text-xs font-mono truncate sm:whitespace-normal sm:break-all">
-            {result?.paymentHash}
+            <div className="text-xs font-mono leading-5 break-all text-foreground/80">
+              {result?.paymentHash}
+            </div>
           </div>
         </div>
       </ModalBody>
