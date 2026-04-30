@@ -893,6 +893,7 @@ const storeEs = {
         confirmModal: {
           title: "Confirmar Pago",
           summaryTitle: "Revisar pago",
+          amountLabel: "Monto:",
           estimatedLabel: "Estimado:",
           descriptionLabel: "Descripción:",
           noDescription: "Sin descripción",

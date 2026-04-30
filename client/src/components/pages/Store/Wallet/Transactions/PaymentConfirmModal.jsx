@@ -200,7 +200,7 @@ function PendingPaymentModalContent({
           ) : (
             <div className="flex justify-between">
               <span className="text-gray-500">
-                {t("payments.send.confirmModal.estimatedLabel")}
+                {t("payments.send.confirmModal.amountLabel")}
               </span>
               <span className="font-medium">
                 {formatSats(invoiceSats)} sats

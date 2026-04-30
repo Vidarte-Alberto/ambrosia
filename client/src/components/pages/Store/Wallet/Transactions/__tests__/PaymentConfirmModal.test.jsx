@@ -87,9 +87,10 @@ describe("PaymentConfirmModal", () => {
       expect(screen.queryByText("payments.send.confirmModal.descriptionLabel")).not.toBeInTheDocument();
     });
 
-    it("renders fiat label", () => {
+    it("renders amount and estimated labels for fixed invoices", () => {
       renderModal();
-      expect(screen.queryAllByText("payments.send.confirmModal.estimatedLabel")).toHaveLength(2);
+      expect(screen.getByText("payments.send.confirmModal.amountLabel")).toBeInTheDocument();
+      expect(screen.getByText("payments.send.confirmModal.estimatedLabel")).toBeInTheDocument();
     });
 
     it("calls onClose when cancel is clicked", () => {

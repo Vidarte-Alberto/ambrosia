@@ -893,6 +893,7 @@ const storeEn = {
         confirmModal: {
           title: "Confirm Payment",
           summaryTitle: "Review payment",
+          amountLabel: "Amount:",
           estimatedLabel: "Estimated:",
           descriptionLabel: "Description:",
           noDescription: "No description",
