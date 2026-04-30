@@ -12,6 +12,16 @@ const storeEn = {
     orders: "Orders",
     reports: "Reports",
   },
+  seedTour: {
+    title: "Protect your SEED Phrase!",
+    description: "Your SEED Phrase is the <b>master key</b> to your Bitcoin wallet. If you lose access to the app, it's the only way to recover your funds.",
+    clickSettings: "Go to Settings to view and back up your SEED Phrase.",
+    nextButton: "Go to Settings",
+    mobileGoToSettings: "Go to Settings",
+    settingsTitle: "Back up your SEED Phrase",
+    settingsDescription: "Write down all <b>12 words in order</b> on paper and store them somewhere safe — offline.",
+    settingsButton: "Got it",
+  },
   walletTour: {
     title: "Before you start!",
     description: "To receive <b>Bitcoin payments</b> you need to open a <b>Lightning channel</b>.",
@@ -808,6 +818,10 @@ const storeEn = {
       walletTour: {
         name: "Lightning Channel",
         description: "Learn how to create your Lightning channel and receive Bitcoin payments.",
+      },
+      seedTour: {
+        name: "SEED Phrase",
+        description: "Learn what your SEED Phrase is and how to keep it safe.",
       },
     },
   },

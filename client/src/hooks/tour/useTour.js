@@ -17,11 +17,13 @@ export function useTour({ key, condition = true, delay = 0, driverOptions, onBef
     if (!condition) return;
     if (!localStorage.getItem(key)) return;
 
+    let driverObj = null;
+
     const timer = setTimeout(() => {
       const options = driverOptionsRef.current;
       const teardown = onBeforeStartRef.current?.();
 
-      const driverObj = driver({
+      driverObj = driver({
         ...options,
         onDestroyStarted: () => {
           teardown?.();
@@ -34,6 +36,9 @@ export function useTour({ key, condition = true, delay = 0, driverOptions, onBef
       driverObj.drive();
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (driverObj) driverObj.destroy();
+    };
   }, [condition, key, delay]);
 }

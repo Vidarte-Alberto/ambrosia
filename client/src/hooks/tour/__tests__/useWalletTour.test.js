@@ -41,6 +41,7 @@ let setItemSpy;
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.useFakeTimers();
   localStorage.clear();
   capturedConfig = {};
   setDesktop();
@@ -50,19 +51,20 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  jest.useRealTimers();
   setItemSpy.mockRestore();
 });
 
 describe("useWalletTour", () => {
   describe("wallet pathname effect", () => {
-    it("sets guard and receive keys on first wallet visit (WALLET_TOUR_KEY = 'true')", () => {
+    it("does not set guard/receive keys on wallet visit (keys are set by tour events, not pathname)", () => {
       localStorage.setItem(WALLET_TOUR_KEY, "true");
       const { usePathname } = require("next/navigation");
       usePathname.mockReturnValue("/store/wallet");
       renderHook(() => useWalletTour(false));
-      expect(setItemSpy).toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
-      expect(setItemSpy).toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
-      expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "visited");
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_TOUR_KEY, "visited");
     });
 
     it("does not set guard/receive keys on subsequent wallet visits (WALLET_TOUR_KEY = 'visited')", () => {
@@ -90,28 +92,51 @@ describe("useWalletTour", () => {
 
   describe("tour initialization", () => {
     it("does not start tour when not authenticated", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(false));
+      jest.runAllTimers();
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
-    it("starts tour when authenticated for the first time", () => {
+    it("does not start tour without WALLET_TOUR_KEY", () => {
       renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
+      expect(mockDrive).not.toHaveBeenCalled();
+    });
+
+    it("does not start tour when WALLET_TOUR_KEY is 'visited'", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "visited");
+      renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
+      expect(mockDrive).not.toHaveBeenCalled();
+    });
+
+    it("starts tour when WALLET_TOUR_KEY is 'true' and authenticated", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
+      renderHook(() => useWalletTour(true));
+      jest.runAllTimers();
       expect(mockDrive).toHaveBeenCalledTimes(1);
     });
 
-    it("does not start tour if already seen", () => {
+    it("does not call drive() before timer fires", () => {
       localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(true));
       expect(mockDrive).not.toHaveBeenCalled();
     });
 
-    it("sets WALLET_TOUR_KEY in localStorage when starting", () => {
+    it("removes WALLET_TOUR_KEY from localStorage when timer fires", () => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
       renderHook(() => useWalletTour(true));
-      expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "true");
+      jest.runAllTimers();
+      expect(localStorage.getItem(WALLET_TOUR_KEY)).toBeNull();
     });
   });
 
   describe("desktop tour (>= 768px)", () => {
+    beforeEach(() => {
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
+    });
+
     it("creates 2 steps on desktop", () => {
       renderHook(() => useWalletTour(true));
       expect(capturedConfig.steps).toHaveLength(2);
@@ -127,17 +152,17 @@ describe("useWalletTour", () => {
       expect(capturedConfig.steps[1].element).toBe("#nav-wallet");
     });
 
-    it("sets guard, receive and visited keys onHighlighted", () => {
+    it("sets guard and receive keys onHighlighted (not visited)", () => {
       renderHook(() => useWalletTour(true));
       capturedConfig.steps[1].onHighlighted();
-      expect(setItemSpy).toHaveBeenCalledWith(WALLET_TOUR_KEY, "visited");
+      expect(setItemSpy).not.toHaveBeenCalledWith(WALLET_TOUR_KEY, "visited");
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
       expect(setItemSpy).toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
     });
 
-    it("does not have onDestroyed on desktop", () => {
+    it("does not have onDestroyStarted on desktop", () => {
       renderHook(() => useWalletTour(true));
-      expect(capturedConfig.onDestroyed).toBeUndefined();
+      expect(capturedConfig.onDestroyStarted).toBeUndefined();
     });
 
     it("sets nextBtnText without arrow", () => {
@@ -148,7 +173,10 @@ describe("useWalletTour", () => {
   });
 
   describe("mobile tour (< 768px)", () => {
-    beforeEach(() => setMobile());
+    beforeEach(() => {
+      setMobile();
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
+    });
 
     it("creates 1 step on mobile", () => {
       renderHook(() => useWalletTour(true));
@@ -180,9 +208,21 @@ describe("useWalletTour", () => {
       expect(capturedConfig.steps[0].element).toBeUndefined();
     });
 
-    it("does not have onDestroyed on mobile (keys set via pathname effect)", () => {
+    it("has onDestroyStarted on mobile to set guard and receive keys", () => {
       renderHook(() => useWalletTour(true));
-      expect(capturedConfig.onDestroyed).toBeUndefined();
+      expect(capturedConfig.onDestroyStarted).toBeDefined();
+      capturedConfig.onDestroyStarted();
+      expect(setItemSpy).toHaveBeenCalledWith(WALLET_GUARD_TOUR_KEY, "true");
+      expect(setItemSpy).toHaveBeenCalledWith(WALLET_RECEIVE_TOUR_KEY, "true");
+    });
+  });
+
+  describe("desktop tour (>= 768px) — onDestroyStarted", () => {
+    it("does not have onDestroyStarted on desktop", () => {
+      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
+      localStorage.setItem(WALLET_TOUR_KEY, "true");
+      renderHook(() => useWalletTour(true));
+      expect(capturedConfig.onDestroyStarted).toBeUndefined();
     });
   });
 });
