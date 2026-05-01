@@ -138,11 +138,11 @@ function PendingPaymentModalContent({
         <div className="space-y-3">
           {isZeroAmount ? (
             <>
-              <div className="space-y-2">
+              <div className="space-y-2 text-center">
                 <p className="text-sm text-gray-600">
                   {t("payments.send.confirmModal.zeroAmountTitle")}
                 </p>
-                <div className="flex gap-2">
+                <div className="flex justify-center gap-2">
                   <Button
                     variant={amountInputMode === "sat" ? "solid" : "bordered"}
                     color={amountInputMode === "sat" ? "primary" : "default"}
@@ -246,7 +246,7 @@ function PendingPaymentModalContent({
           </>
         )}
       </ModalBody>
-      <ModalFooter>
+      <ModalFooter className="justify-between">
         <Button
           variant="bordered"
           type="button"
