@@ -10,8 +10,8 @@ const DEFAULT_CURRENCY = {
   symbol: "$",
   locale: "en-US",
   name: null,
-  country_code: null,
-  country_name: null,
+  countryCode: null,
+  countryName: null,
 };
 
 function deriveLocale(countryCode) {
@@ -28,10 +28,10 @@ function parseCurrencyData(base) {
     acronym: baseAcronym || DEFAULT_CURRENCY.acronym,
     symbol: base?.symbol || DEFAULT_CURRENCY.symbol,
     name: base?.name || DEFAULT_CURRENCY.name,
-    country_code: base?.country_code || null,
-    country_name: base?.country_name || null,
+    countryCode: base?.countryCode || null,
+    countryName: base?.countryName || null,
     locale:
-      deriveLocale(base?.country_code) ||
+      deriveLocale(base?.countryCode) ||
       base?.locale ||
       (typeof navigator !== "undefined" ? navigator.language : DEFAULT_CURRENCY.locale),
   };

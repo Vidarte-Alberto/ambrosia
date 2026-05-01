@@ -10,7 +10,7 @@ export async function processCheckout({
   transactionId = "",
   t,
 }) {
-  const response = await httpClient("/store/orders/checkout", {
+  const checkoutHttpResponse = await httpClient("/store/orders/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -27,9 +27,9 @@ export async function processCheckout({
     }),
   });
 
-  const checkoutResponse = await parseJsonResponse(response, null);
-  if (!checkoutResponse?.order_id) {
+  const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
+  if (!storeCheckoutResult?.order_id) {
     throw new Error(t("errors.checkout"));
   }
-  return checkoutResponse;
+  return storeCheckoutResult;
 }

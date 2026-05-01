@@ -26,7 +26,7 @@ describe("OrdersCard", () => {
 
   const order = {
     id: "abc-123",
-    user_name: "Ana",
+    userName: "Ana",
     status: "paid",
     payment_method: "Cash",
     total: 15,
@@ -47,8 +47,8 @@ describe("OrdersCard", () => {
     expect(formatAmount).toHaveBeenCalledWith(1500);
   });
 
-  it("shows unassigned when no user_name", () => {
-    render(<OrdersCard order={{ ...order, user_name: null }} formatAmount={formatAmount} onViewOrder={onViewOrder} />);
+  it("shows unassigned when no userName", () => {
+    render(<OrdersCard order={{ ...order, userName: null }} formatAmount={formatAmount} onViewOrder={onViewOrder} />);
     expect(screen.getByText("details.unassigned")).toBeInTheDocument();
   });
 

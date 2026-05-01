@@ -26,8 +26,8 @@ fun Application.configureStoreOrders() {
 fun Route.storeOrders(service: OrderService) {
     authorizePermission("orders_read") {
         get("") {
-            val status = call.request.queryParameters["status"]
-            val orders = service.getStoreOrders(status)
+            val orderStatus = call.request.queryParameters["status"]
+            val orders = service.getStoreOrders(orderStatus)
             call.respond(HttpStatusCode.OK, orders)
         }
         get("/{id}") {

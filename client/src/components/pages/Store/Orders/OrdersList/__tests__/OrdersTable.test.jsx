@@ -42,7 +42,7 @@ describe("OrdersTable", () => {
     const orders = [
       {
         id: "abcd1234efgh",
-        user_name: "Ana",
+        userName: "Ana",
         status: "paid",
         payment_method: "BTC",
         total: 15,
@@ -50,7 +50,7 @@ describe("OrdersTable", () => {
       },
       {
         id: "ijkl5678mnop",
-        user_name: null,
+        userName: null,
         status: "open",
         payment_method: null,
         total: 20,

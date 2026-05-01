@@ -145,7 +145,7 @@ data class Order(
 data class OrderWithPayment(
     val id: String,
     val user_id: String,
-    val user_name: String? = null,
+    val userName: String? = null,
     val table_id: String? = null,
     val status: String,
     val total: Double,
@@ -224,8 +224,8 @@ data class Ticket(
     val acronym: String,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable
@@ -235,8 +235,8 @@ data class BaseCurrencyResponse(
     val acronym: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable data class TicketPayment(
@@ -418,7 +418,7 @@ data class StoreOrderItem(
 data class StoreOrder(
     val id: String,
     val user_id: String,
-    val user_name: String? = null,
+    val userName: String? = null,
     val status: String,
     val total: Int,
     val created_at: String,

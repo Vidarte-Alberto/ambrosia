@@ -9,10 +9,10 @@ export function parseUtcDate(dateString) {
 }
 
 const formatDate = (dateString) => {
-  const date = parseUtcDate(dateString);
-  if (isNaN(date.getTime())) return "—";
+  const parsedDate = parseUtcDate(dateString);
+  if (isNaN(parsedDate.getTime())) return "—";
 
-  return date.toLocaleString(undefined, {
+  return parsedDate.toLocaleString(undefined, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

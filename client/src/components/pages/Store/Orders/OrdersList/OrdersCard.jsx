@@ -15,7 +15,7 @@ export function OrdersCard({ order, formatAmount, onViewOrder }) {
       <CardBody className="flex flex-row items-center gap-3 p-3">
         <div className="flex-1 min-w-0">
           <p className="font-medium text-green-900 truncate">
-            {order.user_name || t("details.unassigned")}
+            {order.userName || t("details.unassigned")}
           </p>
           <span className="text-xs text-gray-400">{formatDate(order.created_at)}</span>
           <div className="flex items-center gap-2 mt-1">

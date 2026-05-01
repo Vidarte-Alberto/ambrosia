@@ -78,8 +78,8 @@ const mockCurrency = {
   symbol: "$",
   locale: "en-US",
   name: "United States Dollar",
-  country_code: "US",
-  country_name: "United States",
+  countryCode: "US",
+  countryName: "United States",
 };
 
 beforeEach(() => {

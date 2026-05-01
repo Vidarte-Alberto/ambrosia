@@ -34,7 +34,7 @@ describe("OrderDetailsModal", () => {
     const formatAmount = jest.fn((value) => `fmt-${value}`);
     const order = {
       id: "order-1",
-      user_name: "Luis",
+      userName: "Luis",
       status: "paid",
       payment_method: "Cash",
       total: 25,

@@ -9,7 +9,7 @@ import { StatusChip } from "./OrdersList/StatusChip";
 
 export function OrderDetailsModal({ order, isOpen, onClose, formatAmount }) {
   const t = useTranslations("orders");
-  const userLabel = order?.user_name ?? t("details.unassigned");
+  const userLabel = order?.userName ?? t("details.unassigned");
 
   return (
     <Modal

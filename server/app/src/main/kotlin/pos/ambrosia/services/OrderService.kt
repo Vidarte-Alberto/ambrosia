@@ -128,7 +128,7 @@ class OrderService(
         return OrderWithPayment(
             id = resultSet.getString("id"),
             user_id = resultSet.getString("user_id"),
-            user_name = resultSet.getString("user_name"),
+            userName = resultSet.getString("user_name"),
             table_id = resultSet.getString("table_id"),
             status = resultSet.getString("status"),
             total = resultSet.getDouble("total"),
@@ -509,7 +509,7 @@ class OrderService(
         return StoreOrder(
             id = id,
             user_id = resultSet.getString("user_id"),
-            user_name = resultSet.getString("user_name"),
+            userName = resultSet.getString("user_name"),
             status = resultSet.getString("status"),
             total = resultSet.getInt("total"),
             created_at = resultSet.getString("created_at").replace(" ", "T"),
