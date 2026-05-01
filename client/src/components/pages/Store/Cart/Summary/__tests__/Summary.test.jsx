@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import { Summary } from "../Summary";
 
@@ -10,6 +10,14 @@ jest.mock("@heroui/react", () => ({
   Card: ({ children, shadow, className }) => <div data-shadow={shadow} className={className}>{children}</div>,
   CardHeader: ({ children }) => <div data-testid="card-header">{children}</div>,
   CardBody: ({ children }) => <div data-testid="card-body">{children}</div>,
+}));
+
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, children }) => (
+    <button aria-label="clear-cart" onClick={onPress}>
+      {children}
+    </button>
+  ),
 }));
 
 jest.mock("../SummaryContent", () => ({
@@ -27,6 +35,7 @@ const defaultProps = {
   isPaying: false,
   paymentError: "",
   onClearPaymentError: jest.fn(),
+  onClearCart: jest.fn(),
 };
 
 describe("Summary", () => {
@@ -47,5 +56,25 @@ describe("Summary", () => {
     render(<Summary {...defaultProps} />);
 
     expect(screen.getByTestId("summary-content")).toHaveAttribute("data-items", "1");
+  });
+
+  it("renders clear cart button when cart has items", () => {
+    render(<Summary {...defaultProps} />);
+
+    expect(screen.getByLabelText("clear-cart")).toHaveTextContent("summary.clearCart");
+  });
+
+  it("does not render clear cart button when cart is empty", () => {
+    render(<Summary {...defaultProps} cartItems={[]} />);
+
+    expect(screen.queryByLabelText("clear-cart")).not.toBeInTheDocument();
+  });
+
+  it("calls onClearCart when clear button is pressed", () => {
+    const onClearCart = jest.fn();
+    render(<Summary {...defaultProps} onClearCart={onClearCart} />);
+
+    fireEvent.click(screen.getByLabelText("clear-cart"));
+    expect(onClearCart).toHaveBeenCalled();
   });
 });

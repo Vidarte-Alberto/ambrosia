@@ -556,6 +556,7 @@ const storeEn = {
       },
     },
     summary: {
+      clearCart: "Remove All Items",
       title: "Summary",
       total: "Total",
       subtotal: "Subtotal",

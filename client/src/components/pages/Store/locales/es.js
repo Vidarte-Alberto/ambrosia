@@ -556,6 +556,7 @@ const storeEs = {
       },
     },
     summary: {
+      clearCart: "Remover Todo",
       title: "Resumen",
       total: "Total",
       subtotal: "Subtotal",
