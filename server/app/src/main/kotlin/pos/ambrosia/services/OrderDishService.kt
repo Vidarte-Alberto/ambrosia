@@ -50,13 +50,11 @@ class OrderDishService(
         )
 
     suspend fun addOrderDish(orderDish: OrderDish): String? {
-        // Verificar que la orden existe
         if (!orderExists(orderDish.orderId)) {
             logger.error("Order does not exist: ${orderDish.orderId}")
             return null
         }
 
-        // Verificar que el plato existe
         if (!dishExists(orderDish.dishId)) {
             logger.error("Dish does not exist: ${orderDish.dishId}")
             return null
@@ -153,7 +151,7 @@ class OrderDishService(
         } else {
             logger.info("No dishes found for order: $orderId")
         }
-        return true // Return true even if no rows deleted (order might not have dishes)
+        return true
     }
 
     suspend fun checkOrderDishStatus(

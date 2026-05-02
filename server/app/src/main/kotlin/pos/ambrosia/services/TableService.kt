@@ -71,19 +71,16 @@ class TableService(
     private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
 
     suspend fun addTable(table: Table): String? {
-        // Verificar que el espacio existe
         if (!spaceExists(table.spaceId)) {
             logger.error("Space does not exist: ${table.spaceId}")
             return null
         }
 
-        // Verificar que el nombre de la mesa no exista ya en el espacio
         if (tableNameExistsInSpace(table.name, table.spaceId)) {
             logger.error("Table name already exists in space: ${table.name}")
             return null
         }
 
-        // Validar status
         val tableStatus = table.status ?: "available"
         if (!isValidStatus(tableStatus)) {
             logger.error("Invalid table status: $tableStatus")
@@ -177,19 +174,16 @@ class TableService(
             return false
         }
 
-        // Verificar que el espacio existe
         if (!spaceExists(table.spaceId)) {
             logger.error("Space does not exist: ${table.spaceId}")
             return false
         }
 
-        // Verificar que el nombre de la mesa no exista ya en el espacio (excluyendo la mesa actual)
         if (tableNameExistsInSpaceExcludingId(table.name, table.spaceId, table.id)) {
             logger.error("Table name already exists in space: ${table.name}")
             return false
         }
 
-        // Validar status
         val tableStatus = table.status ?: "available"
         if (!isValidStatus(tableStatus)) {
             logger.error("Invalid table status: $tableStatus")

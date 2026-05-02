@@ -141,13 +141,11 @@ class IngredientService(
             return false
         }
 
-        // Verificar que la categoría existe
         if (!categoryExists(ingredient.categoryId)) {
             logger.error("Category does not exist: ${ingredient.categoryId}")
             return false
         }
 
-        // Validar datos
         if (ingredient.name.isBlank()) {
             logger.error("Ingredient name cannot be blank")
             return false
@@ -180,7 +178,6 @@ class IngredientService(
     }
 
     suspend fun deleteIngredient(id: String): Boolean {
-        // Verificar que el ingrediente no esté siendo usado en platos
         if (ingredientInUse(id)) {
             logger.error("Cannot delete ingredient $id: it's being used in dishes")
             return false

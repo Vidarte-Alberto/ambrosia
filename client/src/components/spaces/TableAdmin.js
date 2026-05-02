@@ -89,7 +89,6 @@ export default function TableAdmin({ room }) {
       const tableData = {
         name: tableForm.name,
         spaceId: room.id,
-        // capacity: tableForm.capacity ? parseInt(tableForm.capacity) : null,
       };
       await addTable(tableData);
       await fetchTables();
@@ -131,8 +130,6 @@ export default function TableAdmin({ room }) {
         ...editingTable,
         id: editingTable.id,
         name: editingTable.name,
-        // ...tableForm,
-        // capacity: tableForm.capacity ? parseInt(tableForm.capacity) : null,
       };
       await updateTable(tableData);
       await fetchTables();
@@ -448,56 +445,6 @@ export default function TableAdmin({ room }) {
                 }}
                 required
               />
-              {/* <Input
-                label="Capacidad (opcional)"
-                placeholder="Número de personas"
-                type="number"
-                value={tableForm.capacity}
-                onChange={(e) =>
-                  setTableForm({ ...tableForm, capacity: e.target.value })
-                }
-                variant="bordered"
-                size="lg"
-                startContent={<Users className="w-4 h-4 text-gray-400" />}
-                classNames={{
-                  input: "text-base",
-                  label: "text-sm font-semibold text-deep",
-                }}
-              />
-              <Select
-                label="Estado Inicial"
-                selectedKeys={[tableForm.status]}
-                onSelectionChange={(keys) => {
-                  const value = Array.from(keys)[0];
-                  setTableForm({ ...tableForm, status: value });
-                }}
-                variant="bordered"
-                size="lg"
-                classNames={{
-                  label: "text-sm font-semibold text-deep",
-                  trigger: "min-h-unit-12",
-                  value: "text-base",
-                }}
-              >
-                <SelectItem key="available" value="available">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span>Disponible</span>
-                  </div>
-                </SelectItem>
-                <SelectItem key="occupied" value="occupied">
-                  <div className="flex items-center space-x-2">
-                    <AlertCircle className="w-4 h-4 text-red-600" />
-                    <span>Ocupada</span>
-                  </div>
-                </SelectItem>
-                <SelectItem key="reserved" value="reserved">
-                  <div className="flex items-center space-x-2">
-                    <Clock className="w-4 h-4 text-yellow-600" />
-                    <span>Reservada</span>
-                  </div>
-                </SelectItem>
-              </Select>*/}
             </div>
           </ModalBody>
           <ModalFooter>

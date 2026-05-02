@@ -8,15 +8,15 @@ function buildOrdersQueryString(filters = {}) {
   const queryParams = new URLSearchParams();
 
   const filterEntries = [
-    ["start_date", filters.startDate],
-    ["end_date", filters.endDate],
+    ["startDate", filters.startDate],
+    ["endDate", filters.endDate],
     ["status", filters.status],
     ["userId", filters.userId],
-    ["payment_method", filters.paymentMethod],
-    ["min_total", filters.minTotal],
-    ["max_total", filters.maxTotal],
-    ["sort_by", filters.sortBy],
-    ["sort_order", filters.sortOrder],
+    ["paymentMethod", filters.paymentMethod],
+    ["minTotal", filters.minTotal],
+    ["maxTotal", filters.maxTotal],
+    ["sortBy", filters.sortBy],
+    ["sortOrder", filters.sortOrder],
   ];
 
   filterEntries.forEach(([key, value]) => {
