@@ -25,8 +25,8 @@ class BaseCurrencyService(
                     acronym = resultSet.getString("acronym"),
                     name = resultSet.getString("name"),
                     symbol = resultSet.getString("symbol"),
-                    country_name = resultSet.getString("country_name"),
-                    country_code = resultSet.getString("country_code"),
+                    countryName = resultSet.getString("country_name"),
+                    countryCode = resultSet.getString("country_code"),
                 )
             } else {
                 logger.error("Base currency not found")

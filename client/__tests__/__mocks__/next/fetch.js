@@ -25,7 +25,7 @@ const mockProducts = [
 
 const mockCategories = [{ id: "cat-hw", name: "Hardware Wallet" }];
 const mockCurrencies = [
-  { id: "currency-1", acronym: "USD", country_code: "US" },
+  { id: "currency-1", acronym: "USD", countryCode: "US" },
 ];
 
 const ResponseImpl = typeof Response !== "undefined" ? Response : null;

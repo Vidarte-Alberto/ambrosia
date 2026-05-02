@@ -2,7 +2,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrdersTable } from "../OrdersTable";
 
-jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
+jest.mock("@/lib/formatDate", () => ({
+  __esModule: true,
+  default: jest.fn(() => "formatted-date"),
+}));
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
@@ -44,7 +47,7 @@ describe("OrdersTable", () => {
     const orders = [
       {
         id: "abcd1234efgh",
-        waiter: "Ana",
+        userName: "Ana",
         status: "paid",
         payment_method: "BTC",
         total: 15,
@@ -52,7 +55,7 @@ describe("OrdersTable", () => {
       },
       {
         id: "ijkl5678mnop",
-        waiter: null,
+        userName: null,
         status: "open",
         payment_method: null,
         total: 20,

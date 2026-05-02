@@ -1,6 +1,6 @@
 import { addToast } from "@heroui/react";
 
-import { createOrderAndTicket } from "./paymentFlows";
+import { processCheckout } from "./paymentFlows";
 
 function buildInvoiceDescription(items = []) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -26,9 +26,6 @@ export function buildHandlePay({
   setBtcPaymentConfig,
   setCashPaymentConfig,
   setCardPaymentConfig,
-  processBasePayment,
-  decrementProductStock = async () => {},
-  updateOrder,
   onResetCart,
   onPay,
   notifyError,
@@ -36,17 +33,10 @@ export function buildHandlePay({
   user,
   ensureCartReady,
   normalizeAmounts,
-  buildOrderPayload,
-  buildTicketPayload,
-  buildPaymentPayload,
-  createOrder,
-  createTicket,
-  createPayment,
-  linkPaymentToTicket,
   printCustomerReceipt,
 }) {
   return async function handlePay({
-    items = [],
+    items: cartItems = [],
     subtotal = 0,
     discount = 0,
     discountAmount = 0,
@@ -56,7 +46,7 @@ export function buildHandlePay({
     try {
       ensureCartReady({
         t,
-        items,
+        items: cartItems,
         selectedPaymentMethod,
         userId: user?.user_id,
         currencyId: currency?.id,
@@ -70,15 +60,7 @@ export function buildHandlePay({
 
     try {
       const currencyId = currency.id;
-
-      const amounts = normalizeAmounts({
-        subtotal,
-        discount,
-        discountAmount,
-        total,
-        formatAmount,
-      });
-
+      const paymentAmounts = normalizeAmounts({ subtotal, discount, discountAmount, total, formatAmount });
       const paymentMethodData = paymentMethodMap[selectedPaymentMethod] || null;
       const methodName = (paymentMethodData?.name || "").toLowerCase();
 
@@ -89,18 +71,18 @@ export function buildHandlePay({
           currency?.acronym ||
           "MXN"
         ).toLowerCase();
-        const invoiceDescription = buildInvoiceDescription(items);
+        const invoiceDescription = buildInvoiceDescription(cartItems);
 
         setBtcPaymentConfig({
           paymentId: `btc-${Date.now()}`,
-          amountFiat: amounts.amountFiat,
+          amountFiat: paymentAmounts.amountFiat,
           currencyAcronym,
-          displayTotal: amounts.displayTotal,
-          subtotal: amounts.subtotal,
-          discount: amounts.discount,
-          discountAmount: amounts.discountAmount,
-          total: amounts.total,
-          items,
+          displayTotal: paymentAmounts.displayTotal,
+          subtotal: paymentAmounts.subtotal,
+          discount: paymentAmounts.discount,
+          discountAmount: paymentAmounts.discountAmount,
+          total: paymentAmounts.total,
+          cartItems,
           invoiceDescription,
           selectedPaymentMethod,
           currencyId,
@@ -110,10 +92,10 @@ export function buildHandlePay({
 
       if (methodName.includes("cash") || methodName.includes("efectivo")) {
         setCashPaymentConfig({
-          amountDue: amounts.amountFiat,
-          displayTotal: amounts.displayTotal,
-          items,
-          amounts,
+          amountDue: paymentAmounts.amountFiat,
+          displayTotal: paymentAmounts.displayTotal,
+          cartItems,
+          paymentAmounts,
           selectedPaymentMethod,
           currencyId,
         });
@@ -126,10 +108,10 @@ export function buildHandlePay({
         methodName.includes("card")
       ) {
         setCardPaymentConfig({
-          amountDue: amounts.amountFiat,
-          displayTotal: amounts.displayTotal,
-          items,
-          amounts,
+          amountDue: paymentAmounts.amountFiat,
+          displayTotal: paymentAmounts.displayTotal,
+          cartItems,
+          paymentAmounts,
           selectedPaymentMethod,
           currencyId,
           methodLabel: paymentMethodData?.name || "",
@@ -137,51 +119,24 @@ export function buildHandlePay({
         return;
       }
 
-      const { paymentResult, orderPayload, orderId } = await processBasePayment(
-        {
-          items,
-          amounts,
-          selectedPaymentMethod,
-          currencyId,
-          user,
-          createOrder,
-          createTicket,
-          createPayment,
-          linkPaymentToTicket,
-          buildOrderPayload,
-          buildTicketPayload,
-          buildPaymentPayload,
-          t,
-        },
-      );
-
-      if (orderId) {
-        await updateOrder(orderId, {
-          ...orderPayload,
-          id: orderId,
-          status: "paid",
-        });
-      }
-
-      try {
-        await decrementProductStock(items);
-      } catch (err) {
-        console.error("Error updating stock:", err);
-        notifyError(t("errors.stockUpdate"));
-      }
+      const storeCheckoutResult = await processCheckout({
+        cartItems,
+        paymentAmounts,
+        selectedPaymentMethod,
+        currencyId,
+        user,
+        t,
+      });
 
       await printCustomerReceipt?.({
-        items,
-        totalCents: amounts.total,
-        ticketId: paymentResult?.ticketId,
+        items: cartItems,
+        totalCents: paymentAmounts.total,
+        ticketId: storeCheckoutResult.ticketId,
       });
 
-      addToast({
-        color: "success",
-        description: t("success.paid"),
-      });
+      addToast({ color: "success", description: t("success.paid") });
       onResetCart?.();
-      onPay?.(paymentResult);
+      onPay?.({ items: cartItems, ...paymentAmounts, paymentMethod: selectedPaymentMethod, ...storeCheckoutResult });
     } catch (err) {
       console.error("Error processing payment:", err);
       notifyError(err?.message || t("errors.process"));
@@ -195,10 +150,7 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
   return (data) => {
     setBtcPaymentConfig((prev) => {
       if (!prev) return prev;
-      return {
-        ...prev,
-        invoiceData: data,
-      };
+      return { ...prev, invoiceData: data };
     });
   };
 }
@@ -206,15 +158,6 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
 export function buildHandleBtcComplete({
   btcPaymentConfig,
   dispatch,
-  createOrderAndTicketFn = createOrderAndTicket,
-  buildOrderPayload,
-  buildTicketPayload,
-  createOrder,
-  createTicket,
-  buildPaymentPayload,
-  createPayment,
-  linkPaymentToTicket,
-  decrementProductStock = async () => {},
   onPay,
   onResetCart,
   notifyError,
@@ -227,62 +170,42 @@ export function buildHandleBtcComplete({
     if (!btcPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      const { orderId, ticketId } = await createOrderAndTicketFn({
-        totalAmount: btcPaymentConfig.amountFiat,
+      const storeCheckoutResult = await processCheckout({
+        cartItems: btcPaymentConfig.cartItems,
+        paymentAmounts: {
+          amountFiat: btcPaymentConfig.amountFiat,
+          subtotal: btcPaymentConfig.subtotal,
+          discount: btcPaymentConfig.discount,
+          discountAmount: btcPaymentConfig.discountAmount,
+          total: btcPaymentConfig.total,
+        },
+        selectedPaymentMethod: btcPaymentConfig.selectedPaymentMethod,
+        currencyId: btcPaymentConfig.currencyId,
         user,
-        buildOrderPayload,
-        buildTicketPayload,
-        createOrder,
-        createTicket,
+        transactionId: data?.invoice?.serialized || "",
         t,
       });
 
-      const paymentPayload = buildPaymentPayload({
-        methodId: btcPaymentConfig.selectedPaymentMethod,
-        currencyId: btcPaymentConfig.currencyId,
-        amount: btcPaymentConfig.amountFiat,
-        transactionId: data?.invoice?.serialized || "",
-      });
-
-      const paymentResponse = await createPayment(paymentPayload);
-      if (!paymentResponse?.id) {
-        throw new Error(t("errors.createPayment"));
-      }
-
-      await linkPaymentToTicket(paymentResponse.id, ticketId);
-
-      try {
-        await decrementProductStock(btcPaymentConfig.items);
-      } catch (err) {
-        console.error("Error updating stock:", err);
-        notifyError(t("errors.stockUpdate"));
-      }
-
       await printCustomerReceipt?.({
-        items: btcPaymentConfig.items,
+        items: btcPaymentConfig.cartItems,
         totalCents: btcPaymentConfig.total,
-        ticketId,
+        ticketId: storeCheckoutResult.ticketId,
         invoice: data?.invoice?.serialized || "",
       });
 
       onPay?.({
-        items: btcPaymentConfig.items,
+        items: btcPaymentConfig.cartItems,
         subtotal: btcPaymentConfig.subtotal,
         discount: btcPaymentConfig.discount,
         discountAmount: btcPaymentConfig.discountAmount,
         total: btcPaymentConfig.total,
         amount: btcPaymentConfig.amountFiat,
         paymentMethod: btcPaymentConfig.selectedPaymentMethod,
-        paymentId: paymentResponse?.id || null,
-        orderId,
-        ticketId: ticketId || null,
+        ...storeCheckoutResult,
         ...data,
       });
       onResetCart?.();
-      addToast({
-        color: "success",
-        description: t("success.btcPaid"),
-      });
+      addToast({ color: "success", description: t("success.btcPaid") });
     } catch (err) {
       console.error("Error completing BTC payment:", err);
       notifyError(err?.message || t("errors.btcComplete"));
@@ -299,16 +222,6 @@ export function buildHandleBtcComplete({
 export function buildHandleCashComplete({
   cashPaymentConfig,
   dispatch,
-  processBasePayment,
-  buildOrderPayload,
-  buildTicketPayload,
-  createOrder,
-  createTicket,
-  buildPaymentPayload,
-  createPayment,
-  linkPaymentToTicket,
-  updateOrder,
-  decrementProductStock = async () => {},
   onPay,
   onResetCart,
   notifyError,
@@ -321,55 +234,31 @@ export function buildHandleCashComplete({
     if (!cashPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      const { paymentResult, orderPayload, orderId } = await processBasePayment(
-        {
-          items: cashPaymentConfig.items || [],
-          amounts: cashPaymentConfig.amounts,
-          selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
-          currencyId: cashPaymentConfig.currencyId,
-          user,
-          buildOrderPayload,
-          buildTicketPayload,
-          createOrder,
-          createTicket,
-          buildPaymentPayload,
-          createPayment,
-          linkPaymentToTicket,
-          t,
-        },
-      );
-
-      if (orderId) {
-        await updateOrder(orderId, {
-          ...orderPayload,
-          id: orderId,
-          status: "paid",
-        });
-      }
-
-      try {
-        await decrementProductStock(paymentResult?.items || []);
-      } catch (err) {
-        console.error("Error updating stock:", err);
-        notifyError(t("errors.stockUpdate"));
-      }
+      const storeCheckoutResult = await processCheckout({
+        cartItems: cashPaymentConfig.cartItems || [],
+        paymentAmounts: cashPaymentConfig.paymentAmounts,
+        selectedPaymentMethod: cashPaymentConfig.selectedPaymentMethod,
+        currencyId: cashPaymentConfig.currencyId,
+        user,
+        t,
+      });
 
       await printCustomerReceipt?.({
-        items: paymentResult?.items,
-        totalCents: paymentResult?.total,
-        ticketId: paymentResult?.ticketId,
+        items: cashPaymentConfig.cartItems,
+        totalCents: cashPaymentConfig.paymentAmounts.total,
+        ticketId: storeCheckoutResult.ticketId,
       });
 
       onPay?.({
-        ...paymentResult,
+        items: cashPaymentConfig.cartItems,
+        ...cashPaymentConfig.paymentAmounts,
+        paymentMethod: cashPaymentConfig.selectedPaymentMethod,
+        ...storeCheckoutResult,
         cashReceived,
         change,
       });
       onResetCart?.();
-      addToast({
-        color: "success",
-        description: t("success.cashPaid"),
-      });
+      addToast({ color: "success", description: t("success.cashPaid") });
     } catch (err) {
       console.error("Error completing cash payment:", err);
       notifyError(err?.message || t("errors.cashComplete"));
@@ -383,16 +272,6 @@ export function buildHandleCashComplete({
 export function buildHandleCardComplete({
   cardPaymentConfig,
   dispatch,
-  processBasePayment,
-  buildOrderPayload,
-  buildTicketPayload,
-  createOrder,
-  createTicket,
-  buildPaymentPayload,
-  createPayment,
-  linkPaymentToTicket,
-  updateOrder,
-  decrementProductStock = async () => {},
   onPay,
   onResetCart,
   notifyError,
@@ -405,54 +284,30 @@ export function buildHandleCardComplete({
     if (!cardPaymentConfig) return;
     dispatch({ type: "start" });
     try {
-      const { paymentResult, orderPayload, orderId } = await processBasePayment(
-        {
-          items: cardPaymentConfig.items || [],
-          amounts: cardPaymentConfig.amounts,
-          selectedPaymentMethod: cardPaymentConfig.selectedPaymentMethod,
-          currencyId: cardPaymentConfig.currencyId,
-          user,
-          buildOrderPayload,
-          buildTicketPayload,
-          createOrder,
-          createTicket,
-          buildPaymentPayload,
-          createPayment,
-          linkPaymentToTicket,
-          t,
-        },
-      );
-
-      if (orderId) {
-        await updateOrder(orderId, {
-          ...orderPayload,
-          id: orderId,
-          status: "paid",
-        });
-      }
-
-      try {
-        await decrementProductStock(paymentResult?.items || []);
-      } catch (err) {
-        console.error("Error updating stock:", err);
-        notifyError(t("errors.stockUpdate"));
-      }
+      const storeCheckoutResult = await processCheckout({
+        cartItems: cardPaymentConfig.cartItems || [],
+        paymentAmounts: cardPaymentConfig.paymentAmounts,
+        selectedPaymentMethod: cardPaymentConfig.selectedPaymentMethod,
+        currencyId: cardPaymentConfig.currencyId,
+        user,
+        t,
+      });
 
       await printCustomerReceipt?.({
-        items: paymentResult?.items,
-        totalCents: paymentResult?.total,
-        ticketId: paymentResult?.ticketId,
+        items: cardPaymentConfig.cartItems,
+        totalCents: cardPaymentConfig.paymentAmounts.total,
+        ticketId: storeCheckoutResult.ticketId,
       });
 
       onPay?.({
-        ...paymentResult,
+        items: cardPaymentConfig.cartItems,
+        ...cardPaymentConfig.paymentAmounts,
+        paymentMethod: cardPaymentConfig.selectedPaymentMethod,
+        ...storeCheckoutResult,
         methodLabel: cardPaymentConfig.methodLabel,
       });
       onResetCart?.();
-      addToast({
-        color: "success",
-        description: t("success.cardPaid"),
-      });
+      addToast({ color: "success", description: t("success.cardPaid") });
     } catch (err) {
       console.error("Error completing card payment:", err);
       notifyError(err?.message || t("errors.cardComplete"));

@@ -2,7 +2,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { OrderDetailsModal } from "../OrderDetailsModal";
 
-jest.mock("@/lib/formatDate", () => jest.fn(() => "formatted-date"));
+jest.mock("@/lib/formatDate", () => ({
+  __esModule: true,
+  default: jest.fn(() => "formatted-date"),
+}));
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
@@ -36,7 +39,7 @@ describe("OrderDetailsModal", () => {
     const formatAmount = jest.fn((value) => `fmt-${value}`);
     const order = {
       id: "order-1",
-      waiter: "Luis",
+      userName: "Luis",
       status: "paid",
       payment_method: "Cash",
       total: 25,

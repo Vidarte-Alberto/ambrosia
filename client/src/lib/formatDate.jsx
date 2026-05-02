@@ -1,19 +1,18 @@
+export function parseUtcDate(dateString) {
+  if (!dateString) return new Date(NaN);
+  if (/^\d+$/.test(String(dateString))) return new Date(parseInt(dateString, 10));
+  const normalizedDateString = String(dateString);
+  if (normalizedDateString.includes("T") && !normalizedDateString.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(normalizedDateString)) {
+    return new Date(`${normalizedDateString}Z`);
+  }
+  return new Date(normalizedDateString);
+}
+
 const formatDate = (dateString) => {
-  // Manejar diferentes formatos de fecha
-  let date;
-  if (dateString.includes("Z") || dateString.includes("T")) {
-    // Formato ISO
-    date = new Date(dateString);
-  } else {
-    // Timestamp en milisegundos
-    date = new Date(parseInt(dateString));
-  }
+  const parsedDate = parseUtcDate(dateString);
+  if (isNaN(parsedDate.getTime())) return "—";
 
-  if (isNaN(date.getTime())) {
-    return "Fecha inválida";
-  }
-
-  return date.toLocaleDateString("es-ES", {
+  return parsedDate.toLocaleString(undefined, {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",

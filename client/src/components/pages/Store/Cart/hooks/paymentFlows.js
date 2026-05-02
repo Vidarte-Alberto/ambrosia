@@ -1,81 +1,35 @@
-import { buildPaymentPayload } from "./paymentBuilders";
+import { httpClient } from "@/lib/http";
+import { parseJsonResponse } from "@/lib/http/parseJsonResponse";
 
-export async function createOrderAndTicket({
-  totalAmount,
-  user,
-  buildOrderPayload,
-  buildTicketPayload,
-  createOrder,
-  createTicket,
-  t,
-}) {
-  const orderPayload = buildOrderPayload(user, totalAmount);
-  const orderResponse = await createOrder(orderPayload);
-  const orderId = orderResponse?.id;
-  if (!orderId) {
-    throw new Error(t("errors.createOrder"));
-  }
-
-  const ticketPayload = buildTicketPayload(user, orderId, totalAmount);
-  const ticketResponse = await createTicket(ticketPayload);
-  if (!ticketResponse?.id) {
-    throw new Error(t("errors.createTicket"));
-  }
-
-  return { orderId, ticketId: ticketResponse.id, orderPayload };
-}
-
-export async function processBasePayment({
-  items,
-  amounts,
+export async function processCheckout({
+  cartItems,
+  paymentAmounts,
   selectedPaymentMethod,
   currencyId,
   user,
-  buildOrderPayload,
-  buildTicketPayload,
-  createOrder,
-  createTicket,
-  createPayment,
-  linkPaymentToTicket,
+  transactionId = "",
   t,
 }) {
-  const { orderId, ticketId, orderPayload } = await createOrderAndTicket({
-    totalAmount: amounts.amountFiat,
-    user,
-    buildOrderPayload,
-    buildTicketPayload,
-    createOrder,
-    createTicket,
-    t,
+  const checkoutHttpResponse = await httpClient("/store/orders/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      user_id: user.user_id,
+      items: cartItems.map((item) => ({
+        product_id: String(item?.id ?? ""),
+        quantity: Number(item?.quantity) || 0,
+        price_at_order: Number(item?.price) || 0,
+      })),
+      payment_method_id: selectedPaymentMethod,
+      currency_id: currencyId,
+      amount: paymentAmounts.amountFiat,
+      transaction_id: transactionId || "",
+    }),
   });
 
-  const paymentPayload = buildPaymentPayload({
-    methodId: selectedPaymentMethod,
-    currencyId,
-    amount: amounts.amountFiat,
-  });
-
-  const paymentResponse = await createPayment(paymentPayload);
-  if (!paymentResponse?.id) {
-    throw new Error(t("errors.createPayment"));
+  const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
+  if (!storeCheckoutResult?.order_id) {
+    throw new Error(t("errors.checkout"));
   }
-
-  await linkPaymentToTicket(paymentResponse.id, ticketId);
-
-  return {
-    paymentResult: {
-      items,
-      subtotal: amounts.subtotal,
-      discount: amounts.discount,
-      discountAmount: amounts.discountAmount,
-      total: amounts.total,
-      amount: amounts.amountFiat,
-      paymentMethod: selectedPaymentMethod,
-      paymentId: paymentResponse.id || null,
-      orderId,
-      ticketId: ticketId || null,
-    },
-    orderPayload,
-    orderId,
-  };
+  return storeCheckoutResult;
 }

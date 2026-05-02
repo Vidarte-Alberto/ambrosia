@@ -143,7 +143,6 @@ data class Order(
     val id: String? = null,
     val user_id: String,
     val table_id: String? = null,
-    val waiter: String,
     val status: String,
     val total: Double,
     val created_at: String,
@@ -153,8 +152,8 @@ data class Order(
 data class OrderWithPayment(
     val id: String,
     val user_id: String,
+    val userName: String? = null,
     val table_id: String? = null,
-    val waiter: String? = null,
     val status: String,
     val total: Double,
     val created_at: String,
@@ -232,8 +231,8 @@ data class Ticket(
     val acronym: String,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable
@@ -243,8 +242,8 @@ data class BaseCurrencyResponse(
     val acronym: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable data class TicketPayment(
@@ -402,4 +401,58 @@ data class InitialSetupStatus(
 @Serializable
 data class SetBaseCurrencyRequest(
     val acronym: String,
+)
+
+@Serializable
+data class CreateStoreOrderItemRequest(
+    val product_id: String,
+    val quantity: Int,
+)
+
+@Serializable
+data class CreateStoreOrderRequest(
+    val items: List<CreateStoreOrderItemRequest>,
+)
+
+@Serializable
+data class StoreOrderItem(
+    val product_id: String,
+    val quantity: Int,
+    val price_at_order: Int,
+)
+
+@Serializable
+data class StoreOrder(
+    val id: String,
+    val user_id: String,
+    val userName: String? = null,
+    val status: String,
+    val total: Int,
+    val created_at: String,
+    val items: List<StoreOrderItem>,
+)
+
+@Serializable
+data class StoreCheckoutItem(
+    val product_id: String,
+    val quantity: Int,
+    val price_at_order: Int,
+)
+
+@Serializable
+data class StoreCheckoutRequest(
+    val user_id: String,
+    val items: List<StoreCheckoutItem>,
+    val payment_method_id: String,
+    val currency_id: String,
+    val amount: Double,
+    val transaction_id: String? = null,
+    val ticket_notes: String = "",
+)
+
+@Serializable
+data class StoreCheckoutResponse(
+    val order_id: String,
+    val ticket_id: String,
+    val payment_id: String,
 )
