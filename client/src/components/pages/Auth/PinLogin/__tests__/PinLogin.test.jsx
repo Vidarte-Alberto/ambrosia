@@ -83,10 +83,10 @@ describe("PinLogin", () => {
   });
 
   it("shows lockout message after a 429 response from the server", async () => {
-    const err = new Error("Too many requests");
-    err.status = 429;
-    err.retryAfter = 180;
-    mockLogin.mockRejectedValue(err);
+    const error = new Error("Too many requests");
+    error.status = 429;
+    error.retryAfter = 180;
+    mockLogin.mockRejectedValue(error);
 
     await renderPinLogin();
 
@@ -123,8 +123,8 @@ describe("PinLogin", () => {
 
   it("shows the specific error message when the user's role is deleted", async () => {
     const specificMessage = "No assigned role for this user, contact Admin";
-    const err = new Error(specificMessage);
-    mockLogin.mockRejectedValue(err);
+    const error = new Error(specificMessage);
+    mockLogin.mockRejectedValue(error);
 
     await renderPinLogin();
 
