@@ -32,6 +32,7 @@ const originalError = console.error;
 beforeEach(() => {
   console.warn = jest.fn((...args) => {
     if (typeof args[0] === "string" && args[0].includes("aria-label")) return;
+    if (args[0] instanceof Error) return;
     originalWarn.call(console, ...args);
   });
 
@@ -42,7 +43,7 @@ beforeEach(() => {
         args[0].includes("Unknown event handler property") ||
         args[0].includes("validateDOMNesting"))
     ) return;
-    if (args[0] instanceof Error && args[0].message === "API Error") return;
+    if (args[0] instanceof Error) return;
     originalError.call(console, ...args);
   });
 
