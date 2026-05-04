@@ -102,12 +102,14 @@ export default function PinLogin() {
       setLockedUntil(null);
       localStorage.removeItem("pinLockoutUntil");
       router.push("/");
-    } catch (err) {
-      if (err?.status === 429) {
-        const ts = Date.now() + (err.retryAfter ?? 180) * 1000;
+    } catch (error) {
+      if (error?.status === 429) {
+        const ts = Date.now() + (error.retryAfter ?? 180) * 1000;
         setLockedUntil(ts);
         localStorage.setItem("pinLockoutUntil", ts.toString());
         setError("");
+      } else if (error?.message === "No assigned role for this user, contact Admin") {
+        setError(error.message);
       } else {
         setError(t("errorMessages.incorrectPin"));
       }

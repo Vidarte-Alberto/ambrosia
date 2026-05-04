@@ -12,6 +12,16 @@ const storeEs = {
     orders: "Ordenes",
     reports: "Reportes",
   },
+  seedTour: {
+    title: "¡Protege tu SEED Phrase!",
+    description: "Tu SEED Phrase es la <b>clave maestra</b> de tu wallet Bitcoin. Si pierdes acceso a la app, es la única forma de recuperar tus fondos.",
+    clickSettings: "Ve a Configuración para ver y respaldar tu SEED Phrase.",
+    nextButton: "Ir a Configuración",
+    mobileGoToSettings: "Ir a Configuración",
+    settingsTitle: "Respalda tu SEED Phrase",
+    settingsDescription: "Escribe las <b>12 palabras en orden</b> en papel y guárdalas en un lugar seguro — sin conexión a internet.",
+    settingsButton: "Entendido",
+  },
   walletTour: {
     title: "¡Antes de comenzar!",
     description: "Para recibir <b>pagos con Bitcoin</b> necesitas abrir un <b>canal Lightning</b>.",
@@ -546,6 +556,7 @@ const storeEs = {
       },
     },
     summary: {
+      clearCart: "Remover Todo",
       title: "Resumen",
       total: "Total",
       subtotal: "Subtotal",
@@ -593,9 +604,11 @@ const storeEs = {
         totalLabel: "Total",
         cancel: "Cancelar",
         confirm: "Confirmar pago",
+        copyButton: "Copiar",
         close: "Cerrar",
         complete: "Pago recibido",
         confirmed: "Pago confirmado",
+        invoice: "Factura BOLT11:",
         waitingPayment: "Esperando la confirmación del pago...",
         markAsPaid: "Marcar como pagado",
         paidAt: "Confirmado a las {time}",
@@ -807,6 +820,10 @@ const storeEs = {
         name: "Canal de Lightning",
         description: "Aprende a crear tu canal Lightning y recibir pagos con Bitcoin.",
       },
+      seedTour: {
+        name: "SEED Phrase",
+        description: "Aprende qué es tu SEED Phrase y cómo protegerla correctamente.",
+      },
     },
   },
   wallet: {
@@ -877,6 +894,15 @@ const storeEs = {
         paySuccessDescription: "El pago Lightning se ha enviado correctamente",
         paymentError: "Error al pagar el invoice",
         paymentErrorDescription: "No se pudo procesar el pago",
+        errors: {
+          invoiceAlreadyPaid: "Esta factura ya fue pagada",
+          invoiceExpired: "Esta factura ha caducado",
+          recipientRejectedPayment: "El nodo del destinatario rechazó el pago",
+          invalidInvoice: "La factura Lightning no es válida",
+          insufficientFunds: "No hay fondos suficientes para realizar este pago",
+          nodeUnavailable: "El nodo Lightning no está disponible en este momento",
+          unknown: "No se pudo procesar el pago",
+        },
         closeButton: "Cerrar",
       },
       history: {

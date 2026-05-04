@@ -44,8 +44,8 @@ export function SidebarContent({
             src={logoSrc || ambrosia}
             alt="ambrosia"
             width={160}
-            height={48}
-            className="object-contain"
+            height={160}
+            className="object-contain max-h-40 w-auto"
           />
         </Link>
         <p className="text-slate-100 text-center mt-4">
@@ -59,7 +59,7 @@ export function SidebarContent({
             availableNavigation.map((item, index) => (
               <NavBarButton
                 key={`${item.path}-${index}`}
-                id={withTourIds && item.label === "wallet" ? "nav-wallet" : undefined}
+                id={withTourIds ? item.tourId : undefined}
                 text={t(item.label)}
                 icon={item.icon}
                 href={item.path}

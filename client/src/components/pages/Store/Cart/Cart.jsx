@@ -160,6 +160,10 @@ export function Cart() {
     setCart(cart.filter((item) => item.id !== id));
   };
 
+  const clearCart = () => {
+    setCart([]);
+  };
+
   return (
     <StoreLayout>
       <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
@@ -174,6 +178,7 @@ export function Cart() {
               cartItems={cart}
               discount={discount}
               onRemoveProduct={removeProduct}
+              onClearCart={clearCart}
               onUpdateQuantity={updateQuantity}
               onPay={handlePay}
               isPaying={isPaying}
@@ -205,6 +210,7 @@ export function Cart() {
           cartItems={cart}
           discount={discount}
           onRemoveProduct={removeProduct}
+          onClearCart={clearCart}
           onUpdateQuantity={updateQuantity}
           onPay={handlePay}
           isPaying={isPaying}

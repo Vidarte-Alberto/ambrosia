@@ -119,10 +119,6 @@ fun Route.auth(
 
         val loginRequest = call.receive<AuthRequest>()
         val userInfo = authService.authenticateUser(loginRequest.name, loginRequest.pin.toCharArray())
-        logger.info(userInfo?.toString() ?: "User not found")
-        val isSecureRequest =
-            call.request.origin.scheme == "https" ||
-                call.request.header("X-Forwarded-Proto") == "https"
 
         if (userInfo == null) {
             LoginRateLimiter.recordFailure(ip)
@@ -135,6 +131,11 @@ fun Route.auth(
             }
             return@post
         }
+
+        logger.info(userInfo.toString())
+        val isSecureRequest =
+            call.request.origin.scheme == "https" ||
+                call.request.header("X-Forwarded-Proto") == "https"
 
         LoginRateLimiter.reset(ip)
         val accessTokenResponse = tokenService.generateAccessToken(userInfo)

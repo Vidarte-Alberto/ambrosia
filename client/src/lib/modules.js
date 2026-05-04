@@ -156,6 +156,7 @@ export const modules = {
         label: "wallet",
         icon: "wallet",
         showInNavbar: true,
+        tourId: "nav-wallet",
       },
       {
         path: "/store/reports",
@@ -168,6 +169,7 @@ export const modules = {
         label: "settings",
         icon: "settings",
         showInNavbar: true,
+        tourId: "nav-settings",
       },
     ],
   },

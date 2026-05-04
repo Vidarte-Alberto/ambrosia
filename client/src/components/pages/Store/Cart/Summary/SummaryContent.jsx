@@ -75,15 +75,15 @@ export function SummaryContent({
         {items.map((item) => (
           <Card key={item.id} className="shadow-none border-1 border-green-600">
             <CardHeader>
-              <div className="flex flex-col">
-                <h3 className="text-sm font-medium text-green-900">
-                  {item.name}
-                </h3>
-                <div className="text-xs text-gray-700">
-                  {formatAmount(item.price)} {t("summary.each")}
+              <div className="flex w-full items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-col">
+                  <h3 className="text-sm font-medium text-green-900">
+                    {item.name}
+                  </h3>
+                  <div className="text-xs text-gray-700">
+                    {formatAmount(item.price)} {t("summary.each")}
+                  </div>
                 </div>
-              </div>
-              <div className="absolute right-5">
                 <DeleteButton onPress={() => onRemoveProduct(item.id)} />
               </div>
             </CardHeader>

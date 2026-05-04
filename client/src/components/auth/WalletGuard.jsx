@@ -163,7 +163,7 @@ export default function WalletGuard({
               variant="bordered"
               type="button"
               className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              onPress={() => (onCancel ? onCancel() : router.back())}
+              onPress={() => (onCancel ? onCancel() : router.push("/store"))}
             >
               {cancelText}
             </Button>

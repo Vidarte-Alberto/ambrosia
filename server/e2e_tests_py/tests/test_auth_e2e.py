@@ -339,3 +339,34 @@ class TestAuthentication:
             assert "refreshToken" not in response.cookies, (
                 "refreshToken should not be set for empty body"
             )
+
+    @pytest.mark.asyncio
+    async def test_login_fails_when_role_deleted(self, server_url: str):
+        """Test that login fails with a helpful error when the user's role is deleted."""
+        from ambrosia.auth_utils import create_role, create_user
+
+        async with AmbrosiaHttpClient(server_url) as admin_client:
+            await login_user(admin_client)
+
+            import random
+
+            suffix = random.randint(1000, 9999)
+            role_id = await create_role(admin_client, f"TempRole_{suffix}")
+            user_name = f"testuser_{suffix}"
+            user_pin = "1234"
+            await create_user(admin_client, user_name, user_pin, role_id)
+
+            delete_response = await admin_client.delete(f"/roles/{role_id}")
+            assert delete_response.status_code == 204
+
+            async with AmbrosiaHttpClient(server_url) as user_client:
+                login_response = await user_client.post(
+                    "/auth/login", json={"name": user_name, "pin": user_pin}
+                )
+
+                assert login_response.status_code == 401
+                assert (
+                    login_response.json()["message"]
+                    == "No assigned role for this user, contact Admin"
+                )
+                assert_cookies_absent(login_response, "accessToken", "refreshToken")

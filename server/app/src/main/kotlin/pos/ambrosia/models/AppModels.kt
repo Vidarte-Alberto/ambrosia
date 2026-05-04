@@ -53,6 +53,13 @@ data class LoginResponse(
 )
 
 @Serializable
+data class WalletErrorResponse(
+    val message: String,
+    val code: String,
+    val source: String,
+)
+
+@Serializable
 data class WalletAuthResponse(
     val message: String,
     val walletTokenExpiresAt: Long,
@@ -146,6 +153,7 @@ data class Order(
 data class OrderWithPayment(
     val id: String,
     val user_id: String,
+    val userName: String? = null,
     val user_name: String? = null,
     val table_id: String? = null,
     val status: String,
@@ -225,8 +233,8 @@ data class Ticket(
     val acronym: String,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable
@@ -236,8 +244,8 @@ data class BaseCurrencyResponse(
     val acronym: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable data class TicketPayment(
@@ -398,23 +406,6 @@ data class SetBaseCurrencyRequest(
 )
 
 @Serializable
-data class ProductSaleItem(
-    @SerialName("productName") val productName: String,
-    @SerialName("quantity") val quantity: Int,
-    @SerialName("priceAtOrder") val priceAtOrder: Int,
-    @SerialName("userName") val userName: String,
-    @SerialName("paymentMethod") val paymentMethod: String,
-    @SerialName("saleDate") val saleDate: String,
-)
-
-@Serializable
-data class ProductSalesReport(
-    @SerialName("totalRevenueCents") val totalRevenueCents: Long,
-    @SerialName("totalItemsSold") val totalItemsSold: Int,
-    @SerialName("sales") val sales: List<ProductSaleItem>,
-)
-
-@Serializable
 data class CreateStoreOrderItemRequest(
     val product_id: String,
     val quantity: Int,
@@ -436,7 +427,7 @@ data class StoreOrderItem(
 data class StoreOrder(
     val id: String,
     val user_id: String,
-    val user_name: String? = null,
+    val userName: String? = null,
     val status: String,
     val total: Int,
     val created_at: String,
@@ -466,4 +457,21 @@ data class StoreCheckoutResponse(
     val order_id: String,
     val ticket_id: String,
     val payment_id: String,
+)
+
+@Serializable
+data class ProductSaleItem(
+    @SerialName("productName") val productName: String,
+    @SerialName("quantity") val quantity: Int,
+    @SerialName("priceAtOrder") val priceAtOrder: Int,
+    @SerialName("userName") val userName: String,
+    @SerialName("paymentMethod") val paymentMethod: String,
+    @SerialName("saleDate") val saleDate: String,
+)
+
+@Serializable
+data class ProductSalesReport(
+    @SerialName("totalRevenueCents") val totalRevenueCents: Long,
+    @SerialName("totalItemsSold") val totalItemsSold: Int,
+    @SerialName("sales") val sales: List<ProductSaleItem>,
 )

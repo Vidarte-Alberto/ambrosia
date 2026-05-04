@@ -83,10 +83,10 @@ describe("PinLogin", () => {
   });
 
   it("shows lockout message after a 429 response from the server", async () => {
-    const err = new Error("Too many requests");
-    err.status = 429;
-    err.retryAfter = 180;
-    mockLogin.mockRejectedValue(err);
+    const error = new Error("Too many requests");
+    error.status = 429;
+    error.retryAfter = 180;
+    mockLogin.mockRejectedValue(error);
 
     await renderPinLogin();
 
@@ -119,5 +119,25 @@ describe("PinLogin", () => {
     });
 
     expect(screen.queryByText(/lockout\.message/)).not.toBeInTheDocument();
+  });
+
+  it("shows the specific error message when the user's role is deleted", async () => {
+    const specificMessage = "No assigned role for this user, contact Admin";
+    const error = new Error(specificMessage);
+    mockLogin.mockRejectedValue(error);
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "4" });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText(specificMessage)).toBeInTheDocument();
   });
 });
