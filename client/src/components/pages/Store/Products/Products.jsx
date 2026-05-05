@@ -39,7 +39,7 @@ export function Products() {
   const [addProductsShowModal, setAddProductsShowModal] = useState(false);
   const [editProductsShowModal, setEditProductsShowModal] = useState(false);
   const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
-  const [data, setData] = useState(createEmptyProductForm);
+  const [productForm, setProductForm] = useState(createEmptyProductForm);
   const [productToDelete, setProductToDelete] = useState(null);
   const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
   const {
@@ -51,12 +51,12 @@ export function Products() {
     refetch: refetchCategories,
   } = useCategories("product");
 
-  const handleDataChange = (newData) => {
-    setData((prev) => ({ ...prev, ...newData }));
+  const handleProductFormChange = (newData) => {
+    setProductForm((prev) => ({ ...prev, ...newData }));
   };
 
   const resetProductForm = () => {
-    setData(createEmptyProductForm());
+    setProductForm(createEmptyProductForm());
   };
 
   const handleCloseAddProductsModal = () => {
@@ -70,7 +70,7 @@ export function Products() {
   };
 
   const handleEditProduct = (product) => {
-    setData({
+    setProductForm({
       productId: product.id,
       productName: product.name,
       productDescription: product.description,
@@ -130,19 +130,19 @@ export function Products() {
       <AddProductsModal
         addProductsShowModal={addProductsShowModal}
         onClose={handleCloseAddProductsModal}
-        data={data}
+        data={productForm}
         addProduct={addProduct}
         isUploading={isUploading}
         categories={categories}
         categoriesLoading={categoriesLoading}
         createCategory={createCategory}
-        onChange={handleDataChange}
+        onChange={handleProductFormChange}
         onProductCreated={handleRefreshData}
       />
 
       <EditProductsModal
-        data={data}
-        onChange={handleDataChange}
+        data={productForm}
+        onChange={handleProductFormChange}
         updateProduct={updateProduct}
         isUploading={isUploading}
         onProductUpdated={handleRefreshData}
@@ -168,7 +168,7 @@ export function Products() {
         createCategory={createCategory}
         updateCategory={updateCategory}
         deleteCategory={deleteCategory}
-        refetch={handleRefreshData}
+        refreshData={handleRefreshData}
       />
     </StoreLayout>
   );

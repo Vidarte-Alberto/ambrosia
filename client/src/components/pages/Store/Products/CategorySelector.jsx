@@ -27,7 +27,7 @@ export function CategorySelector({
     [categories],
   );
 
-  const selectedCategoryNames = useMemo(
+  const selectedCategoryItems = useMemo(
     () => selectedCategories.flatMap((categoryId) => {
       const categoryName = categoryNameById.get(String(categoryId));
       return categoryName ? [{ id: categoryId, name: categoryName }] : [];
@@ -150,9 +150,9 @@ export function CategorySelector({
         ) : null}
       </Autocomplete>
 
-      {selectedCategoryNames.length > 0 ? (
+      {selectedCategoryItems.length > 0 ? (
         <div className="flex flex-wrap gap-2">
-          {selectedCategoryNames.map((category) => (
+          {selectedCategoryItems.map((category) => (
             <Chip
               key={category.id}
               variant="flat"
