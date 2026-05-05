@@ -18,11 +18,8 @@ import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
 import { ProductsList } from "./ProductsList";
 
-export function Products() {
-  const [addProductsShowModal, setAddProductsShowModal] = useState(false);
-  const [editProductsShowModal, setEditProductsShowModal] = useState(false);
-  const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
-  const [data, setData] = useState({
+function createEmptyProductForm() {
+  return {
     productId: "",
     productName: "",
     productDescription: "",
@@ -34,7 +31,15 @@ export function Products() {
     productMaxStock: 0,
     productImage: null,
     productImageUrl: "",
-  });
+    productImageRemoved: false,
+  };
+}
+
+export function Products() {
+  const [addProductsShowModal, setAddProductsShowModal] = useState(false);
+  const [editProductsShowModal, setEditProductsShowModal] = useState(false);
+  const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
+  const [data, setData] = useState(createEmptyProductForm);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [productToDelete, setProductToDelete] = useState(null);
   const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
@@ -49,6 +54,21 @@ export function Products() {
 
   const handleDataChange = (newData) => {
     setData((prev) => ({ ...prev, ...newData }));
+  };
+
+  const resetProductForm = () => {
+    setData(createEmptyProductForm());
+    setSelectedProduct(null);
+  };
+
+  const handleCloseAddProductsModal = () => {
+    resetProductForm();
+    setAddProductsShowModal(false);
+  };
+
+  const handleCloseEditProductsModal = () => {
+    resetProductForm();
+    setEditProductsShowModal(false);
   };
 
   const handleEditProduct = (product) => {
@@ -92,7 +112,10 @@ export function Products() {
             <Button
               color="primary"
               className="bg-green-800"
-              onPress={() => setAddProductsShowModal(true)}
+              onPress={() => {
+                resetProductForm();
+                setAddProductsShowModal(true);
+              }}
             >
               {t("addProduct")}
             </Button>
@@ -110,9 +133,8 @@ export function Products() {
 
       <AddProductsModal
         addProductsShowModal={addProductsShowModal}
-        setAddProductsShowModal={setAddProductsShowModal}
+        onClose={handleCloseAddProductsModal}
         data={data}
-        setData={setData}
         addProduct={addProduct}
         isUploading={isUploading}
         categories={categories}
@@ -124,7 +146,6 @@ export function Products() {
 
       <EditProductsModal
         data={data}
-        setData={setData}
         product={selectedProduct}
         onChange={handleDataChange}
         updateProduct={updateProduct}
@@ -134,7 +155,7 @@ export function Products() {
         categoriesLoading={categoriesLoading}
         createCategory={createCategory}
         editProductsShowModal={editProductsShowModal}
-        setEditProductsShowModal={setEditProductsShowModal}
+        onClose={handleCloseEditProductsModal}
       />
 
       <DeleteProductsModal

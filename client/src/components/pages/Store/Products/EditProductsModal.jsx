@@ -21,7 +21,6 @@ import { CategorySelector } from "./CategorySelector";
 
 export function EditProductsModal({
   data,
-  setData,
   onChange,
   updateProduct,
   onProductUpdated,
@@ -30,7 +29,7 @@ export function EditProductsModal({
   categoriesLoading = false,
   createCategory,
   editProductsShowModal,
-  setEditProductsShowModal,
+  onClose,
 }) {
   const t = useTranslations("products");
   const { currency } = useCurrency();
@@ -42,36 +41,19 @@ export function EditProductsModal({
     try {
       setIsSubmitting(true);
       await updateProduct(data);
-      setEditProductsShowModal(false);
+      onClose?.();
       onProductUpdated?.();
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleOnCloseModal = () => {
-    setData({
-      productId: "",
-      productName: "",
-      productDescription: "",
-      productCategories: [],
-      productSKU: "",
-      productPrice: "",
-      productStock: "",
-      productMinStock: 0,
-      productMaxStock: 0,
-      productImage: null,
-      productImageUrl: "",
-      productImageRemoved: false,
-    });
-
-    setEditProductsShowModal(false);
-  };
-
   return (
     <Modal
       isOpen={editProductsShowModal}
-      onOpenChange={handleOnCloseModal}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onClose?.();
+      }}
       backdrop="blur"
       shouldBlockScroll={false}
       classNames={{
@@ -178,7 +160,7 @@ export function EditProductsModal({
                 variant="bordered"
                 type="button"
                 className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                onPress={() => handleOnCloseModal()}
+                onPress={() => onClose?.()}
               >
                 {t("modal.cancelButton")}
               </Button>

@@ -78,7 +78,6 @@ const renderModal = (props = {}) => render(
   <I18nProvider>
     <AddProductsModal
       data={baseData}
-      setData={jest.fn()}
       addProduct={jest.fn()}
       onChange={jest.fn()}
       onProductCreated={jest.fn()}
@@ -86,7 +85,7 @@ const renderModal = (props = {}) => render(
       categoriesLoading={false}
       createCategory={jest.fn()}
       addProductsShowModal
-      setAddProductsShowModal={jest.fn()}
+      onClose={jest.fn()}
       {...props}
     />
   </I18nProvider>,
@@ -176,10 +175,10 @@ describe("AddProductsModal", () => {
   });
 
   it("cancels and closes modal", () => {
-    const setAddProductsShowModal = jest.fn();
-    renderModal({ setAddProductsShowModal });
+    const onClose = jest.fn();
+    renderModal({ onClose });
     fireEvent.click(screen.getByText("modal.cancelButton"));
-    expect(setAddProductsShowModal).toHaveBeenCalledWith(false);
+    expect(onClose).toHaveBeenCalled();
   });
 
   it("renders the category selector", () => {
@@ -205,35 +204,21 @@ describe("AddProductsModal", () => {
     expect(addProduct).toHaveBeenCalledTimes(1);
   });
 
-  it("submits form, calls addProduct, resets data and closes", async () => {
+  it("submits form, calls addProduct and closes", async () => {
     const addProduct = jest.fn(() => Promise.resolve());
-    const setData = jest.fn();
-    const setAddProductsShowModal = jest.fn();
+    const onClose = jest.fn();
     const onProductCreated = jest.fn();
 
     renderModal({
       addProduct,
-      setData,
-      setAddProductsShowModal,
+      onClose,
       onProductCreated,
     });
 
     fireEvent.click(screen.getByText("modal.submitButton"));
 
     await waitFor(() => expect(addProduct).toHaveBeenCalledWith(baseData));
-    expect(setData).toHaveBeenCalledWith({
-      productName: "",
-      productDescription: "",
-      productCategories: [],
-      productSKU: "",
-      productPrice: "",
-      productStock: 1,
-      productMinStock: 0,
-      productMaxStock: 0,
-      productImage: null,
-      productImageUrl: "",
-    });
-    expect(setAddProductsShowModal).toHaveBeenCalledWith(false);
+    expect(onClose).toHaveBeenCalled();
     expect(onProductCreated).toHaveBeenCalled();
   });
 });
