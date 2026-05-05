@@ -81,7 +81,6 @@ class TicketService(
         statement.setString(1, generatedId)
         statement.setString(2, ticket.orderId)
         statement.setString(3, ticket.userId)
-        // Si no se proporciona fecha, usar la actual
         val ticketDate =
             ticket.ticketDate.ifEmpty {
                 java.time.LocalDateTime

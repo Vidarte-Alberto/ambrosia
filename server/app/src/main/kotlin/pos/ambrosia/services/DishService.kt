@@ -130,13 +130,11 @@ class DishService(
             return false
         }
 
-        // Verificar que la categoría existe
         if (!categoryExists(dish.categoryId)) {
             logger.error("Category does not exist: ${dish.categoryId}")
             return false
         }
 
-        // Validar datos
         if (dish.name.isBlank()) {
             logger.error("Dish name cannot be blank")
             return false
@@ -149,7 +147,7 @@ class DishService(
 
         val statement = connection.prepareStatement(UPDATE_DISH)
         statement.setString(1, dish.name)
-        statement.setDouble(2, dish.price) // CORREGIDO: era setFloat
+        statement.setDouble(2, dish.price)
         statement.setString(3, dish.categoryId)
         statement.setString(4, dish.id)
 
@@ -163,7 +161,6 @@ class DishService(
     }
 
     suspend fun deleteDish(id: String): Boolean {
-        // Verificar que el plato no esté siendo usado en órdenes
         if (dishInUse(id)) {
             logger.error("Cannot delete dish $id: it's being used in orders")
             return false
