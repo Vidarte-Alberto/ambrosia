@@ -135,7 +135,14 @@ export function CategorySelector({
             textValue={category.name}
             data-category-id={category.id}
           >
-            {category.name}
+            <div className="flex items-center justify-between gap-3">
+              <span>{category.name}</span>
+              {selectedCategories.includes(category.id) ? (
+                <span aria-hidden="true" className="text-green-700 text-sm font-semibold">
+                  ✓
+                </span>
+              ) : null}
+            </div>
           </AutocompleteItem>
         ))}
 

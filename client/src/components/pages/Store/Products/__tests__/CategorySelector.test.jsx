@@ -185,6 +185,12 @@ describe("CategorySelector", () => {
     expect(screen.getAllByText("Category 2")).toHaveLength(2);
   });
 
+  it("shows checkmarks for categories that are already selected", () => {
+    renderSelector({ selectedCategories: ["cat-1"] });
+
+    expect(screen.getByText("✓")).toBeInTheDocument();
+  });
+
   it("removes a selected category chip", () => {
     const onSelectionChange = jest.fn();
     renderSelector({
