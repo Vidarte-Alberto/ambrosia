@@ -111,6 +111,18 @@ describe("CategorySelector", () => {
     expect(onSelectionChange).toHaveBeenCalledWith(["cat-1"]);
   });
 
+  it("removes a category when clicking an already selected option", () => {
+    const onSelectionChange = jest.fn();
+    renderSelector({
+      onSelectionChange,
+      selectedCategories: ["cat-1", "cat-2"],
+    });
+
+    fireEvent.click(screen.getAllByText("Category 1")[0]);
+
+    expect(onSelectionChange).toHaveBeenCalledWith(["cat-2"]);
+  });
+
   it("shows and creates a missing category", async () => {
     const onSelectionChange = jest.fn();
     const createCategory = jest.fn(() => Promise.resolve("cat-3"));

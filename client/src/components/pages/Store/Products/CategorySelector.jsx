@@ -40,6 +40,17 @@ export function CategorySelector({
     onSelectionChange([...selectedCategories, categoryId]);
   };
 
+  const toggleSelectedCategory = (categoryId) => {
+    if (!categoryId) return;
+
+    if (selectedCategories.includes(categoryId)) {
+      onSelectionChange(selectedCategories.filter((id) => id !== categoryId));
+      return;
+    }
+
+    appendSelectedCategory(categoryId);
+  };
+
   useEffect(() => {
     setSearchValue("");
   }, [selectedCategories]);
@@ -122,7 +133,7 @@ export function CategorySelector({
             return;
           }
 
-          appendSelectedCategory(key);
+          toggleSelectedCategory(key);
           scheduleComboboxClose({ clearSearch: true });
         }}
         onClear={() => {
