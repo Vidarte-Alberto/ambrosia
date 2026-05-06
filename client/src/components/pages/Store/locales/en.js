@@ -522,6 +522,7 @@ const storeEn = {
       deleteButton: "Delete",
       categorySelectPlaceholder: "Choose a category",
       createCategoryOption: '+ Create "{name}"',
+      noCategoriesAvailable: "No categories yet. Type to create one.",
       errorMsgInputFieldEmpty: "Please fill out this field.",
       errorMsgSelectEmpty: "Please select an item in the list.",
     },

@@ -9,6 +9,10 @@ jest.mock("next-intl", () => ({
       return `+ Create "${values.name}"`;
     }
 
+    if (key === "modal.noCategoriesAvailable") {
+      return "No categories yet. Type to create one.";
+    }
+
     return key;
   },
 }));
@@ -113,6 +117,14 @@ describe("CategorySelector", () => {
 
     expect(screen.getByText("Category 1")).toBeInTheDocument();
     expect(screen.getByText("Category 2")).toBeInTheDocument();
+  });
+
+  it("shows an empty state when there are no categories yet", async () => {
+    renderSelector({ categories: [] });
+
+    await userEvent.click(screen.getByLabelText("modal.productCategoryLabel"));
+
+    expect(screen.getByText("No categories yet. Type to create one.")).toBeInTheDocument();
   });
 
   it("disables combobox when categoriesLoading is true", () => {

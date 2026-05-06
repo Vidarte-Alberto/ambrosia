@@ -42,6 +42,7 @@ export function CategorySelector({
   const createOptionLabel = createOptionKey
     ? t("modal.createCategoryOption", { name: typedCategoryName })
     : null;
+  const showEmptyCategoriesMessage = categoryOptions.length === 0 && !createOptionKey;
 
   return (
     <div className="space-y-3">
@@ -78,6 +79,12 @@ export function CategorySelector({
             </div>
           </AutocompleteItem>
         ))}
+
+        {showEmptyCategoriesMessage ? (
+          <AutocompleteItem key="empty-categories" isDisabled textValue={t("modal.noCategoriesAvailable")}>
+            {t("modal.noCategoriesAvailable")}
+          </AutocompleteItem>
+        ) : null}
 
         {!hasMatchingCategory && createOptionKey ? (
           <AutocompleteItem
