@@ -79,7 +79,6 @@ class ProductService(
         if (p.minStockThreshold < 0) return false
         if (p.maxStockThreshold < 0) return false
         if (p.maxStockThreshold > 0 && p.minStockThreshold > p.maxStockThreshold) return false
-        if (p.categoryIds.isEmpty()) return false
         return true
     }
 

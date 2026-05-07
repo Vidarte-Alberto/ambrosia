@@ -22,7 +22,7 @@ jest.mock("@/hooks/usePermission", () => ({
 }));
 
 jest.mock("../AddProductsModal", () => ({
-  AddProductsModal: ({ addProductsShowModal, data, onChange, onProductCreated, addProduct }) => (
+  AddProductsModal: ({ addProductsShowModal, data, onChange, onProductCreated, addProduct, onClose }) => (
     addProductsShowModal ? (
       <div>
         modal.titleAdd
@@ -35,13 +35,14 @@ jest.mock("../AddProductsModal", () => ({
           />
         </label>
         <button onClick={() => { addProduct?.({}); onProductCreated?.(); }}>modal.submitButton</button>
+        <button onClick={() => onClose?.()}>modal.cancelButton</button>
       </div>
     ) : null
   ),
 }));
 
 jest.mock("../EditProductsModal", () => ({
-  EditProductsModal: ({ editProductsShowModal, data, onChange, product, onProductUpdated, updateProduct }) => (
+  EditProductsModal: ({ editProductsShowModal, data, onChange, product, onProductUpdated, updateProduct, onClose }) => (
     editProductsShowModal ? (
       <div>
         modal.titleEdit
@@ -56,6 +57,7 @@ jest.mock("../EditProductsModal", () => ({
           onChange={(e) => onChange?.({ productDescription: e.target.value })}
         />
         <button onClick={() => { updateProduct?.(product); onProductUpdated?.(); }}>modal.editButton</button>
+        <button onClick={() => onClose?.()}>modal.cancelButton</button>
       </div>
     ) : null
   ),
@@ -190,6 +192,29 @@ describe("Products page", () => {
     expect(screen.getByText("modal.titleAdd")).toBeInTheDocument();
   });
 
+  it("resets add form data when add modal is closed and reopened", async () => {
+    await act(async () => {
+      renderProducts();
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("addProduct"));
+    });
+
+    fireEvent.change(screen.getByLabelText("modal.productNameLabel"), { target: { value: "Dirty Add Name" } });
+    expect(screen.getByDisplayValue("Dirty Add Name")).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("modal.cancelButton"));
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("addProduct"));
+    });
+
+    expect(screen.getByLabelText("modal.productNameLabel")).toHaveValue("");
+  });
+
   it("opens EditProductsModal with correct product data", async () => {
     await act(async () => {
       renderProducts();
@@ -204,6 +229,31 @@ describe("Products page", () => {
     expect(screen.getByText("modal.titleEdit")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Jade Wallet")).toBeInTheDocument();
     expect(screen.getByDisplayValue("Hardware Wallet")).toBeInTheDocument();
+  });
+
+  it("resets edit form data when edit modal is closed and reopened", async () => {
+    await act(async () => {
+      renderProducts();
+    });
+
+    const editButtons = screen.getAllByText("edit").map((el) => el.closest("button"));
+
+    await act(async () => {
+      fireEvent.click(editButtons[0]);
+    });
+
+    fireEvent.change(screen.getByLabelText("modal.productNameLabel"), { target: { value: "Dirty Edit Name" } });
+    expect(screen.getByDisplayValue("Dirty Edit Name")).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText("modal.cancelButton"));
+    });
+
+    await act(async () => {
+      fireEvent.click(editButtons[0]);
+    });
+
+    expect(screen.getByDisplayValue("Jade Wallet")).toBeInTheDocument();
   });
 
   it("opens DeleteProductsModal", async () => {
