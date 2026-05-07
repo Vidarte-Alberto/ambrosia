@@ -16,16 +16,16 @@ class TestReportsEndpoint:
         assert_status_code(response, 200)
 
         data = response.json()
-        assert "totalRevenueCents" in data, (
-            "Response should include totalRevenueCents"
-        )
+        assert "totalRevenueCents" in data, "Response should include totalRevenueCents"
         assert "totalItemsSold" in data, "Response should include totalItemsSold"
         assert "sales" in data, "Response should include the sales array"
         assert isinstance(data["sales"], list), "sales should be a list"
         assert isinstance(data["totalRevenueCents"], int), (
             "totalRevenueCents should be an integer"
         )
-        assert isinstance(data["totalItemsSold"], int), "totalItemsSold should be an integer"
+        assert isinstance(data["totalItemsSold"], int), (
+            "totalItemsSold should be an integer"
+        )
         assert data["totalRevenueCents"] >= 0
         assert data["totalItemsSold"] >= 0
 
