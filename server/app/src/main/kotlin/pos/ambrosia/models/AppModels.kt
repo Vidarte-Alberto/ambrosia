@@ -1,5 +1,6 @@
 package pos.ambrosia.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable data class AuthRequest(
@@ -455,4 +456,21 @@ data class StoreCheckoutResponse(
     val orderId: String,
     val ticketId: String,
     val paymentId: String,
+)
+
+@Serializable
+data class ProductSaleItem(
+    val productName: String,
+    val quantity: Int,
+    val priceAtOrder: Int,
+    val userName: String,
+    val paymentMethod: String,
+    val saleDate: String,
+)
+
+@Serializable
+data class ProductSalesReport(
+    val totalRevenueCents: Long,
+    val totalItemsSold: Int,
+    val sales: List<ProductSaleItem>,
 )

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Card, CardBody, CardHeader, addToast } from "@heroui/react";
-import { TrendingUp, DollarSign, Receipt, PieChart, AlertCircle, Calendar } from "lucide-react";
+import { AlertCircle, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -11,117 +11,131 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { StoreLayout } from "../StoreLayout";
 
 import { DateRangeCard } from "./components/DateRangeCard";
-import { DayReport } from "./components/DayReport";
+import { ReportsHeader } from "./components/ReportsHeader";
 import { ReportSkeleton } from "./components/ReportSkeleton";
+import { SalesTable } from "./components/SalesTable";
 import { SummaryStat } from "./components/SummaryStat";
 import { useReports } from "./hooks/useReports";
 
-const toLocalISO = (d) => {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+const DEFAULT_FILTERS = {
+  activePeriod: "month",
+  startDate: "",
+  endDate: "",
+  productName: "",
+  paymentMethod: "",
 };
-const todayISO = () => toLocalISO(new Date());
 
 export default function Reports() {
-  const [startDate, setStartDate] = useState(todayISO());
-  const [endDate, setEndDate] = useState(todayISO());
-  const [reportData, setReportData] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState("");
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const filtersRef = useRef(DEFAULT_FILTERS);
+  const debounceRef = useRef(null);
+
+  useEffect(() => { filtersRef.current = filters; });
+
   const { formatAmount, loading: currencyLoading } = useCurrency();
-  const { loading: reportsLoading, error: reportsError, generateReportFromData } = useReports();
-  const displayError = error || reportsError;
+  const { reportData, loading, error, fetchReport } = useReports();
   const t = useTranslations("reports");
 
-  const formatDate = useCallback((dateString) => {
-    const [year, month, day] = dateString.split("-");
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      timeZone: "UTC",
-    });
-  }, []);
-
-  const formatCurrency = useCallback(
-    (amount) => {
-      const numeric = Number(amount);
-      if (!Number.isFinite(numeric)) return amount;
-      return formatAmount(Math.round(numeric * 100));
-    },
-    [formatAmount],
-  );
+  const formatCurrency = useCallback((cents) => formatAmount(cents), [formatAmount]);
 
   const showError = useCallback(
     (message) => {
-      setError(message);
-      addToast({
-        title: t("statuses.errorTitle"),
-        description: message,
-        variant: "solid",
-        color: "danger",
-      });
+      addToast({ title: t("statuses.errorTitle"), description: message, variant: "solid", color: "danger" });
     },
     [t],
   );
 
-  const validateRange = useCallback(() => {
-    if (!startDate || !endDate) {
-      showError(t("errors.bothDates"));
-      return false;
-    }
-    if (new Date(startDate) > new Date(endDate)) {
-      showError(t("errors.invalidRange"));
-      return false;
-    }
-    return true;
-  }, [endDate, showError, startDate, t]);
-
-  const generateReport = useCallback(async () => {
-    if (!validateRange()) return;
-    setGenerating(true);
-    setError("");
-    try {
-      const report = await generateReportFromData(startDate, endDate);
-      setReportData(report);
-      addToast({
-        title: t("statuses.generatedTitle"),
-        description: t("statuses.generatedDesc"),
-        variant: "solid",
-        color: "success",
-      });
-    } catch (err) {
-      console.error(err);
-      showError(t("statuses.errorGenerate"));
-    } finally {
-      setGenerating(false);
-    }
-  }, [endDate, generateReportFromData, showError, startDate, t, validateRange]);
-
-  useEffect(() => {
-    if (!reportsLoading) {
-      generateReport();
-    }
-  }, [generateReport, reportsLoading]);
-
-  const setQuickDateRange = (days) => {
-    const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - days);
-
-    setStartDate(toLocalISO(start));
-    setEndDate(toLocalISO(end));
-  };
-
-  const totalTickets = useMemo(
-    () => reportData?.reports?.reduce((total, day) => total + day.tickets.length, 0) || 0,
-    [reportData],
+  const validateCustomRange = useCallback(
+    (startDate, endDate) => {
+      if (startDate && endDate && startDate > endDate) {
+        showError(t("errors.invalidRange"));
+        return false;
+      }
+      if ((startDate && !endDate) || (!startDate && endDate)) {
+        showError(t("errors.bothDates"));
+        return false;
+      }
+      return true;
+    },
+    [showError, t],
   );
 
-  if ((reportsLoading || currencyLoading) && !reportData) {
+  const generateReport = useCallback(async () => {
+    const currentFilters = filtersRef.current;
+    if (!currentFilters.activePeriod && !validateCustomRange(currentFilters.startDate, currentFilters.endDate)) return;
+    try {
+      await fetchReport({
+        period: currentFilters.activePeriod || undefined,
+        startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
+        endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
+        productName: currentFilters.productName || undefined,
+        paymentMethod: currentFilters.paymentMethod || undefined,
+      });
+    } catch {
+      showError(t("statuses.errorGenerate"));
+    }
+  }, [fetchReport, validateCustomRange, showError, t]);
+
+  useEffect(() => {
+    fetchReport({ period: DEFAULT_FILTERS.activePeriod });
+  }, [fetchReport]);
+
+  useEffect(() => () => clearTimeout(debounceRef.current), []);
+
+  const handleFiltersChange = useCallback(
+    (patch) => {
+      const prev = filtersRef.current;
+      const next = { ...prev, ...patch };
+      setFilters(next);
+
+      if ("activePeriod" in patch && patch.activePeriod) {
+        fetchReport({
+          period: next.activePeriod,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      } else if ("startDate" in patch || "endDate" in patch) {
+        if (next.startDate && next.endDate) {
+          if (next.startDate <= next.endDate) {
+            fetchReport({
+              startDate: next.startDate,
+              endDate: next.endDate,
+              productName: next.productName || undefined,
+              paymentMethod: next.paymentMethod || undefined,
+            });
+          } else {
+            showError(t("errors.invalidRange"));
+          }
+        }
+      } else if ("paymentMethod" in patch) {
+        fetchReport({
+          period: next.activePeriod || undefined,
+          startDate: next.activePeriod ? undefined : next.startDate || undefined,
+          endDate: next.activePeriod ? undefined : next.endDate || undefined,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      } else {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+          const currentFilters = filtersRef.current;
+          fetchReport({
+            period: currentFilters.activePeriod || undefined,
+            startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
+            endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
+            productName: currentFilters.productName || undefined,
+            paymentMethod: currentFilters.paymentMethod || undefined,
+          });
+        }, 500);
+      }
+    },
+    [fetchReport, showError, t],
+  );
+
+  const totalRevenue = useMemo(() => reportData?.totalRevenueCents ?? 0, [reportData]);
+  const totalItems = useMemo(() => reportData?.totalItemsSold ?? 0, [reportData]);
+
+  if (currencyLoading && !reportData) {
     return (
       <StoreLayout>
         <ReportSkeleton />
@@ -133,26 +147,27 @@ export default function Reports() {
     <StoreLayout>
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {displayError && (
+        <ReportsHeader
+          onBack={() => window.history.back()}
+          onRefresh={generateReport}
+          loading={loading}
+        />
+
+        {error && (
           <Card className="bg-red-50 border-red-200">
             <CardBody>
               <div className="flex items-center space-x-2">
                 <AlertCircle className="w-5 h-5 text-red-600" />
-                <p className="text-red-600 font-semibold">{displayError}</p>
+                <p className="text-red-600 font-semibold">{t("statuses.errorGenerate")}</p>
               </div>
             </CardBody>
           </Card>
         )}
 
         <DateRangeCard
-          startDate={startDate}
-          endDate={endDate}
-          onChangeStart={(e) => setStartDate(e.target.value)}
-          onChangeEnd={(e) => setEndDate(e.target.value)}
-          onQuickRange={setQuickDateRange}
-          onGenerate={generateReport}
-          disabled={reportsLoading || currencyLoading}
-          generating={generating}
+          filters={filters}
+          onFiltersChange={handleFiltersChange}
+          disabled={currencyLoading}
         />
 
         {reportData && (
@@ -165,23 +180,11 @@ export default function Reports() {
                 </h3>
               </CardHeader>
               <CardBody>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <SummaryStat
-                    icon={<Calendar className="w-6 h-6 text-blue-600" />}
-                    label={t("summary.period")}
-                    value={`${formatDate(reportData.startDate)} - ${formatDate(reportData.endDate)}`}
-                    tone={{
-                      bg: "bg-blue-50",
-                      border: "border-blue-200",
-                      iconBg: "bg-blue-100",
-                      text: "text-blue-700",
-                      value: "text-blue-900",
-                    }}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <SummaryStat
                     icon={<DollarSign className="w-6 h-6 text-green-600" />}
-                    label={t("summary.balance")}
-                    value={formatCurrency(reportData.totalBalance)}
+                    label={t("summary.revenue")}
+                    value={formatCurrency(totalRevenue)}
                     tone={{
                       bg: "bg-green-50",
                       border: "border-green-200",
@@ -191,9 +194,9 @@ export default function Reports() {
                     }}
                   />
                   <SummaryStat
-                    icon={<Receipt className="w-6 h-6 text-purple-600" />}
-                    label={t("summary.tickets")}
-                    value={totalTickets}
+                    icon={<ShoppingCart className="w-6 h-6 text-purple-600" />}
+                    label={t("summary.items")}
+                    value={totalItems}
                     tone={{
                       bg: "bg-purple-50",
                       border: "border-purple-200",
@@ -209,16 +212,12 @@ export default function Reports() {
             <Card className="shadow-lg border-0 bg-white">
               <CardHeader>
                 <h3 className="text-lg font-bold text-deep flex items-center">
-                  <PieChart className="w-5 h-5 mr-2" />
-                  {t("breakdown.title")}
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  {t("sales.title")}
                 </h3>
               </CardHeader>
               <CardBody>
-                <div className="space-y-6 max-h-96 overflow-y-auto">
-                  {reportData.reports.map((report, idx) => (
-                    <DayReport key={`${report.date}-${idx}`} report={report} formatCurrency={formatCurrency} />
-                  ))}
-                </div>
+                <SalesTable sales={reportData.sales} formatCurrency={formatCurrency} />
               </CardBody>
             </Card>
           </div>
