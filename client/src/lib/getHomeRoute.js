@@ -1,5 +1,5 @@
-import { homeRoutesByUserType, homeRoutePriority } from "./homeRoutes";
 import { features, matchesBusiness } from "./features";
+import { homeRoutesByUserType, homeRoutePriority } from "./homeRoutes";
 
 function firstRouteForFeature(featureKey, businessType = null) {
   const feature = features[featureKey];

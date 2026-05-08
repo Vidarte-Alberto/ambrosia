@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
+
 import { useCartPayment } from "./hooks/useCartPayment";
 import { usePersistentCart } from "./hooks/usePersistentCart";
 import { SearchProducts } from "./SearchProducts";
@@ -164,66 +165,66 @@ export function Cart() {
 
   return (
     <div className={`transition-[padding] duration-200 md:pt-0 ${cart.length ? "pt-14" : "pt-0"}`}>
-        <PageHeader title={t("title")} subtitle={t("subtitle")} />
+      <PageHeader title={t("title")} subtitle={t("subtitle")} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <section className="lg:col-span-2">
-            <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
-          </section>
-          <div className="hidden md:block">
-            <Summary
-              cartItems={cart}
-              discount={discount}
-              onRemoveProduct={removeProduct}
-              onClearCart={clearCart}
-              onUpdateQuantity={updateQuantity}
-              onPay={handlePay}
-              isPaying={isPaying}
-              paymentError={paymentError}
-              onClearPaymentError={clearPaymentError}
-              btcPaymentConfig={btcPaymentConfig}
-              onInvoiceReady={handleBtcInvoiceReady}
-              onBtcComplete={handleBtcComplete}
-              onCloseBtcPayment={clearBtcPaymentConfig}
-              cashPaymentConfig={cashPaymentConfig}
-              onCashComplete={handleCashComplete}
-              onCloseCashPayment={clearCashPaymentConfig}
-              cardPaymentConfig={cardPaymentConfig}
-              onCardComplete={handleCardComplete}
-              onCloseCardPayment={clearCardPaymentConfig}
-            />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="lg:col-span-2">
+          <SearchProducts products={products} categories={categories} onAddProduct={addProduct} />
+        </section>
+        <div className="hidden md:block">
+          <Summary
+            cartItems={cart}
+            discount={discount}
+            onRemoveProduct={removeProduct}
+            onClearCart={clearCart}
+            onUpdateQuantity={updateQuantity}
+            onPay={handlePay}
+            isPaying={isPaying}
+            paymentError={paymentError}
+            onClearPaymentError={clearPaymentError}
+            btcPaymentConfig={btcPaymentConfig}
+            onInvoiceReady={handleBtcInvoiceReady}
+            onBtcComplete={handleBtcComplete}
+            onCloseBtcPayment={clearBtcPaymentConfig}
+            cashPaymentConfig={cashPaymentConfig}
+            onCashComplete={handleCashComplete}
+            onCloseCashPayment={clearCashPaymentConfig}
+            cardPaymentConfig={cardPaymentConfig}
+            onCardComplete={handleCardComplete}
+            onCloseCardPayment={clearCardPaymentConfig}
+          />
         </div>
-
-        <MobileSummaryBar
-          cart={cart}
-          total={cartTotal}
-          onCheckout={() => setShowMobileSummary(true)}
-        />
-
-        <SummaryModal
-          isOpen={showMobileSummary}
-          onClose={() => setShowMobileSummary(false)}
-          cartItems={cart}
-          discount={discount}
-          onRemoveProduct={removeProduct}
-          onClearCart={clearCart}
-          onUpdateQuantity={updateQuantity}
-          onPay={handlePay}
-          isPaying={isPaying}
-          paymentError={paymentError}
-          onClearPaymentError={clearPaymentError}
-          btcPaymentConfig={btcPaymentConfig}
-          onInvoiceReady={handleBtcInvoiceReady}
-          onBtcComplete={handleBtcComplete}
-          onCloseBtcPayment={clearBtcPaymentConfig}
-          cashPaymentConfig={cashPaymentConfig}
-          onCashComplete={handleCashComplete}
-          onCloseCashPayment={clearCashPaymentConfig}
-          cardPaymentConfig={cardPaymentConfig}
-          onCardComplete={handleCardComplete}
-          onCloseCardPayment={clearCardPaymentConfig}
-        />
       </div>
+
+      <MobileSummaryBar
+        cart={cart}
+        total={cartTotal}
+        onCheckout={() => setShowMobileSummary(true)}
+      />
+
+      <SummaryModal
+        isOpen={showMobileSummary}
+        onClose={() => setShowMobileSummary(false)}
+        cartItems={cart}
+        discount={discount}
+        onRemoveProduct={removeProduct}
+        onClearCart={clearCart}
+        onUpdateQuantity={updateQuantity}
+        onPay={handlePay}
+        isPaying={isPaying}
+        paymentError={paymentError}
+        onClearPaymentError={clearPaymentError}
+        btcPaymentConfig={btcPaymentConfig}
+        onInvoiceReady={handleBtcInvoiceReady}
+        onBtcComplete={handleBtcComplete}
+        onCloseBtcPayment={clearBtcPaymentConfig}
+        cashPaymentConfig={cashPaymentConfig}
+        onCashComplete={handleCashComplete}
+        onCloseCashPayment={clearCashPaymentConfig}
+        cardPaymentConfig={cardPaymentConfig}
+        onCardComplete={handleCardComplete}
+        onCloseCardPayment={clearCardPaymentConfig}
+      />
+    </div>
   );
 }

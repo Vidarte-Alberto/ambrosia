@@ -9,6 +9,7 @@ import { PageHeader } from "@components/shared/PageHeader";
 import { useOrders } from "./hooks/useOrders";
 import { useProducts } from "./hooks/useProducts";
 import { useUsers } from "./hooks/useUsers";
+
 export function Store() {
   const t = useTranslations("dashboard");
   const { users } = useUsers();

@@ -10,6 +10,7 @@ import { PageHeader } from "@components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
+
 import { AddProductsModal } from "./AddProductsModal";
 import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
