@@ -860,6 +860,7 @@ const storeEn = {
       title: "Transactions",
       receive: {
         tabTitle: "Receive",
+        invoiceAmountTitle: "Enter the invoice amount",
         invoiceAmountSatLabel: "Amount in sats",
         invoiceAmountSatPlaceholder: "e.g. 1000",
         invoiceAmountFiatLabel: "Amount in {currency}",

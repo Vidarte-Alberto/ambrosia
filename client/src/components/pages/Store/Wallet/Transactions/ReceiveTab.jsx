@@ -70,9 +70,11 @@ export function ReceiveTab({ invoiceActions }) {
   };
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-6">
+      <div className="mx-auto max-w-2xl space-y-5">
         <div id="wallet-receive-amount">
           <AmountUnitInputFields
+            align="left"
             amountInputMode={amountInputMode}
             errorMessage={customEstimateError}
             estimatedLabel={t("payments.receive.invoiceEstimatedLabel")}
@@ -90,6 +92,7 @@ export function ReceiveTab({ invoiceActions }) {
             satLabel={t("payments.receive.invoiceAmountSatLabel")}
             satsOptionLabel={t("payments.receive.satsOption")}
             satPlaceholder={t("payments.receive.invoiceAmountSatPlaceholder")}
+            title={t("payments.receive.invoiceAmountTitle")}
             conversionErrorText={t("payments.receive.invoiceFiatToSatsError")}
           />
         </div>
@@ -100,6 +103,9 @@ export function ReceiveTab({ invoiceActions }) {
             value={invoiceDesc}
             onChange={(e) => setInvoiceDesc(e.target.value)}
             isDisabled={isLoading}
+            classNames={{
+              inputWrapper: "border border-default-200 bg-white shadow-none",
+            }}
           />
         </div>
         <div id="wallet-receive-button">
@@ -108,11 +114,13 @@ export function ReceiveTab({ invoiceActions }) {
             color="primary"
             size="lg"
             isLoading={isLoading}
-            className="w-full"
+            className="w-full font-medium"
+            radius="lg"
           >
             {isLoading ? t("payments.receive.invoiceLightningLoading") : t("payments.receive.invoiceLightningButton")}
           </Button>
         </div>
+      </div>
     </div>
   );
 }
