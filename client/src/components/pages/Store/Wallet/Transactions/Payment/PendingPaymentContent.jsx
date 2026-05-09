@@ -12,10 +12,9 @@ import { Send } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { useWalletAmountInput } from "@/components/pages/Store/Wallet/Transactions/hooks/useWalletAmountInput";
 
 import { formatFiat, formatSats } from "../../utils/formatters";
-
-import { usePaymentAmountInput } from "./hooks/usePaymentAmountInput";
 import { ZeroAmountPaymentFields } from "./ZeroAmountPaymentFields";
 
 export function PendingPaymentContent({
@@ -44,7 +43,7 @@ export function PendingPaymentContent({
     handleAmountModeChange,
     getConfirmAmount,
     isConfirmDisabled,
-  } = usePaymentAmountInput({
+  } = useWalletAmountInput({
     isOpen,
     isPaid: false,
     invoiceSats,
