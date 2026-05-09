@@ -15,6 +15,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { useWalletAmountInput } from "@/components/pages/Store/Wallet/Transactions/hooks/useWalletAmountInput";
 
 import { formatFiat, formatSats } from "../../utils/formatters";
+
 import { ZeroAmountPaymentFields } from "./ZeroAmountPaymentFields";
 
 export function PendingPaymentContent({
