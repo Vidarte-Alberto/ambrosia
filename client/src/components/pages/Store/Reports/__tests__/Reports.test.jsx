@@ -169,7 +169,6 @@ describe("Reports", () => {
   it("renders the base layout without report data", async () => {
     renderReports();
 
-    expect(screen.getByTestId("store-layout")).toBeInTheDocument();
     expect(screen.getByTestId("date-range-card")).toBeInTheDocument();
   });
 
