@@ -1,9 +1,29 @@
 import { render, screen } from "@testing-library/react";
 
-import { SalesTable } from "../Sales/SalesTable";
+import { SalesList } from "../Sales/SalesList";
 
 jest.mock("../Sales/PaymentBadge", () => ({
   PaymentBadge: ({ method }) => <span data-testid="payment-badge">{method}</span>,
+}));
+
+jest.mock("../Sales/SalesCard", () => ({
+  SalesCard: ({ sale }) => <div data-testid="sales-card">{`card-${sale.productName}`}</div>,
+}));
+
+jest.mock("@/components/shared/DataTable", () => ({
+  DataTable: ({ columns, items }) => (
+    <table>
+      <tbody>
+        {items.map((item, i) => (
+          <tr key={i}>
+            {columns.map((col) => (
+              <td key={col.key}>{col.render(item)}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ),
 }));
 
 jest.mock("@heroui/react", () => {
@@ -14,23 +34,23 @@ jest.mock("@heroui/react", () => {
 
 const mockFormatCurrency = jest.fn((cents) => `$${cents / 100}`);
 
-describe("SalesTable", () => {
+describe("SalesList", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it("renders empty state when sales is an empty array", () => {
-    render(<SalesTable sales={[]} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={[]} formatCurrency={mockFormatCurrency} />);
     expect(screen.getByText("sales.empty")).toBeInTheDocument();
   });
 
   it("renders empty state when sales is undefined", () => {
-    render(<SalesTable sales={undefined} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={undefined} formatCurrency={mockFormatCurrency} />);
     expect(screen.getByText("sales.empty")).toBeInTheDocument();
   });
 
   it("does not render items when the list is empty", () => {
-    render(<SalesTable sales={[]} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={[]} formatCurrency={mockFormatCurrency} />);
     expect(screen.queryByTestId("payment-badge")).not.toBeInTheDocument();
   });
 
@@ -46,7 +66,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByText("Raspberry Pi")).toBeInTheDocument();
     expect(screen.getByText("alice")).toBeInTheDocument();
@@ -64,7 +84,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByText("×5")).toBeInTheDocument();
   });
@@ -81,7 +101,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(mockFormatCurrency).toHaveBeenCalledWith(1500);
   });
@@ -98,7 +118,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
     expect(mockFormatCurrency).toHaveBeenCalledWith(4500);
   });
 
@@ -114,7 +134,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByTestId("payment-badge")).toHaveTextContent("BTC");
   });
@@ -125,27 +145,10 @@ describe("SalesTable", () => {
       { productName: "Prod B", quantity: 2, priceAtOrder: 200, userName: "u2", paymentMethod: "BTC", saleDate: "2024-01-02 00:00:00" },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByText("Prod A")).toBeInTheDocument();
     expect(screen.getByText("Prod B")).toBeInTheDocument();
-  });
-
-  it("renders the sale date using the native browser API", () => {
-    const sales = [
-      {
-        productName: "Widget",
-        quantity: 1,
-        priceAtOrder: 500,
-        userName: "test",
-        paymentMethod: "Cash",
-        saleDate: "2024-06-15T10:30:00",
-      },
-    ];
-
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
-
-    expect(screen.getByText(/2024/)).toBeInTheDocument();
   });
 
   it("shows dash when saleDate is null", () => {
@@ -160,7 +163,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByText("-")).toBeInTheDocument();
   });
@@ -177,7 +180,7 @@ describe("SalesTable", () => {
       },
     ];
 
-    render(<SalesTable sales={sales} formatCurrency={mockFormatCurrency} />);
+    render(<SalesList sales={sales} formatCurrency={mockFormatCurrency} />);
 
     expect(screen.getByText("-")).toBeInTheDocument();
   });

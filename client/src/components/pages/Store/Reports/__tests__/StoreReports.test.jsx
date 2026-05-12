@@ -46,7 +46,7 @@ jest.mock("../Filters", () => ({
 }));
 
 jest.mock("../Sales", () => ({
-  SalesTable: ({ sales }) => (
+  SalesList: ({ sales }) => (
     <div data-testid="sales-table">
       {sales.map((s, i) => (
         <span key={i} data-testid="sale-item">{s.productName}</span>
@@ -59,7 +59,8 @@ jest.mock("@heroui/react", () => {
   const Card = ({ children, className }) => <div className={className}>{children}</div>;
   const CardHeader = ({ children }) => <div>{children}</div>;
   const CardBody = ({ children }) => <div>{children}</div>;
-  return { Card, CardHeader, CardBody };
+  const Pagination = () => null;
+  return { Card, CardHeader, CardBody, Pagination };
 });
 
 const DEFAULT_FILTERS = {

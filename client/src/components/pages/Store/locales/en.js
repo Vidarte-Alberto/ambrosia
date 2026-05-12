@@ -1101,9 +1101,13 @@ const storeEn = {
     sales: {
       title: "Sales Detail",
       empty: "No sales found for the selected filters",
+      product: "Product",
+      user: "User",
       quantity: "Qty",
       price: "Unit Price",
       total: "Total",
+      paymentMethod: "Payment",
+      date: "Date",
     },
     close: {
       sectionTitle: "Close shift",

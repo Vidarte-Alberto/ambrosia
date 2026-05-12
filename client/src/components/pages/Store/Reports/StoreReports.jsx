@@ -1,16 +1,19 @@
 "use client";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
-import { Card, CardBody, CardHeader } from "@heroui/react";
+import { Card, CardBody, CardHeader, Pagination } from "@heroui/react";
 import { AlertCircle, DollarSign, ShoppingCart, TrendingUp } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 
 import { DateRangeCard } from "./Filters";
-import { SalesTable } from "./Sales";
+import { SalesList } from "./Sales";
 import { ReportSkeleton, ReportsHeader, SummaryStat } from "./Summary";
 import { useReports } from "./hooks/useReports";
+
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
+const DEFAULT_ROWS_PER_PAGE = 10;
 
 export function StoreReports() {
   const { reportData, loading, error, filters, totalRevenue, totalItems, handleFiltersChange, generateReport } =
@@ -18,6 +21,21 @@ export function StoreReports() {
   const { formatAmount, loading: currencyLoading } = useCurrency();
   const t = useTranslations("reports");
   const formatCurrency = useCallback((cents) => formatAmount(cents), [formatAmount]);
+
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
+
+  const sales = reportData?.sales ?? [];
+  const totalPages = Math.ceil(sales.length / rowsPerPage);
+  const paginatedSales = sales.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  const handleFilters = useCallback(
+    (patch) => {
+      handleFiltersChange(patch);
+      setPage(1);
+    },
+    [handleFiltersChange],
+  );
 
   if (currencyLoading && !reportData) {
     return <ReportSkeleton />;
@@ -45,7 +63,7 @@ export function StoreReports() {
 
       <DateRangeCard
         filters={filters}
-        onFiltersChange={handleFiltersChange}
+        onFiltersChange={handleFilters}
         disabled={currencyLoading}
       />
 
@@ -89,14 +107,38 @@ export function StoreReports() {
           </Card>
 
           <Card className="shadow-lg border-0 bg-white">
-            <CardHeader>
+            <CardHeader className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-deep flex items-center">
                 <ShoppingCart className="w-5 h-5 mr-2" />
                 {t("sales.title")}
               </h3>
+              <select
+                className="text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700"
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(1);
+                }}
+              >
+                {ROWS_PER_PAGE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </CardHeader>
             <CardBody>
-              <SalesTable sales={reportData.sales} formatCurrency={formatCurrency} />
+              <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-6">
+                  <Pagination
+                    total={totalPages}
+                    page={page}
+                    onChange={setPage}
+                    color="primary"
+                    showControls
+                    showShadow
+                  />
+                </div>
+              )}
             </CardBody>
           </Card>
         </div>
