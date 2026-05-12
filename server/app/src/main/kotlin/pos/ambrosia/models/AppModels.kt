@@ -348,7 +348,7 @@ data class Config(
 @Serializable
 data class Product(
     val id: String? = null,
-    val SKU: String,
+    val SKU: String? = null,
     val name: String,
     val description: String? = null,
     val imageUrl: String? = null,
