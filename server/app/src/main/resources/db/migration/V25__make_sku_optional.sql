@@ -1,4 +1,4 @@
-PRAGMA foreign_keys = ON;
+PRAGMA foreign_keys = OFF;
 
 CREATE TABLE products_new (
     id BLOB PRIMARY KEY,
@@ -21,3 +21,5 @@ FROM products;
 DROP TABLE products;
 
 ALTER TABLE products_new RENAME TO products;
+
+PRAGMA foreign_keys = ON;
