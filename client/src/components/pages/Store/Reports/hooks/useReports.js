@@ -2,9 +2,36 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { addToast } from "@heroui/react";
+import { parseDate } from "@internationalized/date";
 import { useTranslations } from "next-intl";
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
+
+export function useDateRangeFilters(filters, onFiltersChange) {
+  const activeFilterCount = useMemo(
+    () => [filters.activePeriod, filters.startDate, filters.endDate, filters.productName, filters.paymentMethod]
+      .filter(Boolean).length,
+    [filters],
+  );
+
+  const dateRangeValue = useMemo(() => {
+    if (!filters.startDate || !filters.endDate) return null;
+    return { start: parseDate(filters.startDate), end: parseDate(filters.endDate) };
+  }, [filters.startDate, filters.endDate]);
+
+  const handlePeriodChange = (period) =>
+    onFiltersChange({ activePeriod: period, startDate: "", endDate: "" });
+
+  const handleDateRangeChange = (range) =>
+    onFiltersChange({ startDate: range?.start?.toString() ?? "", endDate: range?.end?.toString() ?? "", activePeriod: null });
+
+  const handlePaymentMethod = (keys) => {
+    const selectedKey = Array.from(keys)[0] ?? "all";
+    onFiltersChange({ paymentMethod: selectedKey === "all" ? "" : selectedKey });
+  };
+
+  return { activeFilterCount, dateRangeValue, handlePeriodChange, handleDateRangeChange, handlePaymentMethod };
+}
 
 export const defaultFilters = {
   activePeriod: "month",
@@ -60,25 +87,10 @@ export function useReports() {
     },
     [t],
   );
-
-  const validateDateRange = useCallback(
-    (startDate, endDate) => {
-      if (startDate && endDate && startDate > endDate) {
-        showError(t("errors.invalidRange"));
-        return false;
-      }
-      if ((startDate && !endDate) || (!startDate && endDate)) {
-        showError(t("errors.bothDates"));
-        return false;
-      }
-      return true;
-    },
-    [showError, t],
-  );
-
+  
   const generateReport = useCallback(async () => {
     const currentFilters = latestFiltersRef.current;
-    if (!currentFilters.activePeriod && !validateDateRange(currentFilters.startDate, currentFilters.endDate)) return;
+    if (!currentFilters.activePeriod && (!currentFilters.startDate || !currentFilters.endDate)) return;
     try {
       await fetchReport({
         period: currentFilters.activePeriod || undefined,
@@ -90,7 +102,7 @@ export function useReports() {
     } catch {
       showError(t("statuses.errorGenerate"));
     }
-  }, [fetchReport, validateDateRange, showError, t]);
+  }, [fetchReport, showError, t]);
 
   useEffect(() => {
     fetchReport({ period: defaultFilters.activePeriod });
@@ -105,47 +117,46 @@ export function useReports() {
       setFilters(next);
 
       if ("activePeriod" in patch && patch.activePeriod) {
-        fetchReport({
+        return fetchReport({
           period: next.activePeriod,
           productName: next.productName || undefined,
           paymentMethod: next.paymentMethod || undefined,
         });
-      } else if ("startDate" in patch || "endDate" in patch) {
-        if (next.startDate && next.endDate) {
-          if (next.startDate <= next.endDate) {
-            fetchReport({
-              startDate: next.startDate,
-              endDate: next.endDate,
-              productName: next.productName || undefined,
-              paymentMethod: next.paymentMethod || undefined,
-            });
-          } else {
-            showError(t("errors.invalidRange"));
-          }
-        }
-      } else if ("paymentMethod" in patch) {
-        fetchReport({
+      }
+
+      if ("startDate" in patch || "endDate" in patch) {
+        if (!next.startDate || !next.endDate) return;
+        return fetchReport({
+          startDate: next.startDate,
+          endDate: next.endDate,
+          productName: next.productName || undefined,
+          paymentMethod: next.paymentMethod || undefined,
+        });
+      }
+
+      if ("paymentMethod" in patch) {
+        return fetchReport({
           period: next.activePeriod || undefined,
           startDate: next.activePeriod ? undefined : next.startDate || undefined,
           endDate: next.activePeriod ? undefined : next.endDate || undefined,
           productName: next.productName || undefined,
           paymentMethod: next.paymentMethod || undefined,
         });
-      } else {
-        clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = setTimeout(() => {
-          const currentFilters = latestFiltersRef.current;
-          fetchReport({
-            period: currentFilters.activePeriod || undefined,
-            startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
-            endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
-            productName: currentFilters.productName || undefined,
-            paymentMethod: currentFilters.paymentMethod || undefined,
-          });
-        }, 500);
       }
+
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        const currentFilters = latestFiltersRef.current;
+        fetchReport({
+          period: currentFilters.activePeriod || undefined,
+          startDate: currentFilters.activePeriod ? undefined : currentFilters.startDate || undefined,
+          endDate: currentFilters.activePeriod ? undefined : currentFilters.endDate || undefined,
+          productName: currentFilters.productName || undefined,
+          paymentMethod: currentFilters.paymentMethod || undefined,
+        });
+      }, 500);
     },
-    [fetchReport, showError, t],
+    [fetchReport],
   );
 
   const totalRevenue = useMemo(() => reportData?.totalRevenueCents ?? 0, [reportData]);

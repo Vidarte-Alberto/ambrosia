@@ -1,9 +1,11 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { Button, Input, Select, SelectItem } from "@heroui/react";
+import { Button, DateRangePicker, Input, Select, SelectItem } from "@heroui/react";
 import { Bitcoin, Banknote, CreditCard, Calendar, Search, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { useDateRangeFilters } from "../hooks/useReports";
 
 const PERIODS = ["week", "month", "year"];
 
@@ -18,28 +20,8 @@ const PAYMENT_OPTIONS = [
 export function DateRangeCard({ filters, onFiltersChange, disabled }) {
   const t = useTranslations("reports");
   const [isOpen, setIsOpen] = useState(true);
-
-  const activeFilterCount = useMemo(
-    () => [filters.activePeriod, filters.startDate, filters.endDate, filters.productName, filters.paymentMethod].filter(Boolean).length,
-    [filters],
-  );
-
-  const handlePeriodChange = (period) => {
-    onFiltersChange({ activePeriod: period, startDate: "", endDate: "" });
-  };
-
-  const handleStartDateChange = (e) => {
-    onFiltersChange({ startDate: e.target.value, activePeriod: null });
-  };
-
-  const handleEndDateChange = (e) => {
-    onFiltersChange({ endDate: e.target.value, activePeriod: null });
-  };
-
-  const handlePaymentMethod = (keys) => {
-    const selectedKey = Array.from(keys)[0] ?? "all";
-    onFiltersChange({ paymentMethod: selectedKey === "all" ? "" : selectedKey });
-  };
+  const { activeFilterCount, dateRangeValue, handlePeriodChange, handleDateRangeChange, handlePaymentMethod } =
+    useDateRangeFilters(filters, onFiltersChange);
 
   return (
     <div className="space-y-4">
@@ -96,19 +78,11 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                type="date"
-                label={t("dates.startLabel")}
-                value={filters.startDate}
-                onChange={handleStartDateChange}
-                isDisabled={disabled}
-              />
-              <Input
-                type="date"
-                label={t("dates.endLabel")}
-                value={filters.endDate}
-                onChange={handleEndDateChange}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DateRangePicker
+                label={t("dates.title")}
+                value={dateRangeValue}
+                onChange={handleDateRangeChange}
                 isDisabled={disabled}
               />
               <Select

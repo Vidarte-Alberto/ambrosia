@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
-import { defaultFilters, useReports } from "../useReports";
+import { defaultFilters, useDateRangeFilters, useReports } from "../useReports";
 
 jest.mock("@/lib/http", () => ({
   httpClient: jest.fn(),
@@ -357,22 +357,6 @@ describe("useReports — filters", () => {
     expect(urls.some((u) => u.includes("endDate=2024-01-31"))).toBe(true);
   });
 
-  it("handleFiltersChange does not fetch and shows error when startDate > endDate", async () => {
-    const { result } = await setupHook();
-
-    await act(async () => {
-      result.current.handleFiltersChange({ startDate: "2024-12-31", activePeriod: null });
-    });
-    await act(async () => {
-      result.current.handleFiltersChange({ endDate: "2024-01-01", activePeriod: null });
-    });
-
-    expect(httpClient).not.toHaveBeenCalled();
-    expect(mockAddToast).toHaveBeenCalledWith(
-      expect.objectContaining({ color: "danger" }),
-    );
-  });
-
   it("handleFiltersChange with paymentMethod fetches immediately", async () => {
     const { result } = await setupHook();
 
@@ -457,5 +441,67 @@ describe("useReports — derived values", () => {
     });
 
     expect(result.current.totalItems).toBe(42);
+  });
+});
+
+describe("useDateRangeFilters", () => {
+  const baseFilters = { activePeriod: "", startDate: "", endDate: "", productName: "", paymentMethod: "" };
+
+  it("activeFilterCount counts non-empty filter values", () => {
+    const { result } = renderHook(() =>
+      useDateRangeFilters({ ...baseFilters, activePeriod: "month", productName: "cake" }, jest.fn()),
+    );
+    expect(result.current.activeFilterCount).toBe(2);
+  });
+
+  it("dateRangeValue is null when dates are missing", () => {
+    const { result } = renderHook(() => useDateRangeFilters(baseFilters, jest.fn()));
+    expect(result.current.dateRangeValue).toBeNull();
+  });
+
+  it("dateRangeValue returns CalendarDate objects when both dates are set", () => {
+    const { result } = renderHook(() =>
+      useDateRangeFilters({ ...baseFilters, startDate: "2024-01-01", endDate: "2024-01-31" }, jest.fn()),
+    );
+    expect(result.current.dateRangeValue.start.toString()).toBe("2024-01-01");
+    expect(result.current.dateRangeValue.end.toString()).toBe("2024-01-31");
+  });
+
+  it("handlePeriodChange calls onFiltersChange with period and clears dates", () => {
+    const onFiltersChange = jest.fn();
+    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    result.current.handlePeriodChange("week");
+    expect(onFiltersChange).toHaveBeenCalledWith({ activePeriod: "week", startDate: "", endDate: "" });
+  });
+
+  it("handleDateRangeChange with a range calls onFiltersChange with stringified dates", () => {
+    const onFiltersChange = jest.fn();
+    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    result.current.handleDateRangeChange({
+      start: { toString: () => "2024-03-01" },
+      end: { toString: () => "2024-03-31" },
+    });
+    expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "2024-03-01", endDate: "2024-03-31", activePeriod: null });
+  });
+
+  it("handleDateRangeChange with null clears dates and activePeriod", () => {
+    const onFiltersChange = jest.fn();
+    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    result.current.handleDateRangeChange(null);
+    expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "", endDate: "", activePeriod: null });
+  });
+
+  it("handlePaymentMethod with 'all' calls onFiltersChange with empty string", () => {
+    const onFiltersChange = jest.fn();
+    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    result.current.handlePaymentMethod(new Set(["all"]));
+    expect(onFiltersChange).toHaveBeenCalledWith({ paymentMethod: "" });
+  });
+
+  it("handlePaymentMethod with a specific method passes it through", () => {
+    const onFiltersChange = jest.fn();
+    const { result } = renderHook(() => useDateRangeFilters(baseFilters, onFiltersChange));
+    result.current.handlePaymentMethod(new Set(["BTC"]));
+    expect(onFiltersChange).toHaveBeenCalledWith({ paymentMethod: "BTC" });
   });
 });

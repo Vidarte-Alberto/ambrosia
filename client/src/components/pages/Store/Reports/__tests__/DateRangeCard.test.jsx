@@ -2,6 +2,16 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { DateRangeCard } from "../Filters";
 
+jest.mock("../hooks/useReports", () => ({
+  useDateRangeFilters: () => ({
+    activeFilterCount: 0,
+    dateRangeValue: null,
+    handlePeriodChange: jest.fn(),
+    handleDateRangeChange: jest.fn(),
+    handlePaymentMethod: jest.fn(),
+  }),
+}));
+
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
   const Input = ({ label, value, onChange, onClear, isDisabled, type }) => (
@@ -23,6 +33,12 @@ jest.mock("@heroui/react", () => {
       {children}
     </button>
   );
+  const DateRangePicker = ({ label, onChange, isDisabled }) => (
+    <div>
+      <label>{label}</label>
+      <button data-testid="date-range-picker" disabled={isDisabled} onClick={() => onChange(null)}>pick</button>
+    </div>
+  );
   const Select = ({ label, children, onSelectionChange, isDisabled }) => (
     <div>
       <label>{label}</label>
@@ -36,7 +52,7 @@ jest.mock("@heroui/react", () => {
     </div>
   );
   const SelectItem = ({ children }) => <option>{children}</option>;
-  return { ...actual, Input, Button, Select, SelectItem };
+  return { ...actual, Input, Button, DateRangePicker, Select, SelectItem };
 });
 
 const DEFAULT_FILTERS = {
@@ -62,41 +78,25 @@ describe("DateRangeCard", () => {
 
   it("calls onFiltersChange with productName when input changes", () => {
     render(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
-    const input = screen.getByTestId("input-filters.productName");
-    fireEvent.change(input, { target: { value: "Widget" } });
+    fireEvent.change(screen.getByTestId("input-filters.productName"), { target: { value: "Widget" } });
     expect(onFiltersChange).toHaveBeenCalledWith({ productName: "Widget" });
   });
 
-  it("calls onFiltersChange with activePeriod when a period button is pressed", () => {
-    render(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
-    fireEvent.click(screen.getByText("dates.period.week"));
-    expect(onFiltersChange).toHaveBeenCalledWith({ activePeriod: "week", startDate: "", endDate: "" });
-  });
-
-  it("calls onFiltersChange with startDate and clears activePeriod when start date changes", () => {
-    render(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
-    const startInput = screen.getByTestId("input-dates.startLabel");
-    fireEvent.change(startInput, { target: { value: "2024-01-01" } });
-    expect(onFiltersChange).toHaveBeenCalledWith({ startDate: "2024-01-01", activePeriod: null });
-  });
-
-  it("calls onFiltersChange with endDate and clears activePeriod when end date changes", () => {
-    render(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
-    const endInput = screen.getByTestId("input-dates.endLabel");
-    fireEvent.change(endInput, { target: { value: "2024-01-31" } });
-    expect(onFiltersChange).toHaveBeenCalledWith({ endDate: "2024-01-31", activePeriod: null });
-  });
-
   it("shows active filter count in toggle button when filters are set", () => {
-    const filters = { ...DEFAULT_FILTERS, activePeriod: "month", productName: "Widget" };
-    render(<DateRangeCard filters={filters} onFiltersChange={onFiltersChange} />);
-    expect(screen.getByText("dates.filtersActive")).toBeInTheDocument();
-  });
-
-  it("shows period toggle title when no filters are active", () => {
-    const emptyFilters = { activePeriod: "", startDate: "", endDate: "", productName: "", paymentMethod: "" };
-    render(<DateRangeCard filters={emptyFilters} onFiltersChange={onFiltersChange} />);
+    const { rerender } = render(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
     expect(screen.getAllByText("dates.title").length).toBeGreaterThan(0);
+
+    const { useDateRangeFilters } = require("../hooks/useReports");
+    useDateRangeFilters.mockReturnValue = undefined;
+    jest.spyOn(require("../hooks/useReports"), "useDateRangeFilters").mockReturnValue({
+      activeFilterCount: 2,
+      dateRangeValue: null,
+      handlePeriodChange: jest.fn(),
+      handleDateRangeChange: jest.fn(),
+      handlePaymentMethod: jest.fn(),
+    });
+    rerender(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
+    expect(screen.getByText("dates.filtersActive")).toBeInTheDocument();
   });
 
   it("disables inputs when disabled prop is true", () => {
