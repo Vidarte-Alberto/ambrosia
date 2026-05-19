@@ -2,8 +2,6 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import Reports from "../Reports";
 
-// ── hooks ────────────────────────────────────────────────────────────────────
-
 const mockFetchReport = jest.fn();
 const mockHandleFilters = jest.fn();
 
@@ -18,8 +16,6 @@ jest.mock("../hooks/useFilters", () => ({
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => mockUseCurrency(),
 }));
-
-// ── child components ─────────────────────────────────────────────────────────
 
 jest.mock("../Filters", () => ({
   FiltersCard: ({ filters, onFiltersChange, disabled }) => (
@@ -82,8 +78,6 @@ jest.mock("lucide-react", () => ({
   AlertCircle: (props) => <svg {...props} data-testid="alert-icon" />,
 }));
 
-// ── test data ────────────────────────────────────────────────────────────────
-
 const DEFAULT_FILTERS = {
   activePeriod: "month",
   startDate: "",
@@ -102,8 +96,6 @@ const REPORT_FIXTURE = {
   totalItemsSold: 3,
   sales: SALES_FIXTURE,
 };
-
-// ── mock factories ────────────────────────────────────────────────────────────
 
 function makeUseReports(overrides = {}) {
   return {
@@ -133,8 +125,6 @@ function makeUseCurrency(overrides = {}) {
 let mockUseReports;
 let mockUseFiltersState;
 let mockUseCurrency;
-
-// ── suite ─────────────────────────────────────────────────────────────────────
 
 describe("Reports", () => {
   beforeEach(() => {

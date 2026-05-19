@@ -1,8 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { DateRangeCard } from "../Filters";
+import { DateRangeCard } from "..";
 
-jest.mock("../hooks/useReports", () => ({
+jest.mock("../../hooks/useReports", () => ({
   useDateRangeFilters: () => ({
     activeFilterCount: 0,
     dateRangeValue: null,
@@ -86,9 +86,9 @@ describe("DateRangeCard", () => {
     const { rerender } = render(<DateRangeCard filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
     expect(screen.getAllByText("dates.title").length).toBeGreaterThan(0);
 
-    const { useDateRangeFilters } = require("../hooks/useReports");
+    const { useDateRangeFilters } = require("../../hooks/useReports");
     useDateRangeFilters.mockReturnValue = undefined;
-    jest.spyOn(require("../hooks/useReports"), "useDateRangeFilters").mockReturnValue({
+    jest.spyOn(require("../../hooks/useReports"), "useDateRangeFilters").mockReturnValue({
       activeFilterCount: 2,
       dateRangeValue: null,
       handlePeriodChange: jest.fn(),

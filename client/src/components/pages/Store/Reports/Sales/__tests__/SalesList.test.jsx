@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 
-import { SalesList } from "../Sales/SalesList";
+import { SalesList } from "../SalesList";
 
-jest.mock("../Sales/SalesCard", () => ({
+jest.mock("../SalesCard", () => ({
   SalesCard: ({ sale }) => <div data-testid="sales-card">{`card-${sale.productName}`}</div>,
 }));
 

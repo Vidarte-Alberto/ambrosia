@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import { SummaryStat } from "../Summary/SummaryStat";
+import { SummaryStat } from "../SummaryStat";
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");

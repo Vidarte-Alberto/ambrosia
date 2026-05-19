@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import { SalesCard } from "../Sales/SalesCard";
+import { SalesCard } from "../SalesCard";
 
 jest.mock("@heroui/react", () => {
   const actual = jest.requireActual("@heroui/react");
