@@ -11,7 +11,7 @@ export function TopProductsBarChart({ products, formatCurrency }) {
     <div>
       <h4 className="text-sm font-semibold text-gray-600 mb-4">{t("charts.topProducts")}</h4>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart data={products} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+        <BarChart aria-label={t("charts.topProducts")} data={products} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
           <XAxis
             type="number"

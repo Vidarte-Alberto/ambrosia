@@ -12,12 +12,12 @@ export function SalesCard({ sale, formatCurrency }) {
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center gap-3 p-3">
         <div className="bg-forest/10 rounded-lg p-2 shrink-0">
-          <Package className="w-4 h-4 text-forest" />
+          <Package aria-hidden="true" className="w-4 h-4 text-forest" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-deep truncate">{sale.productName}</p>
           <div className="flex items-center gap-1 text-sm text-forest mt-0.5">
-            <Users className="w-3 h-3 shrink-0" />
+            <Users aria-hidden="true" className="w-3 h-3 shrink-0" />
             <span className="truncate">{sale.userName}</span>
           </div>
           <div className="flex items-center gap-2 mt-1">

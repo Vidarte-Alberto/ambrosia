@@ -11,7 +11,7 @@ export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
     <div>
       <h4 className="text-sm font-semibold text-gray-600 mb-4">{t("charts.revenueOverTime")}</h4>
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={dailyRevenue} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+        <AreaChart aria-label={t("charts.revenueOverTime")} data={dailyRevenue} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.25} />

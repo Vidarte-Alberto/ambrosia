@@ -39,8 +39,10 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
         <Button
           variant="flat"
           className="lg:w-48 lg:flex-none h-14 justify-between px-3 text-foreground"
+          aria-expanded={isOpen}
           endContent={(
             <ChevronDown
+              aria-hidden="true"
               className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
               strokeWidth={1.5}
             />
@@ -71,7 +73,7 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
                   className={filters.activePeriod === period ? "bg-green-800 text-white" : "text-foreground"}
                 >
                   <div className="flex flex-col items-center">
-                    <Calendar className="w-4 h-4 mb-1" />
+                    <Calendar aria-hidden="true" className="w-4 h-4 mb-1" />
                     <span>{t(`dates.period.${period}`)}</span>
                   </div>
                 </Button>
@@ -80,12 +82,14 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DateRangePicker
+                aria-label={t("dates.title")}
                 label={t("dates.title")}
                 value={dateRangeValue}
                 onChange={handleDateRangeChange}
                 isDisabled={disabled}
               />
               <Select
+                aria-label={t("filters.paymentMethod")}
                 label={t("filters.paymentMethod")}
                 selectedKeys={new Set([filters.paymentMethod || "all"])}
                 onSelectionChange={handlePaymentMethod}

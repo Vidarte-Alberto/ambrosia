@@ -69,6 +69,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         </Select>
 
         <DateRangePicker
+          aria-label={t("filter.dateRangeLabel")}
           className="sm:col-span-2"
           label={t("filter.dateRangeLabel")}
           value={dateRangeValue}
@@ -76,6 +77,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         />
 
         <NumberInput
+          aria-label={t("filter.minTotalLabel")}
           label={t("filter.minTotalLabel")}
           placeholder={t("filter.totalPlaceholder")}
           variant="flat"
@@ -89,6 +91,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         />
 
         <NumberInput
+          aria-label={t("filter.maxTotalLabel")}
           label={t("filter.maxTotalLabel")}
           placeholder={t("filter.totalPlaceholder")}
           classNames={{

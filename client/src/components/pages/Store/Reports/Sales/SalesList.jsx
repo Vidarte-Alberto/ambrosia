@@ -14,7 +14,7 @@ export function SalesList({ sales, formatCurrency }) {
   if (!sales?.length) {
     return (
       <div className="text-center py-12 text-gray-500">
-        <ShoppingBag className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <ShoppingBag aria-hidden="true" className="w-12 h-12 mx-auto mb-3 text-gray-300" />
         <p className="font-medium">{t("sales.empty")}</p>
       </div>
     );
@@ -65,7 +65,7 @@ export function SalesList({ sales, formatCurrency }) {
   ];
 
   return (
-    <section className="w-full">
+    <section aria-label={t("sales.tableAriaLabel")} className="w-full">
       <div className="md:hidden space-y-3">
         {sales.map((sale, i) => (
           <SalesCard key={i} sale={sale} formatCurrency={formatCurrency} />

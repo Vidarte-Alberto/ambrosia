@@ -62,6 +62,9 @@ const reportsEs = {
       total: "Total",
       paymentMethod: "Método de Pago",
       date: "Fecha",
+      rowsPerPage: "Filas por página",
+      paginationAria: "Paginación de ventas",
+      tableAriaLabel: "Detalle de ventas",
     },
     close: {
       modalTitle: "Confirmar Cierre de Turno",

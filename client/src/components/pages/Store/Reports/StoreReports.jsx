@@ -33,7 +33,7 @@ export function StoreReports() {
         <Card className="bg-red-50 border-red-200">
           <CardBody>
             <div className="flex items-center space-x-2">
-              <AlertCircle className="w-5 h-5 text-red-600" />
+              <AlertCircle aria-hidden="true" className="w-5 h-5 text-red-600" />
               <p className="text-red-600 font-semibold">{t("statuses.errorGenerate")}</p>
             </div>
           </CardBody>
@@ -56,7 +56,7 @@ export function StoreReports() {
             <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
               <CardHeader>
                 <h3 className="text-lg font-bold text-deep flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
+                  <TrendingUp aria-hidden="true" className="w-5 h-5 mr-2" />
                   {t("charts.title")}
                 </h3>
               </CardHeader>
@@ -73,7 +73,7 @@ export function StoreReports() {
           <Card className="shadow-lg border-0 bg-white">
             <CardHeader>
               <h3 className="text-lg font-bold text-deep flex items-center">
-                <TrendingUp className="w-5 h-5 mr-2" />
+                <TrendingUp aria-hidden="true" className="w-5 h-5 mr-2" />
                 {t("summary.title")}
               </h3>
             </CardHeader>
@@ -110,7 +110,7 @@ export function StoreReports() {
           <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
             <CardHeader className="flex justify-between items-center">
               <h3 className="text-lg font-bold text-deep flex items-center">
-                <ShoppingCart className="w-5 h-5 mr-2" />
+                <ShoppingCart aria-hidden="true" className="w-5 h-5 mr-2" />
                 {t("sales.title")}
               </h3>
               <div className="flex items-center gap-2">
@@ -119,10 +119,11 @@ export function StoreReports() {
                   disabled={!sales.length}
                   className="flex items-center gap-1.5 text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download aria-hidden="true" className="w-3.5 h-3.5" />
                   {t("sales.export")}
                 </button>
                 <select
+                  aria-label={t("sales.rowsPerPage")}
                   className="text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700"
                   value={rowsPerPage}
                   onChange={(e) => handleRowsPerPageChange(parseInt(e.target.value, 10))}
@@ -144,6 +145,7 @@ export function StoreReports() {
                     color="primary"
                     showControls
                     showShadow
+                    aria-label={t("sales.paginationAria")}
                   />
                 </div>
               )}

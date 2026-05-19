@@ -62,6 +62,9 @@ const reportsEn = {
       total: "Total",
       paymentMethod: "Payment Method",
       date: "Date",
+      rowsPerPage: "Rows per page",
+      paginationAria: "Sales pagination",
+      tableAriaLabel: "Sales detail",
     },
     close: {
       modalTitle: "Confirm Shift Close",

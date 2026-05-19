@@ -13,7 +13,7 @@ export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
     <div>
       <h4 className="text-sm font-semibold text-gray-600 mb-4">{t("charts.paymentSplit")}</h4>
       <ResponsiveContainer width="100%" height={220}>
-        <PieChart>
+        <PieChart aria-label={t("charts.paymentSplit")}>
           <Pie
             data={paymentMethods}
             dataKey="revenue"
