@@ -34,6 +34,7 @@ export function buildHandlePay({
   ensureCartReady,
   normalizeAmounts,
   printCustomerReceipt,
+  refreshShiftTickets,
 }) {
   return async function handlePay({
     items: cartItems = [],
@@ -128,6 +129,7 @@ export function buildHandlePay({
         t,
       });
 
+      await refreshShiftTickets?.();
       await printCustomerReceipt?.({
         items: cartItems,
         totalCents: paymentAmounts.total,
@@ -165,6 +167,7 @@ export function buildHandleBtcComplete({
   user,
   setBtcPaymentConfig,
   printCustomerReceipt,
+  refreshShiftTickets,
 }) {
   return async (data) => {
     if (!btcPaymentConfig) return;
@@ -186,6 +189,7 @@ export function buildHandleBtcComplete({
         t,
       });
 
+      await refreshShiftTickets?.();
       await printCustomerReceipt?.({
         items: btcPaymentConfig.cartItems,
         totalCents: btcPaymentConfig.total,
@@ -229,6 +233,7 @@ export function buildHandleCashComplete({
   setCashPaymentConfig,
   printCustomerReceipt,
   user,
+  refreshShiftTickets,
 }) {
   return async ({ cashReceived, change }) => {
     if (!cashPaymentConfig) return;
@@ -243,6 +248,7 @@ export function buildHandleCashComplete({
         t,
       });
 
+      await refreshShiftTickets?.();
       await printCustomerReceipt?.({
         items: cashPaymentConfig.cartItems,
         totalCents: cashPaymentConfig.paymentAmounts.total,
@@ -279,6 +285,7 @@ export function buildHandleCardComplete({
   setCardPaymentConfig,
   printCustomerReceipt,
   user,
+  refreshShiftTickets,
 }) {
   return async () => {
     if (!cardPaymentConfig) return;
@@ -293,6 +300,7 @@ export function buildHandleCardComplete({
         t,
       });
 
+      await refreshShiftTickets?.();
       await printCustomerReceipt?.({
         items: cardPaymentConfig.cartItems,
         totalCents: cardPaymentConfig.paymentAmounts.total,
