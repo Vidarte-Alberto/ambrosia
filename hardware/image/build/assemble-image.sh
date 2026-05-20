@@ -10,7 +10,11 @@ BOARD_ID=""
 _remaining_args=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --board) BOARD_ID="$2"; shift 2 ;;
+    --board)
+      [[ -n "${2:-}" ]] || { printf 'ERROR: --board requires an argument\n' >&2; exit 1; }
+      BOARD_ID="$2"
+      shift 2
+      ;;
     *)       _remaining_args+=("$1"); shift ;;
   esac
 done
@@ -24,6 +28,7 @@ BOARD_ENV_FILE="$BOARD_DIR/board.env"
 [[ -f "$BOARD_ENV_FILE" ]] || fail "Missing board definition: $BOARD_ENV_FILE"
 # shellcheck source=/dev/null
 source "$BOARD_ENV_FILE"
+[[ -n "${BOARD_SHORT_NAME:-}" ]] || fail "board.env for '$BOARD_ID' is missing BOARD_SHORT_NAME"
 
 OUTPUT_DIR="${OUTPUT_DIR:-$IMAGE_OUT_DIR}"
 STAGING_DIR="${STAGING_DIR:-$IMAGE_STAGING_DIR}"
