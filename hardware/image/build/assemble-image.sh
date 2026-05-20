@@ -6,7 +6,19 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=hardware/image/build/lib.sh
 source "$SCRIPT_DIR/lib.sh"
 
-BOARD_ID="opi-zero-2w"
+BOARD_ID=""
+_remaining_args=()
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --board) BOARD_ID="$2"; shift 2 ;;
+    *)       _remaining_args+=("$1"); shift ;;
+  esac
+done
+set -- "${_remaining_args[@]+"${_remaining_args[@]}"}"
+unset _remaining_args
+
+[[ -n "$BOARD_ID" ]] || { printf 'Usage: sudo %s --board <board-id> [options]\n' "$(basename "$0")" >&2; exit 1; }
+
 BOARD_DIR="$IMAGE_ROOT/boards/$BOARD_ID"
 BOARD_ENV_FILE="$BOARD_DIR/board.env"
 [[ -f "$BOARD_ENV_FILE" ]] || fail "Missing board definition: $BOARD_ENV_FILE"
@@ -26,9 +38,10 @@ OVERRIDE_VERSION=""
 
 usage() {
   cat <<EOF
-Usage: sudo $(basename "$0") [options]
+Usage: sudo $(basename "$0") --board <board-id> [options]
 
 Options:
+  --board <id>              Board target (e.g. opi-zero-2w, rpi-zero-2w) [required]
   --base-image <path>       Reuse a local base image archive or .img
   --base-image-url <url>    Download the official base image archive to cache
   --skip-artifacts-build    Reuse an existing staging directory
@@ -513,6 +526,9 @@ install_repo_assets() {
   install -m 0644 "$IMAGE_ROOT/common/templates/phoenix.conf.stub" "$ROOTFS_MNT/etc/ambrosia/phoenix.conf.stub"
   install -m 0644 "$IMAGE_ROOT/common/templates/ambrosia-device.env.example" "$BOOT_MNT/ambrosia-device.env.example"
 
+  printf 'BOARD_SHORT_NAME=%s\n' "$BOARD_SHORT_NAME" > "$ROOTFS_MNT/etc/ambrosia/board-identity"
+  chmod 0644 "$ROOTFS_MNT/etc/ambrosia/board-identity"
+
   sed -i \
     -e "s/__RUNTIME_USER__/${RUNTIME_USER}/g" \
     -e "s/__RUNTIME_GROUP__/${RUNTIME_GROUP}/g" \
@@ -587,6 +603,7 @@ verify_mounted_image() {
   require_sane_javascript_text_file "$ROOTFS_MNT/opt/ambrosia/client/node_modules/next/dist/compiled/comment-json/index.js"
   require_sane_javascript_text_file "$ROOTFS_MNT/opt/ambrosia/client/node_modules/next/dist/build/next-config-ts/transpile-config.js"
   [[ -d "$ROOTFS_MNT/opt/ambrosia/client/.next/static" ]] || fail "Mounted image is missing /opt/ambrosia/client/.next/static"
+  require_nonempty_file "$ROOTFS_MNT/etc/ambrosia/board-identity"
   require_nonempty_file "$ROOTFS_MNT/etc/ambrosia/Caddyfile.template"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-firstboot.service"
   require_nonempty_file "$ROOTFS_MNT/etc/systemd/system/ambrosia-wifi-portal.service"

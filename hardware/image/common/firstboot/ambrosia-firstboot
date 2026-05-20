@@ -8,7 +8,7 @@ RUNTIME_HOME="/home/${RUNTIME_USER}"
 STATE_DIR="/var/lib/ambrosia"
 MARKER_FILE="${STATE_DIR}/firstboot-complete"
 LOG_FILE="/var/log/ambrosia-firstboot.log"
-DEVICE_ENV_FILE="/boot/ambrosia-device.env"
+DEVICE_ENV_FILE=""
 DEVICE_ENV_ARCHIVE="${STATE_DIR}/consumed-device.env"
 TEMPLATES_DIR="/etc/ambrosia"
 CADDY_TEMPLATE="${TEMPLATES_DIR}/Caddyfile.template"
@@ -23,6 +23,14 @@ ambrosia_hostname=""
 ambrosia_admin_password=""
 ambrosia_wifi_country="US"
 ambrosia_lang="en_US.UTF-8"
+
+find_device_env_file() {
+  local c
+  for c in "/boot/firmware/ambrosia-device.env" "/boot/ambrosia-device.env"; do
+    [[ -f "$c" ]] && { printf '%s' "$c"; return 0; }
+  done
+  return 1
+}
 
 log() {
   printf '[ambrosia-firstboot] %s\n' "$*"
@@ -42,7 +50,9 @@ ensure_machine_id() {
 }
 
 load_preseed() {
-  [[ -f "$DEVICE_ENV_FILE" ]] || return 0
+  local resolved
+  resolved=$(find_device_env_file) || return 0
+  DEVICE_ENV_FILE="$resolved"
 
   while IFS='=' read -r key value; do
     [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
@@ -69,10 +79,16 @@ load_preseed() {
 }
 
 default_hostname() {
-  local machine_id suffix
+  local machine_id suffix short_name
   machine_id=$(tr -d '\n' </etc/machine-id)
   suffix=${machine_id:0:6}
-  printf 'ambrosia-opi-%s' "${suffix:-000000}"
+  short_name="device"
+  if [[ -f /etc/ambrosia/board-identity ]]; then
+    # shellcheck source=/dev/null
+    source /etc/ambrosia/board-identity
+    short_name="${BOARD_SHORT_NAME:-device}"
+  fi
+  printf 'ambrosia-%s-%s' "$short_name" "${suffix:-000000}"
 }
 
 apply_hostname() {
