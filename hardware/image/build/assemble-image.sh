@@ -193,6 +193,7 @@ require_host_dependencies() {
     losetup
     lsblk
     mount
+    openssl
     partx
     parted
     resize2fs
@@ -391,6 +392,11 @@ attach_and_mount_image() {
     esac
   fi
 
+  if [[ -z "$root_part" && "$partition_count" -ge 2 ]]; then
+    root_part="${partition_devs[-1]}"
+    [[ -n "$boot_part" ]] || boot_part="${partition_devs[0]}"
+  fi
+
   [[ -n "$root_part" ]] || fail "Could not detect root partition on $LOOPDEV"
 
   ROOTFS_MNT="$WORKDIR/rootfs"
@@ -533,6 +539,10 @@ install_repo_assets() {
 
   printf 'BOARD_SHORT_NAME=%s\n' "$BOARD_SHORT_NAME" > "$ROOTFS_MNT/etc/ambrosia/board-identity"
   chmod 0644 "$ROOTFS_MNT/etc/ambrosia/board-identity"
+
+  if [[ -f "$ROOTFS_MNT/usr/lib/raspberrypi-sys-mods/firstboot" ]]; then
+    printf 'ambrosia:%s\n' "$(openssl passwd -6 'Ambrosia2026!')" > "$BOOT_MNT/userconf.txt"
+  fi
 
   sed -i \
     -e "s/__RUNTIME_USER__/${RUNTIME_USER}/g" \

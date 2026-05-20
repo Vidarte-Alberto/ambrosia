@@ -397,6 +397,14 @@ small{color:#666;}
 </body></html>"""
 
 
+def _monitor_connection():
+    while True:
+        time.sleep(15)
+        if wifi_is_real() or uplink_is_real():
+            stop_ap()
+            os._exit(0)
+
+
 def _do_connect(ssid, pw):
     """Background task: tear down AP, try to join the user's Wi-Fi.
 
@@ -482,6 +490,9 @@ def main():
     signal.signal(signal.SIGTERM, shutdown_on_signal)
     signal.signal(signal.SIGINT, shutdown_on_signal)
 
+    sh(["nmcli", "device", "set", WLAN, "managed", "yes"])
+    sh(["nmcli", "radio", "wifi", "on"])
+
     for _ in range(BOOT_WAIT_SECONDS):
         if wifi_is_real() or uplink_is_real():
             print("Network uplink already connected, exiting.", flush=True)
@@ -500,6 +511,7 @@ def main():
     print("Bringing up setup AP (hostapd + dnsmasq).", flush=True)
     if not start_ap():
         sys.exit(1)
+    threading.Thread(target=_monitor_connection, daemon=True).start()
     try:
         app.run(host="0.0.0.0", port=80, debug=False, use_reloader=False)
     finally:
