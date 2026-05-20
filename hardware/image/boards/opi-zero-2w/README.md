@@ -26,7 +26,7 @@ Direct vendor download URLs tend to move. The assembler therefore supports:
 ## Entry points
 
 - `hardware/image/build/build-artifacts.sh`
-- `hardware/image/build/assemble-opi-image.sh`
+- `hardware/image/build/assemble-image.sh --board opi-zero-2w`
 
 ## Outputs
 
