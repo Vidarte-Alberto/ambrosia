@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { useTurn } from "@/hooks/turn/useTurn";
 
 import { usePayments } from "../../hooks/usePayments";
 import { usePrinters } from "../../hooks/usePrinter";
@@ -32,6 +33,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const t = useTranslations("cart.payment");
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
+  const { refreshShiftTickets } = useTurn();
   const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
   const { paymentMethods } = usePaymentMethods();
   const { getPaymentCurrencyById } = usePayments();
@@ -113,6 +115,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       ensureCartReady,
       normalizeAmounts,
       printCustomerReceipt,
+      refreshShiftTickets,
     }),
     [
       currency,
@@ -125,6 +128,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       t,
       user,
       printCustomerReceipt,
+      refreshShiftTickets,
     ],
   );
 
@@ -144,6 +148,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       user,
       setBtcPaymentConfig,
       printCustomerReceipt,
+      refreshShiftTickets,
     }),
     [
       btcPaymentConfig,
@@ -154,6 +159,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       t,
       user,
       printCustomerReceipt,
+      refreshShiftTickets,
     ],
   );
 
@@ -172,6 +178,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setCashPaymentConfig,
       printCustomerReceipt,
       user,
+      refreshShiftTickets,
     }),
     [
       cashPaymentConfig,
@@ -182,6 +189,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       printCustomerReceipt,
       t,
       user,
+      refreshShiftTickets,
     ],
   );
 
@@ -200,6 +208,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setCardPaymentConfig,
       printCustomerReceipt,
       user,
+      refreshShiftTickets,
     }),
     [
       cardPaymentConfig,
@@ -210,6 +219,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       printCustomerReceipt,
       t,
       user,
+      refreshShiftTickets,
     ],
   );
 
