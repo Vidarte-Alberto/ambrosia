@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useMemo, useState } from "react";
 
+import formatDate from "@lib/formatDate";
+
 import { useTranslations } from "next-intl";
 
 const DEFAULT_ROWS_PER_PAGE = 10;
@@ -40,7 +42,7 @@ export function useSalesData(sales, formatCurrency) {
       formatCurrency(sale.priceAtOrder),
       formatCurrency(sale.priceAtOrder * sale.quantity),
       sale.paymentMethod ?? "",
-      sale.saleDate?.slice(0, 10) ?? "",
+      sale.saleDate ? formatDate(sale.saleDate) : "",
     ]);
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
