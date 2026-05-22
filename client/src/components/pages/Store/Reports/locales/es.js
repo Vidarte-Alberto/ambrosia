@@ -39,15 +39,25 @@ const reportsEs = {
     },
     summary: {
       title: "Resumen",
+      subtitle: "Totales consolidados del período seleccionado",
       revenue: "Ingresos Totales",
       items: "Productos Vendidos",
+    },
+    charts: {
+      title: "Analítica",
+      subtitle: "Visualiza tendencias de ingresos y distribución de ventas",
+      revenueOverTime: "Ingresos por Día",
+      topProducts: "Top Productos por Ingresos",
+      paymentSplit: "Distribución de Métodos de Pago",
     },
     payment: {
       unknown: "Desconocido",
     },
     sales: {
       title: "Detalle de Ventas",
+      subtitle: "Registro completo de transacciones del período",
       empty: "No se encontraron ventas con los filtros seleccionados",
+      export: "Exportar CSV",
       product: "Producto",
       user: "Usuario",
       quantity: "Cant.",
@@ -55,6 +65,9 @@ const reportsEs = {
       total: "Total",
       paymentMethod: "Método de Pago",
       date: "Fecha",
+      rowsPerPage: "Filas por página",
+      paginationAria: "Paginación de ventas",
+      tableAriaLabel: "Detalle de ventas",
     },
     close: {
       modalTitle: "Confirmar Cierre de Turno",

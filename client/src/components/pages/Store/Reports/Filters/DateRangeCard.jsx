@@ -1,9 +1,11 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { Button, Input, Select, SelectItem } from "@heroui/react";
+import { Button, DateRangePicker, Input, Select, SelectItem } from "@heroui/react";
 import { Bitcoin, Banknote, CreditCard, Calendar, Search, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
+
+import { useDateRangeFilters } from "../hooks/useFilters";
 
 const PERIODS = ["week", "month", "year"];
 
@@ -18,28 +20,8 @@ const PAYMENT_OPTIONS = [
 export function DateRangeCard({ filters, onFiltersChange, disabled }) {
   const t = useTranslations("reports");
   const [isOpen, setIsOpen] = useState(true);
-
-  const activeFilterCount = useMemo(
-    () => [filters.activePeriod, filters.startDate, filters.endDate, filters.productName, filters.paymentMethod].filter(Boolean).length,
-    [filters],
-  );
-
-  const handlePeriodChange = (period) => {
-    onFiltersChange({ activePeriod: period, startDate: "", endDate: "" });
-  };
-
-  const handleStartDateChange = (e) => {
-    onFiltersChange({ startDate: e.target.value, activePeriod: null });
-  };
-
-  const handleEndDateChange = (e) => {
-    onFiltersChange({ endDate: e.target.value, activePeriod: null });
-  };
-
-  const handlePaymentMethod = (keys) => {
-    const selectedKey = Array.from(keys)[0] ?? "all";
-    onFiltersChange({ paymentMethod: selectedKey === "all" ? "" : selectedKey });
-  };
+  const { activeFilterCount, dateRangeValue, handlePeriodChange, handleDateRangeChange, handlePaymentMethod } =
+    useDateRangeFilters(filters, onFiltersChange);
 
   return (
     <div className="space-y-4">
@@ -57,8 +39,10 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
         <Button
           variant="flat"
           className="lg:w-48 lg:flex-none h-14 justify-between px-3 text-foreground"
+          aria-expanded={isOpen}
           endContent={(
             <ChevronDown
+              aria-hidden="true"
               className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
               strokeWidth={1.5}
             />
@@ -89,29 +73,23 @@ export function DateRangeCard({ filters, onFiltersChange, disabled }) {
                   className={filters.activePeriod === period ? "bg-green-800 text-white" : "text-foreground"}
                 >
                   <div className="flex flex-col items-center">
-                    <Calendar className="w-4 h-4 mb-1" />
+                    <Calendar aria-hidden="true" className="w-4 h-4 mb-1" />
                     <span>{t(`dates.period.${period}`)}</span>
                   </div>
                 </Button>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Input
-                type="date"
-                label={t("dates.startLabel")}
-                value={filters.startDate}
-                onChange={handleStartDateChange}
-                isDisabled={disabled}
-              />
-              <Input
-                type="date"
-                label={t("dates.endLabel")}
-                value={filters.endDate}
-                onChange={handleEndDateChange}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <DateRangePicker
+                aria-label={t("dates.title")}
+                label={t("dates.title")}
+                value={dateRangeValue}
+                onChange={handleDateRangeChange}
                 isDisabled={disabled}
               />
               <Select
+                aria-label={t("filters.paymentMethod")}
                 label={t("filters.paymentMethod")}
                 selectedKeys={new Set([filters.paymentMethod || "all"])}
                 onSelectionChange={handlePaymentMethod}
