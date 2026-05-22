@@ -18,8 +18,8 @@ Direct vendor download URLs tend to move. The assembler therefore supports:
 ## Host prerequisites
 
 - root privileges
-- `7z`, `losetup`, `mount`, `umount`, `partx`, `lsblk`
-- `rsync`, `tar`, `gzip`, `sha256sum`, `curl`, `unzip`
+- `git`, `npm`, `node` (for building artifacts)
+- `7z`, `blkid`, `curl`, `e2fsck`, `gzip`, `losetup`, `lsblk`, `mount`, `openssl`, `partx`, `parted`, `resize2fs`, `rsync`, `sha256sum`, `tar`, `truncate`, `umount`, `unzip`, `xz`
 - `systemctl`
 - `qemu-aarch64-static` if the build host is not `aarch64`
 
