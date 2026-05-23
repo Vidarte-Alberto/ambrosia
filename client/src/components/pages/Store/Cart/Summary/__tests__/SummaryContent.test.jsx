@@ -2,6 +2,19 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { SummaryContent } from "../SummaryContent";
 
+jest.mock("@heroui/react", () => {
+  const actual = jest.requireActual("@heroui/react");
+  return { ...actual, addToast: jest.fn() };
+});
+
+jest.mock("../hooks/usePendingRemoval", () => ({
+  usePendingRemoval: () => ({
+    pendingRemovals: new Set(),
+    startRemoval: jest.fn((itemId, onConfirm) => onConfirm()),
+    cancelRemoval: jest.fn(),
+  }),
+}));
+
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({ formatAmount: (value) => `fmt-${value}` }),
 }));

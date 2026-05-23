@@ -1,9 +1,10 @@
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const DELETE_THRESHOLD = 100;
 
 export function SwipeableCartItem({ onRemove, isTouchDevice, children }) {
+  const t = useTranslations("cart");
   const dragX = useMotionValue(0);
   const deleteBackgroundOpacity = useTransform(dragX, [-DELETE_THRESHOLD, 0], [1, 0]);
 
@@ -17,7 +18,7 @@ export function SwipeableCartItem({ onRemove, isTouchDevice, children }) {
         className="absolute inset-0 bg-red-500 flex items-center justify-end px-5 rounded-lg"
         style={{ opacity: deleteBackgroundOpacity }}
       >
-        <Trash2 className="text-white w-6 h-6" />
+        <span className="text-white font-semibold text-sm">{t("summary.swipeDelete")}</span>
       </motion.div>
       <motion.div
         style={{ x: dragX }}

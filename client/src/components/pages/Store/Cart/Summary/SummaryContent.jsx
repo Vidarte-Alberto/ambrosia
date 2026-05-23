@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 
-import { Button, Card, CardBody, CardHeader, Divider, Image, NumberInput, Select, SelectItem } from "@heroui/react";
+import { addToast, Button, Card, CardBody, CardHeader, Divider, Image, NumberInput, Select, SelectItem } from "@heroui/react";
 import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -13,6 +13,7 @@ import { CardPaymentModal } from "../CardPaymentModal";
 import { CashPaymentModal } from "../CashPaymentModal";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 
+import { usePendingRemoval } from "./hooks/usePendingRemoval";
 import { SwipeableCartItem } from "./SwipeableCartItem";
 
 export function SummaryContent({
@@ -31,11 +32,31 @@ export function SummaryContent({
   const t = useTranslations("cart");
   const { formatAmount } = useCurrency();
   const { paymentMethods } = usePaymentMethods();
+  const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [isTouchDevice] = useState(
     () => typeof window !== "undefined" && navigator.maxTouchPoints > 0,
   );
   const items = cartItems || [];
+  const visibleItems = items.filter((item) => !pendingRemovals.has(item.id));
+
+  const handleStartRemoval = (item) => {
+    startRemoval(item.id, () => onRemoveProduct(item.id));
+    addToast({
+      description: item.name,
+      timeout: 5000,
+      endContent: (
+        <Button
+          size="sm"
+          color="primary"
+          className="bg-green-800"
+          onPress={() => cancelRemoval(item.id)}
+        >
+          {t("summary.undoToast.undo")}
+        </Button>
+      ),
+    });
+  };
 
   const effectivePaymentMethod = useMemo(() => {
     if (selectedPaymentMethod) return selectedPaymentMethod;
@@ -72,12 +93,12 @@ export function SummaryContent({
   return (
     <>
       <div className="space-y-4">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const imageUrl = storedAssetUrl(item.imageUrl);
           return (
             <SwipeableCartItem
               key={item.id}
-              onRemove={() => onRemoveProduct(item.id)}
+              onRemove={() => handleStartRemoval(item)}
               isTouchDevice={isTouchDevice}
             >
               <Card className="shadow-none border-1 border-green-600">
@@ -107,7 +128,7 @@ export function SummaryContent({
                         </div>
                       </div>
                     </div>
-                    {!isTouchDevice && <DeleteButton onPress={() => onRemoveProduct(item.id)} />}
+                    <DeleteButton onPress={() => handleStartRemoval(item)} />
                   </div>
                 </CardHeader>
                 <CardBody>
@@ -178,7 +199,7 @@ export function SummaryContent({
             className="w-full"
             size="lg"
             isLoading={isPaying}
-            isDisabled={!items.length}
+            isDisabled={!visibleItems.length}
             onPress={handlePay}
           >
             {t("summary.pay")}
@@ -214,6 +235,7 @@ export function SummaryContent({
         onClose={cardPayment?.onClose}
         onComplete={cardPayment?.onComplete}
       />
+
     </>
   );
 }

@@ -16,10 +16,6 @@ jest.mock("framer-motion", () => {
   };
 });
 
-jest.mock("lucide-react", () => ({
-  Trash2: () => <span data-testid="trash-icon" />,
-}));
-
 afterEach(() => {
   global.__swipeableOnDragEnd = null;
   jest.clearAllMocks();
@@ -50,14 +46,14 @@ describe("SwipeableCartItem", () => {
       expect(screen.getByTestId("child-content")).toBeInTheDocument();
     });
 
-    it("renders the delete background with trash icon", () => {
+    it("renders the delete label in the swipe background", () => {
       render(
         <SwipeableCartItem onRemove={jest.fn()} isTouchDevice>
           <div />
         </SwipeableCartItem>,
       );
 
-      expect(screen.getByTestId("trash-icon")).toBeInTheDocument();
+      expect(screen.getByText("summary.swipeDelete")).toBeInTheDocument();
     });
 
     it("calls onRemove when drag exceeds the delete threshold", async () => {
