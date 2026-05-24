@@ -10,6 +10,7 @@ const cartEn = {
     card: {
       add: "Add",
       stock: "in stock",
+      showProductDetails: "Show Details",
       errors: {
         unknownCategory: "Unknown category",
       },
@@ -58,6 +59,10 @@ const cartEn = {
     },
     errors: {
       outOfStock: "Not enough stock available for this product.",
+    },
+    productDetails: {
+      sku: "SKU",
+      close: "Close",
     },
     paymentModal: {
       bitcoin: {

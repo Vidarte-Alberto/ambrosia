@@ -10,6 +10,7 @@ const cartEs = {
     card: {
       add: "Agregar",
       stock: "en almacén",
+      showProductDetails: "Ver detalles",
       errors: {
         unknownCategory: "Categoría desconocida",
       },
@@ -58,6 +59,10 @@ const cartEs = {
     },
     errors: {
       outOfStock: "No hay stock suficiente para este producto.",
+    },
+    productDetails: {
+      sku: "SKU",
+      close: "Cerrar",
     },
     paymentModal: {
       bitcoin: {
