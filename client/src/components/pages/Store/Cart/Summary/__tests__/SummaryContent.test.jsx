@@ -7,6 +7,16 @@ jest.mock("@heroui/react", () => {
   return { ...actual, addToast: jest.fn() };
 });
 
+jest.mock("../CartItemCard", () => ({
+  CartItemCard: ({ item, onRemove }) => (
+    <div data-testid={`cart-item-${item.id}`}>
+      <span>{item.name}</span>
+      <button aria-label="Remove Product" onClick={onRemove} />
+      <span data-testid={`summary-image-placeholder-${item.id}`} />
+    </div>
+  ),
+}));
+
 jest.mock("../hooks/usePendingRemoval", () => ({
   usePendingRemoval: () => ({
     pendingRemovals: new Set(),
@@ -86,24 +96,11 @@ beforeEach(() => {
 });
 
 describe("SummaryContent", () => {
-  it("renders item name, price and subtotal", () => {
+  it("renders a CartItemCard for each cart item", () => {
     render(<SummaryContent {...defaultProps} />);
 
+    expect(screen.getByTestId("cart-item-1")).toBeInTheDocument();
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Jade Wallet" })).toHaveAttribute("src", "/uploads/jade-wallet.png");
-    expect(screen.getByText(/fmt-1000/)).toBeInTheDocument();
-    expect(screen.getAllByText("fmt-2000")).toHaveLength(2);
-  });
-
-  it("renders a placeholder when an item image is missing", () => {
-    render(
-      <SummaryContent
-        {...defaultProps}
-        cartItems={[{ id: 2, name: "M5 Stick", price: 500, quantity: 1, subtotal: 500 }]}
-      />,
-    );
-
-    expect(screen.getByTestId("summary-image-placeholder-2")).toBeInTheDocument();
   });
 
   it("renders computed totals with discount", () => {
@@ -119,14 +116,6 @@ describe("SummaryContent", () => {
 
     fireEvent.click(screen.getByLabelText("Remove Product"));
     expect(onRemoveProduct).toHaveBeenCalledWith(1);
-  });
-
-  it("calls onUpdateQuantity when quantity changes", () => {
-    const onUpdateQuantity = jest.fn();
-    render(<SummaryContent {...defaultProps} onUpdateQuantity={onUpdateQuantity} />);
-
-    fireEvent.change(screen.getByLabelText("summary.quantity"), { target: { value: "3" } });
-    expect(onUpdateQuantity).toHaveBeenCalledWith(1, 3);
   });
 
   it("selects BTC as default payment method", () => {
