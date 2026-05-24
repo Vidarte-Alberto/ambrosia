@@ -1,16 +1,15 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { addToast, Button, Divider, Select, SelectItem } from "@heroui/react";
+import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
-
-import { useCurrency } from "@/components/hooks/useCurrency";
 
 import { BitcoinPaymentModal } from "../BitcoinPaymentModal";
 import { CardPaymentModal } from "../CardPaymentModal";
 import { CashPaymentModal } from "../CashPaymentModal";
-import { usePaymentMethods } from "../hooks/usePaymentMethod";
 
 import { CartItemCard } from "./CartItemCard";
+import { CartPaymentSection } from "./CartPaymentSection";
+import { CartTotals } from "./CartTotals";
 import { usePendingRemoval } from "./hooks/usePendingRemoval";
 import { SwipeableCartItem } from "./SwipeableCartItem";
 
@@ -28,15 +27,16 @@ export function SummaryContent({
   cardPayment,
 }) {
   const t = useTranslations("cart");
-  const { formatAmount } = useCurrency();
-  const { paymentMethods } = usePaymentMethods();
   const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
   const [isTouchDevice] = useState(
     () => typeof window !== "undefined" && navigator.maxTouchPoints > 0,
   );
   const items = cartItems || [];
   const visibleItems = items.filter((item) => !pendingRemovals.has(item.id));
+
+  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const discountAmount = (subtotal * (Number(discount) || 0)) / 100;
+  const total = subtotal - discountAmount;
 
   const handleStartRemoval = (item) => {
     startRemoval(item.id, () => onRemoveProduct(item.id));
@@ -53,38 +53,6 @@ export function SummaryContent({
           {t("summary.undoToast.undo")}
         </Button>
       ),
-    });
-  };
-
-  const effectivePaymentMethod = useMemo(() => {
-    if (selectedPaymentMethod) return selectedPaymentMethod;
-    const bitcoinLightningMethod = paymentMethods.find((method) => method.name === "BTC");
-    return bitcoinLightningMethod ? String(bitcoinLightningMethod.id) : "";
-  }, [selectedPaymentMethod, paymentMethods]);
-
-  const { subtotal, discountAmount, total } = useMemo(() => {
-    const itemsToProcess = cartItems || [];
-    const subtotalValue = itemsToProcess.reduce((sum, item) => sum + item.subtotal, 0);
-    const discountValue = Number(discount) || 0;
-    const discountTotal = (subtotalValue * discountValue) / 100;
-    const totalValue = subtotalValue - discountTotal;
-
-    return {
-      subtotal: subtotalValue,
-      discountAmount: discountTotal,
-      total: totalValue,
-    };
-  }, [cartItems, discount]);
-
-  const handlePay = () => {
-    onClearPaymentError?.();
-    onPay?.({
-      items,
-      subtotal,
-      discount,
-      discountAmount,
-      total,
-      selectedPaymentMethod: effectivePaymentMethod,
     });
   };
 
@@ -105,59 +73,18 @@ export function SummaryContent({
           </SwipeableCartItem>
         ))}
 
-        <div className="space-y-2 text-sm text-gray-800">
-          <div className="flex justify-between">
-            <span>{t("summary.subtotal")}</span>
-            <span>{formatAmount(subtotal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>{t("summary.discount")}</span>
-            <span>{formatAmount(discountAmount)}</span>
-          </div>
-          <Divider className="bg-green-600" />
-          <div className="flex justify-between items-center font-semibold text-green-900">
-            <span>{t("summary.total")}:</span>
-            <span className="text-lg">{formatAmount(total)}</span>
-          </div>
-        </div>
+        <CartTotals subtotal={subtotal} discountAmount={discountAmount} total={total} />
 
-        {paymentError && (
-          <p className="text-sm text-red-600">{paymentError}</p>
-        )}
-
-        <div className="space-y-2">
-          <Select
-            label={t("summary.paymentMethodLabel")}
-            placeholder={t("summary.paymentMethodSelectPlaceholder")}
-            isRequired
-            errorMessage={t("summary.errorMsgSelectEmpty")}
-            selectedKeys={effectivePaymentMethod ? [effectivePaymentMethod] : []}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0];
-              if (!value) return;
-              setSelectedPaymentMethod(value);
-              onClearPaymentError?.();
-            }}
-            isDisabled={isPaying}
-          >
-            {paymentMethods.map((method) => (
-              <SelectItem key={method.id} value={method.id}>
-                {method.name === "BTC" ? `${method.name} (Lightning)` : method.name}
-              </SelectItem>
-            ))}
-          </Select>
-
-          <Button
-            color="primary"
-            className="w-full"
-            size="lg"
-            isLoading={isPaying}
-            isDisabled={!visibleItems.length}
-            onPress={handlePay}
-          >
-            {t("summary.pay")}
-          </Button>
-        </div>
+        <CartPaymentSection
+          isPaying={isPaying}
+          isDisabled={!visibleItems.length}
+          paymentError={paymentError}
+          onClearPaymentError={onClearPaymentError}
+          onPay={(selectedPaymentMethod) => {
+            onClearPaymentError?.();
+            onPay?.({ items, subtotal, discount, discountAmount, total, selectedPaymentMethod });
+          }}
+        />
       </div>
 
       <BitcoinPaymentModal
