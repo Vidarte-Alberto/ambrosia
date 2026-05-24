@@ -1,6 +1,6 @@
 "use client";
 import { Button, Chip, Image, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -23,10 +23,10 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
   const isOutOfStock = quantity <= 0;
 
   const stockChipClassName = isOutOfStock
-    ? "bg-rose-100 text-rose-800 border border-rose-200"
+    ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
     : quantity < 11
-      ? "bg-amber-100 text-amber-800 border border-amber-200"
-      : "bg-green-200 text-green-800 border border-green-300";
+      ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
+      : "bg-green-200 text-xs text-green-800 border border-green-300";
 
   const handleAddToCart = () => {
     onAddProduct?.(product);
@@ -47,43 +47,46 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
       }}
     >
       <ModalContent>
+        {imageUrl ? (
+          <div className="h-56 bg-gray-100 overflow-hidden flex items-center justify-center">
+            <Image
+              removeWrapper
+              alt={product.name}
+              src={imageUrl}
+              className="w-full h-full object-cover rounded-none"
+            />
+          </div>
+        ) : (
+          <div className="h-56 bg-gray-100 flex items-center justify-center">
+            <ImageIcon className="h-16 w-16 text-gray-300" aria-hidden="true" />
+          </div>
+        )}
+
         <ModalHeader className="flex flex-col pb-2">
           {product.name}
           <span className="text-sm font-normal text-gray-500">{categoryNames}</span>
         </ModalHeader>
 
-        <ModalBody className="space-y-4">
-          {imageUrl ? (
-            <div className="h-48 bg-gray-100 overflow-hidden rounded-lg flex items-center justify-center">
-              <Image
-                removeWrapper
-                alt={product.name}
-                src={imageUrl}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          ) : (
-            <div className="h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-              <ImageIcon className="h-12 w-12 text-gray-400" aria-hidden="true" />
-            </div>
-          )}
-
+        <ModalBody className="space-y-3 pt-0">
           <div className="flex items-center justify-between">
-            <p className="text-2xl font-bold text-green-800">{formatAmount(product.priceCents)}</p>
+            <div>
+              <h2 className="text-2xl font-bold text-green-800">{formatAmount(product.priceCents)}</h2>
+              <p className="text-xs">
+                SKU: <span className="text-gray-800">{product.SKU ?? "—"}</span>
+              </p>
+            </div>
             <Chip size="sm" className={stockChipClassName}>
               {quantity} {t("card.stock")}
             </Chip>
           </div>
 
-          <div className="border-t pt-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">{t("productDetails.sku")}</span>
-              <span className="font-medium text-gray-800">{product.SKU ?? "—"}</span>
-            </div>
-          </div>
-
           {product.description && (
-            <p className="text-sm text-gray-600">{product.description}</p>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                {t("productDetails.description")}
+              </p>
+              <p className="text-sm text-gray-600">{product.description}</p>
+            </div>
           )}
         </ModalBody>
 
@@ -95,6 +98,7 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
             color="primary"
             className="bg-green-800"
             isDisabled={isOutOfStock}
+            startContent={<ShoppingCart size={16} />}
             onPress={handleAddToCart}
           >
             {t("card.add")}

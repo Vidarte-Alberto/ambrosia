@@ -61,7 +61,7 @@ const cartEs = {
       outOfStock: "No hay stock suficiente para este producto.",
     },
     productDetails: {
-      sku: "SKU",
+      description: "Descripción",
       close: "Cerrar",
     },
     paymentModal: {
