@@ -28,6 +28,10 @@ const cartEn = {
       pay: "Pay",
       each: "each",
       viewCart: "Checkout",
+      swipeDelete: "Remove",
+      undoToast: {
+        undo: "Undo",
+      },
     },
     payment: {
       errors: {

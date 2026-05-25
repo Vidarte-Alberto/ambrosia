@@ -28,6 +28,10 @@ const cartEs = {
       pay: "Pagar",
       each: "c/u",
       viewCart: "Cobrar",
+      swipeDelete: "Remover",
+      undoToast: {
+        undo: "Deshacer",
+      },
     },
     payment: {
       errors: {
