@@ -60,11 +60,11 @@ describe("PeriodFilter", () => {
 
   it("active period button uses primary color and full radius", () => {
     render(<PeriodFilter filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
-    const monthBtn = screen.getAllByText("dates.period.month").find(
-      (el) => el.closest("button")?.getAttribute("data-color") === "primary"
-        && el.closest("button")?.getAttribute("data-radius") === "full",
+    const activePeriodButton = screen.getAllByText("dates.period.month").find(
+      (element) => element.closest("button")?.getAttribute("data-color") === "primary"
+        && element.closest("button")?.getAttribute("data-radius") === "full",
     );
-    expect(monthBtn).toBeTruthy();
+    expect(activePeriodButton).toBeTruthy();
   });
 
   it("disables buttons when disabled prop is true", () => {
