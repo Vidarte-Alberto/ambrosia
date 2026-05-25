@@ -12,7 +12,7 @@ export function CartPaymentSection({
   onClearPaymentError,
   onPay,
 }) {
-  const t = useTranslations("cart");
+  const translateCart = useTranslations("cart");
   const { paymentMethods } = usePaymentMethods();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
 
@@ -28,10 +28,10 @@ export function CartPaymentSection({
         <p className="text-sm text-red-600">{paymentError}</p>
       )}
       <Select
-        label={t("summary.paymentMethodLabel")}
-        placeholder={t("summary.paymentMethodSelectPlaceholder")}
+        label={translateCart("summary.paymentMethodLabel")}
+        placeholder={translateCart("summary.paymentMethodSelectPlaceholder")}
         isRequired
-        errorMessage={t("summary.errorMsgSelectEmpty")}
+        errorMessage={translateCart("summary.errorMsgSelectEmpty")}
         selectedKeys={effectivePaymentMethod ? [effectivePaymentMethod] : []}
         onSelectionChange={(keys) => {
           const value = Array.from(keys)[0];
@@ -55,7 +55,7 @@ export function CartPaymentSection({
         isDisabled={isDisabled}
         onPress={() => onPay(effectivePaymentMethod)}
       >
-        {t("summary.pay")}
+        {translateCart("summary.pay")}
       </Button>
     </div>
   );

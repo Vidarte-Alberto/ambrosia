@@ -7,7 +7,7 @@ import { DeleteButton } from "@/components/shared/DeleteButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
-  const t = useTranslations("cart");
+  const translateCart = useTranslations("cart");
   const { formatAmount } = useCurrency();
   const imageUrl = storedAssetUrl(item.imageUrl);
 
@@ -33,7 +33,7 @@ export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
             <div className="flex min-w-0 flex-col">
               <h3 className="text-sm font-medium text-green-900">{item.name}</h3>
               <div className="text-xs text-gray-700">
-                {formatAmount(item.price)} {t("summary.each")}
+                {formatAmount(item.price)} {translateCart("summary.each")}
               </div>
             </div>
           </div>
@@ -44,7 +44,7 @@ export function CartItemCard({ item, onRemove, onUpdateQuantity }) {
         <div className="flex items-center justify-between">
           <NumberInput
             className="w-1/2"
-            label={t("summary.quantity")}
+            label={translateCart("summary.quantity")}
             minValue={1}
             size="sm"
             placeholder="Enter the amount"

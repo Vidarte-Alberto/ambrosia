@@ -26,7 +26,7 @@ export function SummaryContent({
   cashPayment,
   cardPayment,
 }) {
-  const t = useTranslations("cart");
+  const translateCart = useTranslations("cart");
   const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();
   const [isTouchDevice] = useState(
     () => typeof window !== "undefined" && navigator.maxTouchPoints > 0,
@@ -50,7 +50,7 @@ export function SummaryContent({
           className="bg-green-800"
           onPress={() => cancelRemoval(item.id)}
         >
-          {t("summary.undoToast.undo")}
+          {translateCart("summary.undoToast.undo")}
         </Button>
       ),
     });
