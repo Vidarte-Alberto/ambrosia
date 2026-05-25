@@ -1,17 +1,17 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
-import { Button, Card, CardBody, CardHeader, Divider, Image, NumberInput, Select, SelectItem } from "@heroui/react";
-import { ImageIcon } from "lucide-react";
+import { addToast, Button } from "@heroui/react";
 import { useTranslations } from "next-intl";
-
-import { useCurrency } from "@/components/hooks/useCurrency";
-import { DeleteButton } from "@/components/shared/DeleteButton";
-import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 import { BitcoinPaymentModal } from "../BitcoinPaymentModal";
 import { CardPaymentModal } from "../CardPaymentModal";
 import { CashPaymentModal } from "../CashPaymentModal";
-import { usePaymentMethods } from "../hooks/usePaymentMethod";
+
+import { CartItemCard } from "./CartItemCard";
+import { CartPaymentSection } from "./CartPaymentSection";
+import { CartTotals } from "./CartTotals";
+import { usePendingRemoval } from "./hooks/usePendingRemoval";
+import { SwipeableCartItem } from "./SwipeableCartItem";
 
 export function SummaryContent({
   cartItems,
@@ -26,153 +26,65 @@ export function SummaryContent({
   cashPayment,
   cardPayment,
 }) {
-  const t = useTranslations("cart");
-  const { formatAmount } = useCurrency();
-  const { paymentMethods } = usePaymentMethods();
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("");
+  const translateCart = useTranslations("cart");
+  const { pendingRemovals, startRemoval, cancelRemoval } = usePendingRemoval();
+  const [isTouchDevice] = useState(
+    () => typeof window !== "undefined" && navigator.maxTouchPoints > 0,
+  );
   const items = cartItems || [];
+  const visibleItems = items.filter((item) => !pendingRemovals.has(item.id));
 
-  const effectivePaymentMethod = useMemo(() => {
-    if (selectedPaymentMethod) return selectedPaymentMethod;
-    const bitcoinLightningMethod = paymentMethods.find((method) => method.name === "BTC");
-    return bitcoinLightningMethod ? String(bitcoinLightningMethod.id) : "";
-  }, [selectedPaymentMethod, paymentMethods]);
+  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
+  const discountAmount = (subtotal * (Number(discount) || 0)) / 100;
+  const total = subtotal - discountAmount;
 
-  const { subtotal, discountAmount, total } = useMemo(() => {
-    const itemsToProcess = cartItems || [];
-    const subtotalValue = itemsToProcess.reduce((sum, item) => sum + item.subtotal, 0);
-    const discountValue = Number(discount) || 0;
-    const discountTotal = (subtotalValue * discountValue) / 100;
-    const totalValue = subtotalValue - discountTotal;
-
-    return {
-      subtotal: subtotalValue,
-      discountAmount: discountTotal,
-      total: totalValue,
-    };
-  }, [cartItems, discount]);
-
-  const handlePay = () => {
-    onClearPaymentError?.();
-    onPay?.({
-      items,
-      subtotal,
-      discount,
-      discountAmount,
-      total,
-      selectedPaymentMethod: effectivePaymentMethod,
+  const handleStartRemoval = (item) => {
+    startRemoval(item.id, () => onRemoveProduct(item.id));
+    addToast({
+      description: item.name,
+      timeout: 5000,
+      endContent: (
+        <Button
+          size="sm"
+          color="primary"
+          className="bg-green-800"
+          onPress={() => cancelRemoval(item.id)}
+        >
+          {translateCart("summary.undoToast.undo")}
+        </Button>
+      ),
     });
   };
 
   return (
     <>
       <div className="space-y-4">
-        {items.map((item) => {
-          const imageUrl = storedAssetUrl(item.imageUrl);
-          return (
-            <Card key={item.id} className="shadow-none border-1 border-green-600">
-              <CardHeader>
-                <div className="flex w-full items-start justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
-                      {imageUrl ? (
-                        <Image
-                          removeWrapper
-                          alt={item.name}
-                          src={imageUrl}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div data-testid={`summary-image-placeholder-${item.id}`}>
-                          <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex min-w-0 flex-col">
-                      <h3 className="text-sm font-medium text-green-900">
-                        {item.name}
-                      </h3>
-                      <div className="text-xs text-gray-700">
-                        {formatAmount(item.price)} {t("summary.each")}
-                      </div>
-                    </div>
-                  </div>
-                  <DeleteButton onPress={() => onRemoveProduct(item.id)} />
-                </div>
-              </CardHeader>
-              <CardBody>
-                <div className="flex items-center justify-between">
-                  <NumberInput
-                    className="w-1/2"
-                    label={t("summary.quantity")}
-                    minValue={1}
-                    size="sm"
-                    placeholder="Enter the amount"
-                    value={item.quantity}
-                    onChange={(value) => onUpdateQuantity(item.id, Number(value))}
-                  />
-                  <div className="text-sm font-semibold text-green-900">
-                    {formatAmount(item.subtotal)}
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          );
-        })}
-
-        <div className="space-y-2 text-sm text-gray-800">
-          <div className="flex justify-between">
-            <span>{t("summary.subtotal")}</span>
-            <span>{formatAmount(subtotal)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>{t("summary.discount")}</span>
-            <span>{formatAmount(discountAmount)}</span>
-          </div>
-          <Divider className="bg-green-600" />
-          <div className="flex justify-between items-center font-semibold text-green-900">
-            <span>{t("summary.total")}:</span>
-            <span className="text-lg">{formatAmount(total)}</span>
-          </div>
-        </div>
-
-        {paymentError && (
-          <p className="text-sm text-red-600">{paymentError}</p>
-        )}
-
-        <div className="space-y-2">
-          <Select
-            label={t("summary.paymentMethodLabel")}
-            placeholder={t("summary.paymentMethodSelectPlaceholder")}
-            isRequired
-            errorMessage={t("summary.errorMsgSelectEmpty")}
-            selectedKeys={effectivePaymentMethod ? [effectivePaymentMethod] : []}
-            onSelectionChange={(keys) => {
-              const value = Array.from(keys)[0];
-              if (!value) return;
-              setSelectedPaymentMethod(value);
-              onClearPaymentError?.();
-            }}
-            isDisabled={isPaying}
+        {visibleItems.map((item) => (
+          <SwipeableCartItem
+            key={item.id}
+            onRemove={() => handleStartRemoval(item)}
+            isTouchDevice={isTouchDevice}
           >
-            {paymentMethods.map((method) => (
-              <SelectItem key={method.id} value={method.id}>
-                {method.name === "BTC" ? `${method.name} (Lightning)` : method.name}
-              </SelectItem>
-            ))}
-          </Select>
+            <CartItemCard
+              item={item}
+              onRemove={() => handleStartRemoval(item)}
+              onUpdateQuantity={onUpdateQuantity}
+            />
+          </SwipeableCartItem>
+        ))}
 
-          <Button
-            color="primary"
-            className="w-full"
-            size="lg"
-            isLoading={isPaying}
-            isDisabled={!items.length}
-            onPress={handlePay}
-          >
-            {t("summary.pay")}
-          </Button>
-        </div>
+        <CartTotals subtotal={subtotal} discountAmount={discountAmount} total={total} />
+
+        <CartPaymentSection
+          isPaying={isPaying}
+          isDisabled={!visibleItems.length}
+          paymentError={paymentError}
+          onClearPaymentError={onClearPaymentError}
+          onPay={(selectedPaymentMethod) => {
+            onClearPaymentError?.();
+            onPay?.({ items, subtotal, discount, discountAmount, total, selectedPaymentMethod });
+          }}
+        />
       </div>
 
       <BitcoinPaymentModal
@@ -203,6 +115,7 @@ export function SummaryContent({
         onClose={cardPayment?.onClose}
         onComplete={cardPayment?.onComplete}
       />
+
     </>
   );
 }
