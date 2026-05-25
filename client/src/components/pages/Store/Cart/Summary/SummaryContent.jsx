@@ -16,6 +16,7 @@ import { usePaymentMethods } from "../hooks/usePaymentMethod";
 export function SummaryContent({
   cartItems,
   discount,
+  hydrated,
   onRemoveProduct,
   onUpdateQuantity,
   onPay,
@@ -167,7 +168,7 @@ export function SummaryContent({
             className="w-full"
             size="lg"
             isLoading={isPaying}
-            isDisabled={!items.length}
+            isDisabled={!hydrated || !items.length}
             onPress={handlePay}
           >
             {t("summary.pay")}

@@ -22,10 +22,30 @@ export function Cart() {
     cart,
     setCart,
     discount,
+    hydrated,
     resetCartState,
   } = usePersistentCart();
   const { products, refetch: refetchProducts } = useProducts();
   const { categories } = useCategories();
+
+  useEffect(() => {
+    if (!hydrated || products.length === 0) return;
+    setCart((currentCart) => {
+      let changed = false;
+      const reconciled = currentCart.reduce((acc, item) => {
+        const product = products.find((p) => p.id === item.id);
+        if (!product) { changed = true; return acc; }
+        if (product.priceCents !== item.price) {
+          changed = true;
+          acc.push({ ...item, price: product.priceCents, subtotal: item.quantity * product.priceCents });
+        } else {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+      return changed ? reconciled : currentCart;
+    });
+  }, [products, hydrated, setCart]);
 
   const {
     handlePay,
@@ -196,6 +216,7 @@ export function Cart() {
           <Summary
             cartItems={cart}
             discount={discount}
+            hydrated={hydrated}
             onRemoveProduct={removeProduct}
             onClearCart={clearCart}
             onUpdateQuantity={updateQuantity}
@@ -221,6 +242,7 @@ export function Cart() {
         onClose={() => setShowMobileSummary(false)}
         cartItems={cart}
         discount={discount}
+        hydrated={hydrated}
         onRemoveProduct={removeProduct}
         onClearCart={clearCart}
         onUpdateQuantity={updateQuantity}
