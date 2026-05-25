@@ -46,14 +46,13 @@ class DishService(
         Dish(
             id = resultSet.getString("id"),
             name = resultSet.getString("name"),
-            price = resultSet.getDouble("price"), // CORREGIDO: era getFloat
-            category_id = resultSet.getString("category_id"),
+            price = resultSet.getDouble("price"),
+            categoryId = resultSet.getString("category_id"),
         )
 
     suspend fun addDish(dish: Dish): String? {
-        // Verificar que la categoría existe
-        if (!categoryExists(dish.category_id)) {
-            logger.error("Category does not exist: ${dish.category_id}")
+        if (!categoryExists(dish.categoryId)) {
+            logger.error("Category does not exist: ${dish.categoryId}")
             return null
         }
 
@@ -76,8 +75,8 @@ class DishService(
 
         statement.setString(1, generatedId)
         statement.setString(2, dish.name)
-        statement.setDouble(3, dish.price) // CORREGIDO: era setFloat
-        statement.setString(4, dish.category_id)
+        statement.setDouble(3, dish.price)
+        statement.setString(4, dish.categoryId)
 
         val rowsAffected = statement.executeUpdate()
 
@@ -131,13 +130,11 @@ class DishService(
             return false
         }
 
-        // Verificar que la categoría existe
-        if (!categoryExists(dish.category_id)) {
-            logger.error("Category does not exist: ${dish.category_id}")
+        if (!categoryExists(dish.categoryId)) {
+            logger.error("Category does not exist: ${dish.categoryId}")
             return false
         }
 
-        // Validar datos
         if (dish.name.isBlank()) {
             logger.error("Dish name cannot be blank")
             return false
@@ -150,8 +147,8 @@ class DishService(
 
         val statement = connection.prepareStatement(UPDATE_DISH)
         statement.setString(1, dish.name)
-        statement.setDouble(2, dish.price) // CORREGIDO: era setFloat
-        statement.setString(3, dish.category_id)
+        statement.setDouble(2, dish.price)
+        statement.setString(3, dish.categoryId)
         statement.setString(4, dish.id)
 
         val rowsUpdated = statement.executeUpdate()
@@ -164,7 +161,6 @@ class DishService(
     }
 
     suspend fun deleteDish(id: String): Boolean {
-        // Verificar que el plato no esté siendo usado en órdenes
         if (dishInUse(id)) {
             logger.error("Cannot delete dish $id: it's being used in orders")
             return false

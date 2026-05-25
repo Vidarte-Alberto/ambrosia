@@ -30,37 +30,37 @@ class OrderDishServiceTest {
             val orderDish1 =
                 OrderDish(
                     id = "od1",
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             val orderDish2 =
                 OrderDish(
                     id = "od2",
-                    order_id = "order123",
-                    dish_id = "dish2",
-                    price_at_order = 100.00,
+                    orderId = "order123",
+                    dishId = "dish2",
+                    priceAtOrder = 100.00,
                     notes = "No onion",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true).thenReturn(true).thenReturn(false) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(orderDish1.id).thenReturn(orderDish2.id) // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn(orderDish1.order_id).thenReturn(orderDish2.order_id) // Arrange
-            whenever(mockResultSet.getString("dish_id")).thenReturn(orderDish1.dish_id).thenReturn(orderDish2.dish_id) // Arrange
-            whenever(mockResultSet.getDouble("price_at_order")).thenReturn(orderDish1.price_at_order).thenReturn(orderDish2.price_at_order)
+            whenever(mockResultSet.getString("order_id")).thenReturn(orderDish1.orderId).thenReturn(orderDish2.orderId) // Arrange
+            whenever(mockResultSet.getString("dish_id")).thenReturn(orderDish1.dishId).thenReturn(orderDish2.dishId) // Arrange
+            whenever(mockResultSet.getDouble("price_at_order")).thenReturn(orderDish1.priceAtOrder).thenReturn(orderDish2.priceAtOrder)
             whenever(mockResultSet.getString("notes")).thenReturn(orderDish1.notes).thenReturn(orderDish2.notes) // Arrange
             whenever(mockResultSet.getString("status")).thenReturn(orderDish1.status).thenReturn(orderDish2.status) // Arrange
-            whenever(mockResultSet.getBoolean("should_prepare")).thenReturn(orderDish1.should_prepare).thenReturn(orderDish2.should_prepare)
+            whenever(mockResultSet.getBoolean("should_prepare")).thenReturn(orderDish1.shouldPrepare).thenReturn(orderDish2.shouldPrepare)
             val service = OrderDishService(mockConnection) // Arrange
             val result = service.getOrderDishesByOrderId("order123") // Act
             assertEquals(2, result.size) // Assert
-            assertEquals("dish1", result[0].dish_id) // Assert
+            assertEquals("dish1", result[0].dishId) // Assert
         }
     }
 
@@ -80,15 +80,15 @@ class OrderDishServiceTest {
     fun `getOrderDishById returns dish when found`() {
         runBlocking {
             val expectedOrderDish =
-                OrderDish(order_id = "od1", dish_id = "dish1", price_at_order = 50.00, status = "PENDING", should_prepare = true) // Arrange
+                OrderDish(orderId = "od1", dishId = "dish1", priceAtOrder = 50.00, status = "PENDING", shouldPrepare = true) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn(expectedOrderDish.order_id) // Arrange
-            whenever(mockResultSet.getString("dish_id")).thenReturn(expectedOrderDish.dish_id) // Arrange
-            whenever(mockResultSet.getDouble("price_at_order")).thenReturn(expectedOrderDish.price_at_order) // Arrange
+            whenever(mockResultSet.getString("order_id")).thenReturn(expectedOrderDish.orderId) // Arrange
+            whenever(mockResultSet.getString("dish_id")).thenReturn(expectedOrderDish.dishId) // Arrange
+            whenever(mockResultSet.getDouble("price_at_order")).thenReturn(expectedOrderDish.priceAtOrder) // Arrange
             whenever(mockResultSet.getString("status")).thenReturn(expectedOrderDish.status) // Arrange
-            whenever(mockResultSet.getBoolean("should_prepare")).thenReturn(expectedOrderDish.should_prepare) // Arrange
+            whenever(mockResultSet.getBoolean("should_prepare")).thenReturn(expectedOrderDish.shouldPrepare) // Arrange
             val service = OrderDishService(mockConnection) // Arrange
             val result = service.getOrderDishById("od1") // Act
             assertNotNull(result) // Assert
@@ -114,12 +114,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = "non-existing-id",
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             whenever(mockConnection.prepareStatement(contains("SELECT id FROM orders WHERE id = ?"))).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
@@ -136,12 +136,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = "od1",
-                    order_id = "order123",
-                    dish_id = "dish-not-found",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish-not-found",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val dishCheckStatement: PreparedStatement = mock() // Arrange
@@ -165,12 +165,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = "od1",
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val dishCheckStatement: PreparedStatement = mock() // Arrange
@@ -197,12 +197,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = "od1",
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
             val dishCheckStatement: PreparedStatement = mock() // Arrange
@@ -229,12 +229,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = null,
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             val service = OrderDishService(mockConnection) // Arrange
             val result = service.updateOrderDish(orderDish) // Act
@@ -249,12 +249,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = "od1",
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 55.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 55.00,
                     notes = "No spicy",
                     status = "COOKING",
-                    should_prepare = false,
+                    shouldPrepare = false,
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeUpdate()).thenReturn(1) // Arrange
@@ -270,12 +270,12 @@ class OrderDishServiceTest {
             val orderDish =
                 OrderDish(
                     id = "not-found-od",
-                    order_id = "order123",
-                    dish_id = "dish1",
-                    price_at_order = 50.00,
+                    orderId = "order123",
+                    dishId = "dish1",
+                    priceAtOrder = 50.00,
                     notes = "Extra spicy",
                     status = "PENDING",
-                    should_prepare = true,
+                    shouldPrepare = true,
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeUpdate()).thenReturn(0) // Arrange

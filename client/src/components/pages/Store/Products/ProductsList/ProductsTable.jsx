@@ -10,6 +10,7 @@ import {
   Chip,
   Image,
 } from "@heroui/react";
+import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
@@ -36,16 +37,24 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
       <TableBody>
         {products.map((product) => {
           const productStatus = status(product);
+          const imageUrl = storedAssetUrl(product?.imageUrl);
           return (
             <TableRow key={product.id}>
               <TableCell>
-                <Image
-                  alt={product.name}
-                  className="rounded-md object-cover shrink-0"
-                  src={storedAssetUrl(product?.image_url)}
-                  width={40}
-                  height={40}
-                />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden bg-gray-100">
+                  {imageUrl ? (
+                    <Image
+                      removeWrapper
+                      alt={product.name}
+                      className="h-full w-full object-cover"
+                      src={imageUrl}
+                    />
+                  ) : (
+                    <div data-testid={`product-table-image-placeholder-${product.id}`}>
+                      <ImageIcon aria-hidden="true" className="h-5 w-5 text-gray-400" />
+                    </div>
+                  )}
+                </div>
               </TableCell>
               <TableCell>
                 <span className="block max-w-[120px] truncate">{product.name}</span>
@@ -54,9 +63,9 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                 <span className="block max-w-[50px] truncate">{product.description}</span>
               </TableCell>
               <TableCell>
-                {product.category_ids?.some((catId) => categoryNameById[String(catId)]) ? (
+                {product.categoryIds?.some((catId) => categoryNameById[String(catId)]) ? (
                   <div className="flex flex-wrap gap-1">
-                    {product.category_ids.filter((catId) => categoryNameById[String(catId)]).map((catId) => (
+                    {product.categoryIds.filter((catId) => categoryNameById[String(catId)]).map((catId) => (
                       <Chip key={catId} className="bg-green-200 text-xs text-green-800 border border-green-300">
                         {categoryNameById[String(catId)]}
                       </Chip>
@@ -72,7 +81,7 @@ export function ProductsTable({ products, categoryNameById, status, normalizeNum
                 <span className="whitespace-nowrap">{product.SKU}</span>
               </TableCell>
               <TableCell>
-                <span className="whitespace-nowrap">{formatAmount(product.price_cents)}</span>
+                <span className="whitespace-nowrap">{formatAmount(product.priceCents)}</span>
               </TableCell>
               <TableCell>
                 <Chip

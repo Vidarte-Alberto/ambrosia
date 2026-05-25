@@ -91,8 +91,8 @@ class PaymentService(
                     acronym = resultSet.getString("acronym"),
                     name = resultSet.getString("name"),
                     symbol = resultSet.getString("symbol"),
-                    country_name = resultSet.getString("country_name"),
-                    country_code = resultSet.getString("country_code"),
+                    countryName = resultSet.getString("country_name"),
+                    countryCode = resultSet.getString("country_code"),
                 )
             currencies.add(currency)
         }
@@ -110,8 +110,8 @@ class PaymentService(
                 acronym = resultSet.getString("acronym"),
                 name = resultSet.getString("name"),
                 symbol = resultSet.getString("symbol"),
-                country_name = resultSet.getString("country_name"),
-                country_code = resultSet.getString("country_code"),
+                countryName = resultSet.getString("country_name"),
+                countryCode = resultSet.getString("country_code"),
             )
         } else {
             logger.warn("Currency not found with ID: $id")
@@ -120,18 +120,18 @@ class PaymentService(
     }
 
     suspend fun addPayment(payment: Payment): String? {
-        if (payment.method_id.isBlank() || payment.currency_id.isBlank()) {
+        if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
             logger.error("Method ID, currency ID and transaction ID are required fields")
             return null
         }
 
-        if (!paymentMethodExists(payment.method_id)) {
-            logger.error("Payment method ID does not exist: ${payment.method_id}")
+        if (!paymentMethodExists(payment.methodId)) {
+            logger.error("Payment method ID does not exist: ${payment.methodId}")
             return null
         }
 
-        if (!currencyExists(payment.currency_id)) {
-            logger.error("Currency ID does not exist: ${payment.currency_id}")
+        if (!currencyExists(payment.currencyId)) {
+            logger.error("Currency ID does not exist: ${payment.currencyId}")
             return null
         }
 
@@ -142,9 +142,9 @@ class PaymentService(
         val statement = connection.prepareStatement(ADD_PAYMENT)
 
         statement.setString(1, generatedId)
-        statement.setString(2, payment.method_id)
-        statement.setString(3, payment.currency_id)
-        statement.setString(4, payment.transaction_id)
+        statement.setString(2, payment.methodId)
+        statement.setString(3, payment.currencyId)
+        statement.setString(4, payment.transactionId)
         statement.setDouble(5, payment.amount)
 
         val rowsAffected = statement.executeUpdate()
@@ -166,9 +166,9 @@ class PaymentService(
             val payment =
                 Payment(
                     id = resultSet.getString("id"),
-                    method_id = resultSet.getString("method_id"),
-                    currency_id = resultSet.getString("currency_id"),
-                    transaction_id = resultSet.getString("transaction_id"),
+                    methodId = resultSet.getString("method_id"),
+                    currencyId = resultSet.getString("currency_id"),
+                    transactionId = resultSet.getString("transaction_id"),
                     amount = resultSet.getDouble("amount"),
                 )
             payments.add(payment)
@@ -184,9 +184,9 @@ class PaymentService(
         return if (resultSet.next()) {
             Payment(
                 id = resultSet.getString("id"),
-                method_id = resultSet.getString("method_id"),
-                currency_id = resultSet.getString("currency_id"),
-                transaction_id = resultSet.getString("transaction_id"),
+                methodId = resultSet.getString("method_id"),
+                currencyId = resultSet.getString("currency_id"),
+                transactionId = resultSet.getString("transaction_id"),
                 amount = resultSet.getDouble("amount"),
             )
         } else {
@@ -201,25 +201,25 @@ class PaymentService(
             return false
         }
 
-        if (payment.method_id.isBlank() || payment.currency_id.isBlank()) {
+        if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
             logger.error("Method ID, currency ID and transaction ID are required fields")
             return false
         }
 
-        if (!paymentMethodExists(payment.method_id)) {
-            logger.error("Payment method ID does not exist: ${payment.method_id}")
+        if (!paymentMethodExists(payment.methodId)) {
+            logger.error("Payment method ID does not exist: ${payment.methodId}")
             return false
         }
 
-        if (!currencyExists(payment.currency_id)) {
-            logger.error("Currency ID does not exist: ${payment.currency_id}")
+        if (!currencyExists(payment.currencyId)) {
+            logger.error("Currency ID does not exist: ${payment.currencyId}")
             return false
         }
 
         val statement = connection.prepareStatement(UPDATE_PAYMENT)
-        statement.setString(1, payment.method_id)
-        statement.setString(2, payment.currency_id)
-        statement.setString(3, payment.transaction_id)
+        statement.setString(1, payment.methodId)
+        statement.setString(2, payment.currencyId)
+        statement.setString(3, payment.transactionId)
         statement.setDouble(4, payment.amount)
         statement.setString(5, payment.id)
 

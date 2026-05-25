@@ -57,14 +57,14 @@ class DishServiceTest {
     @Test
     fun `getDishById returns dish when found`() {
         runBlocking {
-            val expectedDish = Dish(id = "dish-1", name = "Pizza", price = 12.99, category_id = "cat-1") // Arrange
+            val expectedDish = Dish(id = "dish-1", name = "Pizza", price = 12.99, categoryId = "cat-1") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(expectedDish.id) // Arrange
             whenever(mockResultSet.getString("name")).thenReturn(expectedDish.name) // Arrange
             whenever(mockResultSet.getDouble("price")).thenReturn(expectedDish.price) // Arrange
-            whenever(mockResultSet.getString("category_id")).thenReturn(expectedDish.category_id) // Arrange
+            whenever(mockResultSet.getString("category_id")).thenReturn(expectedDish.categoryId) // Arrange
             val service = DishService(mockConnection) // Arrange
             val result = service.getDishById("dish-1") // Act
             assertNotNull(result) // Assert
@@ -116,7 +116,7 @@ class DishServiceTest {
     @Test
     fun `addDish returns null if category does not exist`() {
         runBlocking {
-            val newDish = Dish(id = null, name = "New Dish", price = 10.0, category_id = "non-existent-cat") // Arrange
+            val newDish = Dish(id = null, name = "New Dish", price = 10.0, categoryId = "non-existent-cat") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
@@ -130,7 +130,7 @@ class DishServiceTest {
     @Test
     fun `addDish returns null if name is blank`() {
         runBlocking {
-            val dishWithBlankName = Dish(id = null, name = "  ", price = 10.0, category_id = "cat-1") // Arrange
+            val dishWithBlankName = Dish(id = null, name = "  ", price = 10.0, categoryId = "cat-1") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
@@ -143,7 +143,7 @@ class DishServiceTest {
     @Test
     fun `addDish returns null if price is invalid`() {
         runBlocking {
-            val dishWithInvalidPrice = Dish(id = null, name = "Fries", price = 0.0, category_id = "cat-1") // Arrange
+            val dishWithInvalidPrice = Dish(id = null, name = "Fries", price = 0.0, categoryId = "cat-1") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
@@ -156,7 +156,7 @@ class DishServiceTest {
     @Test
     fun `addDish returns new ID on success`() {
         runBlocking {
-            val newDish = Dish(id = null, name = "New Dish", price = 15.0, category_id = "cat-1") // Arrange
+            val newDish = Dish(id = null, name = "New Dish", price = 15.0, categoryId = "cat-1") // Arrange
             val categoryCheckStatement: PreparedStatement = mock() // Arrange
             val addDishStatement: PreparedStatement = mock() // Arrange
             whenever(
@@ -177,7 +177,7 @@ class DishServiceTest {
     @Test
     fun `addDish returns null when database insert fails`() {
         runBlocking {
-            val newDish = Dish(id = null, name = "New Dish", price = 15.0, category_id = "cat-1") // Arrange
+            val newDish = Dish(id = null, name = "New Dish", price = 15.0, categoryId = "cat-1") // Arrange
             val categoryCheckStatement: PreparedStatement = mock() // Arrange
             val addDishStatement: PreparedStatement = mock() // Arrange
             whenever(
@@ -197,7 +197,7 @@ class DishServiceTest {
     @Test
     fun `updateDish returns false if ID is null`() {
         runBlocking {
-            val dishWithNullId = Dish(id = null, name = "A Name", price = 10.0, category_id = "cat-1") // Arrange
+            val dishWithNullId = Dish(id = null, name = "A Name", price = 10.0, categoryId = "cat-1") // Arrange
             val service = DishService(mockConnection) // Arrange
             val result = service.updateDish(dishWithNullId) // Act
             assertFalse(result) // Assert
@@ -208,7 +208,7 @@ class DishServiceTest {
     @Test
     fun `updateDish returns false if category does not exist`() {
         runBlocking {
-            val dishToUpdate = Dish(id = "dish-1", name = "A Name", price = 10.0, category_id = "non-existent-cat") // Arrange
+            val dishToUpdate = Dish(id = "dish-1", name = "A Name", price = 10.0, categoryId = "non-existent-cat") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
@@ -221,7 +221,7 @@ class DishServiceTest {
     @Test
     fun `updateDish returns false if name is blank`() {
         runBlocking {
-            val dishWithBlankName = Dish(id = "dish-1", name = "  ", price = 10.0, category_id = "cat-1") // Arrange
+            val dishWithBlankName = Dish(id = "dish-1", name = "  ", price = 10.0, categoryId = "cat-1") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
@@ -234,7 +234,7 @@ class DishServiceTest {
     @Test
     fun `updateDish returns false if price is invalid`() {
         runBlocking {
-            val dishWithInvalidPrice = Dish(id = "dish-1", name = "Fries", price = -5.0, category_id = "cat-1") // Arrange
+            val dishWithInvalidPrice = Dish(id = "dish-1", name = "Fries", price = -5.0, categoryId = "cat-1") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
@@ -247,7 +247,7 @@ class DishServiceTest {
     @Test
     fun `updateDish returns true on success`() {
         runBlocking {
-            val dishToUpdate = Dish(id = "dish-1", name = "Updated Dish", price = 20.0, category_id = "cat-1") // Arrange
+            val dishToUpdate = Dish(id = "dish-1", name = "Updated Dish", price = 20.0, categoryId = "cat-1") // Arrange
             val categoryCheckStatement: PreparedStatement = mock() // Arrange
             val updateDishStatement: PreparedStatement = mock() // Arrange
             whenever(
@@ -267,7 +267,7 @@ class DishServiceTest {
     @Test
     fun `updateDish returns false when database update fails`() {
         runBlocking {
-            val dishToUpdate = Dish(id = "dish-1", name = "Updated Dish", price = 20.0, category_id = "cat-1") // Arrange
+            val dishToUpdate = Dish(id = "dish-1", name = "Updated Dish", price = 20.0, categoryId = "cat-1") // Arrange
             val categoryCheckStatement: PreparedStatement = mock() // Arrange
             val updateDishStatement: PreparedStatement = mock() // Arrange
             whenever(

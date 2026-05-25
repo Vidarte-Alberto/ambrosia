@@ -28,6 +28,10 @@ class PhoenixBalanceException(
 
 class PhoenixServiceException(
     message: String = "Phoenix Lightning node service error",
+    val code: String = "unknown",
+    val statusCode: Int? = null,
+    val source: String = "phoenixd",
+    val upstreamMessage: String? = null,
 ) : RuntimeException(message)
 
 class InvalidTokenException(
@@ -53,6 +57,10 @@ class DuplicateUserNameException(
 class DuplicateProductSkuException(
     message: String = "SKU already exists",
 ) : IllegalStateException(message)
+
+class MissingRoleException(
+    message: String = "No assigned role for this user, contact Admin",
+) : Exception(message)
 
 class LastUserDeletionException(
     message: String = "Cannot delete the last user",

@@ -45,8 +45,8 @@ class ShiftService(
             logger.warn("Attempt to open a new shift while one is already open: ${existingOpen.id}")
             return null
         }
-        if (!userExists(shift.user_id)) {
-            logger.error("User does not exist: ${shift.user_id}")
+        if (!userExists(shift.userId)) {
+            logger.error("User does not exist: ${shift.userId}")
             return null
         }
 
@@ -57,12 +57,12 @@ class ShiftService(
         val statement = connection.prepareStatement(ADD_SHIFT)
 
         statement.setString(1, generatedId)
-        statement.setString(2, shift.user_id)
-        statement.setString(3, shift.shift_date)
-        statement.setString(4, shift.start_time)
-        statement.setString(5, shift.end_time)
+        statement.setString(2, shift.userId)
+        statement.setString(3, shift.shiftDate)
+        statement.setString(4, shift.startTime)
+        statement.setString(5, shift.endTime)
         statement.setString(6, shift.notes)
-        statement.setDouble(7, shift.initial_amount)
+        statement.setDouble(7, shift.initialAmount)
 
         val rowsAffected = statement.executeUpdate()
 
@@ -87,13 +87,13 @@ class ShiftService(
             val shift =
                 Shift(
                     id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    shift_date = resultSet.getString("shift_date"),
-                    start_time = resultSet.getString("start_time"),
-                    end_time = resultSet.getString("end_time"),
+                    userId = resultSet.getString("user_id"),
+                    shiftDate = resultSet.getString("shift_date"),
+                    startTime = resultSet.getString("start_time"),
+                    endTime = resultSet.getString("end_time"),
                     notes = resultSet.getString("notes"),
-                    initial_amount = resultSet.getDouble("initial_amount"),
-                    final_amount = if (isFinalNull) null else finalAmt,
+                    initialAmount = resultSet.getDouble("initial_amount"),
+                    finalAmount = if (isFinalNull) null else finalAmt,
                     difference = if (isDiffNull) null else diffAmt,
                 )
             shifts.add(shift)
@@ -113,13 +113,13 @@ class ShiftService(
             val isDiffNull = resultSet.wasNull()
             Shift(
                 id = resultSet.getString("id"),
-                user_id = resultSet.getString("user_id"),
-                shift_date = resultSet.getString("shift_date"),
-                start_time = resultSet.getString("start_time"),
-                end_time = resultSet.getString("end_time"),
+                userId = resultSet.getString("user_id"),
+                shiftDate = resultSet.getString("shift_date"),
+                startTime = resultSet.getString("start_time"),
+                endTime = resultSet.getString("end_time"),
                 notes = resultSet.getString("notes"),
-                initial_amount = resultSet.getDouble("initial_amount"),
-                final_amount = if (isFinalNull) null else finalAmt,
+                initialAmount = resultSet.getDouble("initial_amount"),
+                finalAmount = if (isFinalNull) null else finalAmt,
                 difference = if (isDiffNull) null else diffAmt,
             )
         } else {
@@ -141,13 +141,13 @@ class ShiftService(
             val shift =
                 Shift(
                     id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    shift_date = resultSet.getString("shift_date"),
-                    start_time = resultSet.getString("start_time"),
-                    end_time = resultSet.getString("end_time"),
+                    userId = resultSet.getString("user_id"),
+                    shiftDate = resultSet.getString("shift_date"),
+                    startTime = resultSet.getString("start_time"),
+                    endTime = resultSet.getString("end_time"),
                     notes = resultSet.getString("notes"),
-                    initial_amount = resultSet.getDouble("initial_amount"),
-                    final_amount = if (isFinalNull) null else finalAmt,
+                    initialAmount = resultSet.getDouble("initial_amount"),
+                    finalAmount = if (isFinalNull) null else finalAmt,
                     difference = if (isDiffNull) null else diffAmt,
                 )
             shifts.add(shift)
@@ -169,13 +169,13 @@ class ShiftService(
             val shift =
                 Shift(
                     id = resultSet.getString("id"),
-                    user_id = resultSet.getString("user_id"),
-                    shift_date = resultSet.getString("shift_date"),
-                    start_time = resultSet.getString("start_time"),
-                    end_time = resultSet.getString("end_time"),
+                    userId = resultSet.getString("user_id"),
+                    shiftDate = resultSet.getString("shift_date"),
+                    startTime = resultSet.getString("start_time"),
+                    endTime = resultSet.getString("end_time"),
                     notes = resultSet.getString("notes"),
-                    initial_amount = resultSet.getDouble("initial_amount"),
-                    final_amount = if (isFinalNull) null else finalAmt,
+                    initialAmount = resultSet.getDouble("initial_amount"),
+                    finalAmount = if (isFinalNull) null else finalAmt,
                     difference = if (isDiffNull) null else diffAmt,
                 )
             shifts.add(shift)
@@ -187,9 +187,7 @@ class ShiftService(
     suspend fun getOpenShift(userId: String? = null): Shift? {
         val statement =
             if (userId != null) {
-                val st = connection.prepareStatement(GET_OPEN_SHIFT_BY_USER)
-                st.setString(1, userId)
-                st
+                connection.prepareStatement(GET_OPEN_SHIFT_BY_USER).also { it.setString(1, userId) }
             } else {
                 connection.prepareStatement(GET_OPEN_SHIFT)
             }
@@ -202,13 +200,13 @@ class ShiftService(
             val isDiffNull = resultSet.wasNull()
             Shift(
                 id = resultSet.getString("id"),
-                user_id = resultSet.getString("user_id"),
-                shift_date = resultSet.getString("shift_date"),
-                start_time = resultSet.getString("start_time"),
-                end_time = resultSet.getString("end_time"),
+                userId = resultSet.getString("user_id"),
+                shiftDate = resultSet.getString("shift_date"),
+                startTime = resultSet.getString("start_time"),
+                endTime = resultSet.getString("end_time"),
                 notes = resultSet.getString("notes"),
-                initial_amount = resultSet.getDouble("initial_amount"),
-                final_amount = if (isFinalNull) null else finalAmt,
+                initialAmount = resultSet.getDouble("initial_amount"),
+                finalAmount = if (isFinalNull) null else finalAmt,
                 difference = if (isDiffNull) null else diffAmt,
             )
         } else {
@@ -222,16 +220,16 @@ class ShiftService(
             return false
         }
 
-        if (!userExists(shift.user_id)) {
-            logger.error("User does not exist: ${shift.user_id}")
+        if (!userExists(shift.userId)) {
+            logger.error("User does not exist: ${shift.userId}")
             return false
         }
 
         val statement = connection.prepareStatement(UPDATE_SHIFT)
-        statement.setString(1, shift.user_id)
-        statement.setString(2, shift.shift_date)
-        statement.setString(3, shift.start_time)
-        statement.setString(4, shift.end_time)
+        statement.setString(1, shift.userId)
+        statement.setString(2, shift.shiftDate)
+        statement.setString(3, shift.startTime)
+        statement.setString(4, shift.endTime)
         statement.setString(5, shift.notes)
         statement.setString(6, shift.id)
 

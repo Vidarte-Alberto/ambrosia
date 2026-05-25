@@ -11,16 +11,24 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+const mockAddToast = jest.fn();
+jest.mock("@heroui/react", () => ({
+  addToast: (...args) => mockAddToast(...args),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 const handlers = {};
 
 function TestComponent() {
-  const { orders, loading, error, createOrder, updateOrder, fetchOrdersFiltered } = useOrders();
+  const { orders, loading, error, fetchOrdersFiltered } = useOrders();
 
   useEffect(() => {
-    handlers.createOrder = createOrder;
-    handlers.updateOrder = updateOrder;
     handlers.fetchOrdersFiltered = fetchOrdersFiltered;
-  }, [createOrder, updateOrder, fetchOrdersFiltered]);
+  }, [fetchOrdersFiltered]);
 
   return (
     <div>
@@ -35,15 +43,10 @@ function TestComponent() {
 describe("useOrders", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, "error").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("loads orders on mount", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
     render(<TestComponent />);
 
@@ -62,7 +65,7 @@ describe("useOrders", () => {
   });
 
   it("sets empty orders when apiClient returns non-array", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ data: [] });
     render(<TestComponent />);
 
@@ -70,92 +73,8 @@ describe("useOrders", () => {
     expect(screen.getByTestId("count")).toHaveTextContent("0");
   });
 
-  it("appends created orders to state", async () => {
-    httpClient.mockResolvedValue({});
-    parseJsonResponse.mockResolvedValueOnce([{ id: 1 }]);
-    parseJsonResponse.mockResolvedValueOnce({ id: 2 });
-
-    render(<TestComponent />);
-
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
-
-    await act(async () => {
-      await handlers.createOrder({ note: "test" });
-    });
-
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("2"));
-  });
-
-  it("does not append when createOrder returns without id", async () => {
-    httpClient.mockResolvedValue({});
-    parseJsonResponse.mockResolvedValueOnce([{ id: 1 }]);
-    parseJsonResponse.mockResolvedValueOnce({ status: "ok" });
-
-    render(<TestComponent />);
-
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
-
-    await act(async () => {
-      await handlers.createOrder({ note: "test" });
-    });
-
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
-  });
-
-  it("sets error when createOrder fails", async () => {
-    httpClient.mockResolvedValueOnce({});
-    httpClient.mockRejectedValueOnce(new Error("create-fail"));
-    parseJsonResponse.mockResolvedValueOnce([]);
-
-    render(<TestComponent />);
-
-    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
-
-    await expect(handlers.createOrder({ note: "test" })).rejects.toThrow("create-fail");
-    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"));
-  });
-
-  it("updates an order when updateOrder succeeds", async () => {
-    httpClient.mockResolvedValue({});
-    parseJsonResponse.mockResolvedValueOnce([{ id: 1, status: "open" }, { id: 2 }]);
-    parseJsonResponse.mockResolvedValueOnce({ id: 1, status: "paid" });
-
-    render(<TestComponent />);
-
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("2"));
-
-    await act(async () => {
-      await handlers.updateOrder(1, { status: "paid" });
-    });
-
-    await waitFor(() => expect(screen.getByTestId("first-status")).toHaveTextContent("paid"));
-  });
-
-  it("sets error when updateOrder fails", async () => {
-    httpClient.mockResolvedValueOnce({});
-    httpClient.mockRejectedValueOnce(new Error("update-fail"));
-    parseJsonResponse.mockResolvedValueOnce([{ id: 1, status: "open" }]);
-
-    render(<TestComponent />);
-
-    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("1"));
-
-    await expect(handlers.updateOrder(1, { status: "paid" })).rejects.toThrow("update-fail");
-    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"));
-  });
-
-  it("throws when updateOrder is called without an orderId", async () => {
-    httpClient.mockResolvedValueOnce({});
-    parseJsonResponse.mockResolvedValueOnce([]);
-    render(<TestComponent />);
-
-    await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
-
-    await expect(handlers.updateOrder()).rejects.toThrow("orderId is required");
-  });
-
   it("fetchOrdersFiltered sends status query params", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -171,7 +90,7 @@ describe("useOrders", () => {
   });
 
   it("fetchOrdersFiltered sends sorting query params", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -183,11 +102,11 @@ describe("useOrders", () => {
       await handlers.fetchOrdersFiltered({ sortBy: "total", sortOrder: "asc" });
     });
 
-    expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments?sort_by=total&sort_order=asc");
+    expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments?sortBy=total&sortOrder=asc");
   });
 
   it("fetchOrdersFiltered omits empty params", async () => {
-    httpClient.mockResolvedValue({});
+    httpClient.mockResolvedValue({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([]);
     parseJsonResponse.mockResolvedValueOnce([]);
 
@@ -202,17 +121,22 @@ describe("useOrders", () => {
     expect(httpClient).toHaveBeenLastCalledWith("/orders/with-payments");
   });
 
-  it("sets error when filtered fetch returns non-ok response", async () => {
-    httpClient.mockResolvedValueOnce({});
+  it("shows connection toast and returns null when filtered fetch returns non-ok response", async () => {
+    httpClient.mockResolvedValueOnce({ ok: true });
     httpClient.mockResolvedValueOnce({ ok: false });
     parseJsonResponse.mockResolvedValueOnce([]);
-    parseJsonResponse.mockResolvedValueOnce({ message: "bad request" });
 
     render(<TestComponent />);
 
     await waitFor(() => expect(screen.getByTestId("loading")).toHaveTextContent("no"));
 
-    await expect(handlers.fetchOrdersFiltered({ status: "paid" })).rejects.toThrow("bad request");
-    await waitFor(() => expect(screen.getByTestId("error")).toHaveTextContent("yes"));
+    let result;
+    await act(async () => {
+      result = await handlers.fetchOrdersFiltered({ status: "paid" });
+    });
+
+    expect(result).toBeNull();
+    expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ color: "danger" }));
+    expect(screen.getByTestId("error")).toHaveTextContent("no");
   });
 });

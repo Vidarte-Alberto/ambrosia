@@ -9,6 +9,15 @@ jest.mock("@/lib/http", () => ({
   parseJsonResponse: jest.fn(),
 }));
 
+jest.mock("@heroui/react", () => ({
+  addToast: jest.fn(),
+}));
+
+jest.mock("next-intl", () => {
+  const t = (key) => key;
+  return { useTranslations: () => t };
+});
+
 function TestComponent() {
   const { paymentMethods, loading, error } = usePaymentMethods();
   return (
@@ -22,11 +31,11 @@ function TestComponent() {
 
 describe("usePaymentMethods", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   it("loads payment methods when response returns array", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
     render(<TestComponent />);
 
@@ -36,7 +45,7 @@ describe("usePaymentMethods", () => {
   });
 
   it("sets empty list when response returns non-array", async () => {
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ data: [] });
     render(<TestComponent />);
 

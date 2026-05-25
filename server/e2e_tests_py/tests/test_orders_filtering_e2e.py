@@ -1,7 +1,5 @@
 """End-to-end coverage for server-side order filtering and sorting."""
 
-import time
-
 import pytest
 
 from ambrosia.api_utils import assert_status_code
@@ -10,19 +8,18 @@ from ambrosia.api_utils import assert_status_code
 async def _get_current_user_id(admin_client) -> str:
     response = await admin_client.get("/users/me")
     assert_status_code(response, 200, "Failed to fetch current user")
-    return response.json()["user"]["user_id"]
+    return response.json()["user"]["userId"]
 
 
 async def _create_order(
     admin_client, user_id: str, status: str, total: float, created_at: str
 ) -> str:
     payload = {
-        "user_id": user_id,
-        "table_id": None,
-        "waiter": f"e2e-{int(time.time() * 1000)}",
+        "userId": user_id,
+        "tableId": None,
         "status": status,
         "total": total,
-        "created_at": created_at,
+        "createdAt": created_at,
     }
     response = await admin_client.post("/orders", json=payload)
     assert_status_code(response, 201, f"Failed to create order with status {status}")
@@ -54,7 +51,7 @@ async def test_orders_with_payments_sorts_by_total_ascending(admin_client):
     await _create_order(admin_client, user_id, "paid", 25.0, "2025-02-03T10:00:00")
 
     response = await admin_client.get(
-        "/orders/with-payments?sort_by=total&sort_order=asc"
+        "/orders/with-payments?sortBy=total&sortOrder=asc"
     )
     assert_status_code(response, 200)
 

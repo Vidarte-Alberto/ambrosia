@@ -70,7 +70,7 @@ describe("useProducts", () => {
 
   it("loads products on mount", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
 
     renderWithProvider();
@@ -82,7 +82,7 @@ describe("useProducts", () => {
 
   it("sets empty products when apiClient returns non-array", async () => {
     useUpload.mockReturnValue({ upload: jest.fn(), isUploading: false });
-    httpClient.mockResolvedValueOnce({});
+    httpClient.mockResolvedValueOnce({ ok: true });
     parseJsonResponse.mockResolvedValueOnce({ data: [] });
 
     renderWithProvider();
@@ -142,13 +142,63 @@ describe("useProducts", () => {
         SKU: "SKU-1",
         name: "Cafe",
         description: "Caliente",
-        image_url: "https://img.test/item.png",
-        cost_cents: 1050,
-        category_ids: [7],
+        imageUrl: "https://img.test/item.png",
+        costCents: 1050,
+        categoryIds: [7],
         quantity: 3,
-        min_stock_threshold: 0,
-        max_stock_threshold: 0,
-        price_cents: 1050,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
+        priceCents: 1050,
+      }),
+      notShowError: false,
+    });
+  });
+
+  it("sends null SKU when the SKU field is blank", async () => {
+    const upload = jest.fn();
+    useUpload.mockReturnValue({ upload, isUploading: false });
+
+    httpClient.mockResolvedValueOnce({ ok: true });
+    httpClient.mockResolvedValueOnce({ ok: true });
+    parseJsonResponse.mockResolvedValueOnce([]);
+    parseJsonResponse.mockResolvedValueOnce({ id: 2, message: "Product added successfully" });
+    parseJsonResponse.mockResolvedValueOnce([]);
+
+    renderWithProvider();
+
+    await waitFor(() => expect(screen.getByTestId("count")).toHaveTextContent("0"));
+
+    await act(async () => {
+      await handlers.addProduct({
+        productSKU: "   ",
+        productName: "No SKU",
+        productDescription: "",
+        productImage: null,
+        productImageUrl: null,
+        productPrice: 10,
+        productCategories: [],
+        productStock: 1,
+        productMinStock: 0,
+        productMaxStock: 0,
+      });
+    });
+
+    expect(httpClient).toHaveBeenCalledWith("/products", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        SKU: null,
+        name: "No SKU",
+        description: null,
+        imageUrl: null,
+        costCents: 1000,
+        categoryIds: [],
+        quantity: 1,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
+        priceCents: 1000,
       }),
       notShowError: false,
     });
@@ -195,13 +245,13 @@ describe("useProducts", () => {
         SKU: "SKU-22",
         name: "Te",
         description: null,
-        image_url: "https://cdn.test/te.png",
-        cost_cents: 425,
-        category_ids: [2],
+        imageUrl: "https://cdn.test/te.png",
+        costCents: 425,
+        categoryIds: [2],
         quantity: 1,
-        min_stock_threshold: 0,
-        max_stock_threshold: 0,
-        price_cents: 425,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
+        priceCents: 425,
       }),
       notShowError: false,
     });
@@ -250,13 +300,13 @@ describe("useProducts", () => {
         SKU: "SKU-30",
         name: "Te Verde",
         description: "Suave",
-        image_url: "/files/tea.png",
-        cost_cents: 350,
-        category_ids: [4],
+        imageUrl: "/files/tea.png",
+        costCents: 350,
+        categoryIds: [4],
         quantity: 8,
-        min_stock_threshold: 0,
-        max_stock_threshold: 0,
-        price_cents: 350,
+        minStockThreshold: 0,
+        maxStockThreshold: 0,
+        priceCents: 350,
       }),
       notShowError: false,
     });

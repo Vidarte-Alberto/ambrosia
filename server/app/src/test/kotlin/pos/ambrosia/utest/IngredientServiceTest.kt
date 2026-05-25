@@ -66,11 +66,11 @@ class IngredientServiceTest {
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(expectedIngredient.id) // Arrange
             whenever(mockResultSet.getString("name")).thenReturn(expectedIngredient.name) // Arrange
-            whenever(mockResultSet.getString("category_id")).thenReturn(expectedIngredient.category_id) // Arrange
+            whenever(mockResultSet.getString("category_id")).thenReturn(expectedIngredient.categoryId) // Arrange
             whenever(mockResultSet.getDouble("quantity")).thenReturn(expectedIngredient.quantity) // Arrange
             whenever(mockResultSet.getString("unit")).thenReturn(expectedIngredient.unit) // Arrange
-            whenever(mockResultSet.getDouble("low_stock_threshold")).thenReturn(expectedIngredient.low_stock_threshold) // Arrange
-            whenever(mockResultSet.getDouble("cost_per_unit")).thenReturn(expectedIngredient.cost_per_unit) // Arrange
+            whenever(mockResultSet.getDouble("low_stock_threshold")).thenReturn(expectedIngredient.lowStockThreshold) // Arrange
+            whenever(mockResultSet.getDouble("cost_per_unit")).thenReturn(expectedIngredient.costPerUnit) // Arrange
             val service = IngredientService(mockConnection) // Arrange
             val result = service.getIngredientById("ing-1") // Act
             assertNotNull(result) // Assert

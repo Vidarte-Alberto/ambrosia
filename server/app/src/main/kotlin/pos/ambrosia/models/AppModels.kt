@@ -1,5 +1,6 @@
 package pos.ambrosia.models
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable data class AuthRequest(
@@ -26,7 +27,7 @@ data class AuthResponse(
 
 @Serializable
 data class UserResponse(
-    val user_id: String,
+    val userId: String,
     val name: String,
     val email: String? = null,
     val phone: String? = null,
@@ -49,6 +50,13 @@ data class LoginResponse(
 
 @Serializable data class Message(
     val message: String,
+)
+
+@Serializable
+data class WalletErrorResponse(
+    val message: String,
+    val code: String,
+    val source: String,
 )
 
 @Serializable
@@ -98,8 +106,8 @@ data class Table(
     val id: String? = null,
     val name: String,
     val status: String? = null,
-    val space_id: String,
-    val order_id: String? = null,
+    val spaceId: String,
+    val orderId: String? = null,
 )
 
 @Serializable
@@ -107,18 +115,18 @@ data class Dish(
     val id: String? = null,
     val name: String,
     val price: Double,
-    val category_id: String,
+    val categoryId: String,
 )
 
 @Serializable
 data class Ingredient(
     val id: String? = null,
     val name: String,
-    val category_id: String,
+    val categoryId: String,
     val quantity: Double,
     val unit: String,
-    val low_stock_threshold: Double,
-    val cost_per_unit: Double,
+    val lowStockThreshold: Double,
+    val costPerUnit: Double,
 )
 
 @Serializable
@@ -134,25 +142,24 @@ data class Supplier(
 @Serializable
 data class Order(
     val id: String? = null,
-    val user_id: String,
-    val table_id: String? = null,
-    val waiter: String,
+    val userId: String,
+    val tableId: String? = null,
     val status: String,
     val total: Double,
-    val created_at: String,
+    val createdAt: String,
 )
 
 @Serializable
 data class OrderWithPayment(
     val id: String,
-    val user_id: String,
-    val table_id: String? = null,
-    val waiter: String? = null,
+    val userId: String,
+    val userName: String? = null,
+    val tableId: String? = null,
     val status: String,
     val total: Double,
-    val created_at: String,
-    val payment_method: String? = null,
-    val payment_method_ids: List<String> = emptyList(),
+    val createdAt: String,
+    val paymentMethod: String? = null,
+    val paymentMethodIds: List<String> = emptyList(),
 )
 
 data class OrderWithPaymentFilters(
@@ -170,18 +177,18 @@ data class OrderWithPaymentFilters(
 @Serializable
 data class OrderDish(
     val id: String? = null,
-    val order_id: String,
-    val dish_id: String,
-    val price_at_order: Double,
+    val orderId: String,
+    val dishId: String,
+    val priceAtOrder: Double,
     val notes: String? = null,
     val status: String,
-    val should_prepare: Boolean,
+    val shouldPrepare: Boolean,
 )
 
 @Serializable
 data class AddOrderDishRequest(
-    val dish_id: String,
-    val price_at_order: Double,
+    val dishId: String,
+    val priceAtOrder: Double,
     val notes: String? = null,
 )
 
@@ -198,9 +205,9 @@ data class OrderWithDishesRequest(
 @Serializable
 data class Payment(
     val id: String? = null,
-    val method_id: String,
-    val currency_id: String,
-    val transaction_id: String? = null,
+    val methodId: String,
+    val currencyId: String,
+    val transactionId: String? = null,
     val amount: Double,
 )
 
@@ -212,11 +219,11 @@ data class Payment(
 @Serializable
 data class Ticket(
     val id: String? = null,
-    val order_id: String,
-    val user_id: String,
-    val ticket_date: String,
+    val orderId: String,
+    val userId: String,
+    val ticketDate: String,
     val status: Int,
-    val total_amount: Double,
+    val totalAmount: Double,
     val notes: String,
 )
 
@@ -225,42 +232,42 @@ data class Ticket(
     val acronym: String,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable
 data class BaseCurrencyResponse(
-    val currency_id: String? = null,
+    val currencyId: String? = null,
     val id: String? = null,
     val acronym: String? = null,
     val name: String? = null,
     val symbol: String? = null,
-    val country_name: String? = null,
-    val country_code: String? = null,
+    val countryName: String? = null,
+    val countryCode: String? = null,
 )
 
 @Serializable data class TicketPayment(
-    val payment_id: String,
-    val ticket_id: String,
+    val paymentId: String,
+    val ticketId: String,
 )
 
 @Serializable
 data class Shift(
     val id: String? = null,
-    val user_id: String,
-    val shift_date: String,
-    val start_time: String,
-    val end_time: String? = null,
+    val userId: String,
+    val shiftDate: String,
+    val startTime: String,
+    val endTime: String? = null,
     val notes: String,
-    val initial_amount: Double = 0.0,
-    val final_amount: Double? = null,
+    val initialAmount: Double = 0.0,
+    val finalAmount: Double? = null,
     val difference: Double? = null,
 )
 
 @Serializable
 data class CloseShiftRequest(
-    val final_amount: Double? = null,
+    val finalAmount: Double? = null,
     val difference: Double? = null,
 )
 
@@ -341,21 +348,21 @@ data class Config(
 @Serializable
 data class Product(
     val id: String? = null,
-    val SKU: String,
+    val SKU: String? = null,
     val name: String,
     val description: String? = null,
-    val image_url: String? = null,
-    val cost_cents: Int,
-    val category_ids: List<String> = emptyList(),
+    val imageUrl: String? = null,
+    val costCents: Int,
+    val categoryIds: List<String> = emptyList(),
     val quantity: Int,
-    val min_stock_threshold: Int,
-    val max_stock_threshold: Int,
-    val price_cents: Int,
+    val minStockThreshold: Int,
+    val maxStockThreshold: Int,
+    val priceCents: Int,
 )
 
 @Serializable
 data class ProductStockAdjustment(
-    val product_id: String,
+    val productId: String,
     val quantity: Int,
 )
 
@@ -395,4 +402,75 @@ data class InitialSetupStatus(
 @Serializable
 data class SetBaseCurrencyRequest(
     val acronym: String,
+)
+
+@Serializable
+data class CreateStoreOrderItemRequest(
+    val productId: String,
+    val quantity: Int,
+)
+
+@Serializable
+data class CreateStoreOrderRequest(
+    val items: List<CreateStoreOrderItemRequest>,
+)
+
+@Serializable
+data class StoreOrderItem(
+    val productId: String,
+    val quantity: Int,
+    val priceAtOrder: Int,
+)
+
+@Serializable
+data class StoreOrder(
+    val id: String,
+    val userId: String,
+    val userName: String? = null,
+    val status: String,
+    val total: Int,
+    val createdAt: String,
+    val items: List<StoreOrderItem>,
+)
+
+@Serializable
+data class StoreCheckoutItem(
+    val productId: String,
+    val quantity: Int,
+    val priceAtOrder: Int,
+)
+
+@Serializable
+data class StoreCheckoutRequest(
+    val userId: String,
+    val items: List<StoreCheckoutItem>,
+    val paymentMethodId: String,
+    val currencyId: String,
+    val amount: Double,
+    val transactionId: String? = null,
+    val ticketNotes: String = "",
+)
+
+@Serializable
+data class StoreCheckoutResponse(
+    val orderId: String,
+    val ticketId: String,
+    val paymentId: String,
+)
+
+@Serializable
+data class ProductSaleItem(
+    val productName: String,
+    val quantity: Int,
+    val priceAtOrder: Int,
+    val userName: String,
+    val paymentMethod: String,
+    val saleDate: String,
+)
+
+@Serializable
+data class ProductSalesReport(
+    val totalRevenueCents: Long,
+    val totalItemsSold: Int,
+    val sales: List<ProductSaleItem>,
 )

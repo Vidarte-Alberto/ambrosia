@@ -48,7 +48,7 @@ class TestRoutingE2E:
 
         if response.status_code == 200:
             # If successful, check that response contains expected field
-            assert_response_contains(response, "currency_id")
+            assert_response_contains(response, "currencyId")
 
     @pytest.mark.asyncio
     async def test_non_existent_endpoint(self, public_client):

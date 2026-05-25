@@ -15,15 +15,10 @@ export function useWalletTour(isAuth) {
   const pathname = usePathname();
   const tTour = useTranslations("walletTour");
   const driverRef = useRef(null);
-  const tourStartedRef = useRef(false);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     if (!pathname.startsWith("/store/wallet")) return;
-    if (localStorage.getItem(WALLET_TOUR_KEY) === "true") {
-      localStorage.setItem(WALLET_TOUR_KEY, "visited");
-      localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
-      localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
-    }
     if (driverRef.current) {
       driverRef.current.destroy();
       driverRef.current = null;
@@ -43,11 +38,8 @@ export function useWalletTour(isAuth) {
   const tourMobileGoToWallet = tTour("mobileGoToWallet");
 
   useEffect(() => {
-    if (!isAuth || tourStartedRef.current) return;
-    if (localStorage.getItem(WALLET_TOUR_KEY)) return;
-
-    tourStartedRef.current = true;
-    localStorage.setItem(WALLET_TOUR_KEY, "true");
+    if (!isAuth || timerRef.current) return;
+    if (localStorage.getItem(WALLET_TOUR_KEY) !== "true") return;
 
     const isMobile = window.innerWidth < 768;
     const walletButton = `<br/><br/><a href="/store/wallet" style="display:inline-block;margin-top:4px;padding:8px 16px;background:#166534;color:#fff;border-radius:8px;text-decoration:none;font-size:14px">${tourMobileGoToWallet}</a>`;
@@ -56,6 +48,13 @@ export function useWalletTour(isAuth) {
       allowClose: true,
       overlayOpacity: 0.5,
       nextBtnText: tourNextButton,
+      ...(isMobile && {
+        onDestroyStarted: () => {
+          localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
+          localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
+          driverObj.destroy();
+        },
+      }),
       steps: isMobile
         ? [
             {
@@ -83,7 +82,6 @@ export function useWalletTour(isAuth) {
                 showButtons: ["close"],
               },
               onHighlighted: () => {
-                localStorage.setItem(WALLET_TOUR_KEY, "visited");
                 localStorage.setItem(WALLET_GUARD_TOUR_KEY, "true");
                 localStorage.setItem(WALLET_RECEIVE_TOUR_KEY, "true");
               },
@@ -92,6 +90,17 @@ export function useWalletTour(isAuth) {
     });
 
     driverRef.current = driverObj;
-    driverObj.drive();
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      localStorage.removeItem(WALLET_TOUR_KEY);
+      driverObj.drive();
+    }, 800);
   }, [isAuth, tourTitle, tourDescription, tourClickWallet, tourNextButton, tourMobileGoToWallet]);
+
+  useEffect(() => () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
 }

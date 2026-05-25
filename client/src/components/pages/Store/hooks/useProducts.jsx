@@ -7,13 +7,17 @@ import { useTranslations } from "next-intl";
 import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function useProducts() {
   const t = useTranslations("products");
+  const { fetchList } = useFetchList();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { upload, isUploading } = useUpload();
+
+  const normalizeSku = (sku) => sku?.trim() || null;
 
   const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => {
     const priceNumber = Number(product.productPrice ?? 0);
@@ -26,16 +30,16 @@ export function useProducts() {
 
     return {
       ...(includeId ? { id: product.productId } : {}),
-      SKU: product.productSKU,
+      SKU: normalizeSku(product.productSKU),
       name: product.productName,
       description: product.productDescription || null,
-      image_url: imageUrl,
-      cost_cents: priceCents,
-      category_ids: toArray(product.productCategories),
+      imageUrl,
+      costCents: priceCents,
+      categoryIds: toArray(product.productCategories),
       quantity: Number.isFinite(quantityNumber) ? quantityNumber : 0,
-      min_stock_threshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
-      max_stock_threshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
-      price_cents: priceCents,
+      minStockThreshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
+      maxStockThreshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
+      priceCents,
     };
   };
 
@@ -72,8 +76,8 @@ export function useProducts() {
     setError(null);
 
     try {
-      const response = await httpClient("/products");
-      const productsData = await parseJsonResponse(response, []);
+      const productsData = await fetchList("/products");
+      if (productsData === null) return;
       setProducts(toArray(productsData));
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -81,7 +85,7 @@ export function useProducts() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchList]);
 
   const addProduct = async (product) => {
     try {

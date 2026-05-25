@@ -1,7 +1,9 @@
-import { Button, Card, CardBody, CardFooter, CardHeader, Chip } from "@heroui/react";
+import { Button, Card, CardBody, CardFooter, CardHeader, Chip, Image } from "@heroui/react";
+import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function ProductList({ products, onAddProduct, categories }) {
   const t = useTranslations("cart");
@@ -38,19 +40,34 @@ export function ProductList({ products, onAddProduct, categories }) {
     <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
       {products.map((product) => {
         const status = stockStatus(product);
+        const imageUrl = storedAssetUrl(product.imageUrl);
         return (
           <Card
             shadow="none"
             className="bg-white rounded-lg"
             key={product.id}
           >
+            <div className="h-28 md:h-36 bg-gray-100 overflow-hidden flex items-center justify-center">
+              {imageUrl ? (
+                <Image
+                  removeWrapper
+                  alt={product.name}
+                  src={imageUrl}
+                  className="w-full h-full object-cover rounded-none"
+                />
+              ) : (
+                <div data-testid={`product-image-placeholder-${product.id}`}>
+                  <ImageIcon aria-hidden="true" className="h-8 w-8 text-gray-400" />
+                </div>
+              )}
+            </div>
             <CardHeader className="flex flex-col items-start pb-1">
               <h2 className="text-sm md:text-lg font-medium">{product.name}</h2>
-              <p className="text-xs">{getCategoryNames(product.category_ids)}</p>
+              <p className="text-xs">{getCategoryNames(product.categoryIds)}</p>
             </CardHeader>
             <CardBody className="py-1">
               <h2 className="text-lg md:text-2xl font-bold text-green-800">
-                {formatAmount(product.price_cents)}
+                {formatAmount(product.priceCents)}
               </h2>
               <p className="hidden md:block text-xs">
                 SKU: <span className="text-gray-800">{product.SKU}</span>

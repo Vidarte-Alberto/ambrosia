@@ -42,11 +42,11 @@ class TicketService(
     private fun isValidStatus(status: Int): Boolean = status in 0..1
 
     private fun validateTicket(ticket: Ticket): String? {
-        if (!orderExists(ticket.order_id)) {
-            return "Order does not exist: ${ticket.order_id}"
+        if (!orderExists(ticket.orderId)) {
+            return "Order does not exist: ${ticket.orderId}"
         }
-        if (!userExists(ticket.user_id)) {
-            return "User does not exist: ${ticket.user_id}"
+        if (!userExists(ticket.userId)) {
+            return "User does not exist: ${ticket.userId}"
         }
         if (!isValidStatus(ticket.status)) {
             return "Invalid ticket status: ${ticket.status}"
@@ -54,15 +54,15 @@ class TicketService(
         return null
     }
 
-    private fun mapResultSetToTicket(rs: java.sql.ResultSet): Ticket =
+    private fun mapResultSetToTicket(resultSet: java.sql.ResultSet): Ticket =
         Ticket(
-            id = rs.getString("id"),
-            order_id = rs.getString("order_id"),
-            user_id = rs.getString("user_id"),
-            ticket_date = rs.getString("ticket_date"),
-            status = rs.getInt("status"),
-            total_amount = rs.getDouble("total_amount"),
-            notes = rs.getString("notes"),
+            id = resultSet.getString("id"),
+            orderId = resultSet.getString("order_id"),
+            userId = resultSet.getString("user_id"),
+            ticketDate = resultSet.getString("ticket_date"),
+            status = resultSet.getInt("status"),
+            totalAmount = resultSet.getDouble("total_amount"),
+            notes = resultSet.getString("notes"),
         )
 
     suspend fun addTicket(ticket: Ticket): String? {
@@ -79,18 +79,17 @@ class TicketService(
         val statement = connection.prepareStatement(ADD_TICKET)
 
         statement.setString(1, generatedId)
-        statement.setString(2, ticket.order_id)
-        statement.setString(3, ticket.user_id)
-        // Si no se proporciona fecha, usar la actual
+        statement.setString(2, ticket.orderId)
+        statement.setString(3, ticket.userId)
         val ticketDate =
-            ticket.ticket_date.ifEmpty {
+            ticket.ticketDate.ifEmpty {
                 java.time.LocalDateTime
                     .now()
                     .toString()
             }
         statement.setString(4, ticketDate)
         statement.setInt(5, ticket.status)
-        statement.setDouble(6, ticket.total_amount.toDouble())
+        statement.setDouble(6, ticket.totalAmount.toDouble())
         statement.setString(7, ticket.notes)
 
         val rowsAffected = statement.executeUpdate()
@@ -164,11 +163,11 @@ class TicketService(
         }
 
         val statement = connection.prepareStatement(UPDATE_TICKET)
-        statement.setString(1, ticket.order_id)
-        statement.setString(2, ticket.user_id)
-        statement.setString(3, ticket.ticket_date)
+        statement.setString(1, ticket.orderId)
+        statement.setString(2, ticket.userId)
+        statement.setString(3, ticket.ticketDate)
         statement.setInt(4, ticket.status)
-        statement.setDouble(5, ticket.total_amount)
+        statement.setDouble(5, ticket.totalAmount)
         statement.setString(6, ticket.notes)
         statement.setString(7, ticket.id)
 

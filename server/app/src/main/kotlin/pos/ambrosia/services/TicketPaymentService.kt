@@ -37,30 +37,30 @@ class TicketPaymentService(
     }
 
     suspend fun addTicketPayment(ticketPayment: TicketPayment): Boolean {
-        if (ticketPayment.payment_id.isBlank() || ticketPayment.ticket_id.isBlank()) {
+        if (ticketPayment.paymentId.isBlank() || ticketPayment.ticketId.isBlank()) {
             logger.error("Payment ID and ticket ID are required fields")
             return false
         }
 
-        if (!ticketExists(ticketPayment.ticket_id)) {
-            logger.error("Ticket ID does not exist: ${ticketPayment.ticket_id}")
+        if (!ticketExists(ticketPayment.ticketId)) {
+            logger.error("Ticket ID does not exist: ${ticketPayment.ticketId}")
             return false
         }
 
-        if (!paymentExists(ticketPayment.payment_id)) {
-            logger.error("Payment ID does not exist: ${ticketPayment.payment_id}")
+        if (!paymentExists(ticketPayment.paymentId)) {
+            logger.error("Payment ID does not exist: ${ticketPayment.paymentId}")
             return false
         }
 
         val statement = connection.prepareStatement(ADD_TICKET_PAYMENT)
-        statement.setString(1, ticketPayment.payment_id)
-        statement.setString(2, ticketPayment.ticket_id)
+        statement.setString(1, ticketPayment.paymentId)
+        statement.setString(2, ticketPayment.ticketId)
 
         val rowsAffected = statement.executeUpdate()
 
         return if (rowsAffected > 0) {
             logger.info(
-                "Ticket payment created successfully: payment ${ticketPayment.payment_id} -> ticket ${ticketPayment.ticket_id}",
+                "Ticket payment created successfully: payment ${ticketPayment.paymentId} -> ticket ${ticketPayment.ticketId}",
             )
             true
         } else {
@@ -79,8 +79,8 @@ class TicketPaymentService(
         while (resultSet.next()) {
             val ticketPayment =
                 TicketPayment(
-                    payment_id = resultSet.getString("payment_id"),
-                    ticket_id = resultSet.getString("ticket_id"),
+                    paymentId = resultSet.getString("payment_id"),
+                    ticketId = resultSet.getString("ticket_id"),
                 )
             ticketPayments.add(ticketPayment)
         }
@@ -99,8 +99,8 @@ class TicketPaymentService(
         while (resultSet.next()) {
             val ticketPayment =
                 TicketPayment(
-                    payment_id = resultSet.getString("payment_id"),
-                    ticket_id = resultSet.getString("ticket_id"),
+                    paymentId = resultSet.getString("payment_id"),
+                    ticketId = resultSet.getString("ticket_id"),
                 )
             ticketPayments.add(ticketPayment)
         }

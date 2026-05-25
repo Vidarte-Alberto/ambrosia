@@ -13,14 +13,14 @@ export function SearchProducts({ products, onAddProduct, categories }) {
   const [categoryFilter, setCategoryFilter] = useState(null);
 
   const filteredProducts = products.filter((product) => {
-    const categoryIds = product.category_ids ?? [];
+    const categoryIds = product.categoryIds ?? [];
     const categoryNames = categories
       .filter((cat) => categoryIds.includes(cat.id))
       .map((cat) => cat.name)
       .join(" ");
 
     const searchMatch = product.name.toLowerCase().includes(search.toLowerCase())
-      || product.SKU.toLowerCase().includes(search.toLowerCase())
+      || product.SKU?.toLowerCase().includes(search.toLowerCase())
       || categoryNames.toLowerCase().includes(search.toLowerCase());
     const categoryMatch = !categoryFilter || categoryIds.includes(categoryFilter);
     return searchMatch && categoryMatch;

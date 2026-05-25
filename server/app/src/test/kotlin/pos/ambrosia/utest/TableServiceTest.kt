@@ -63,8 +63,8 @@ class TableServiceTest {
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(expectedTable.id) // Arrange
             whenever(mockResultSet.getString("name")).thenReturn(expectedTable.name) // Arrange
-            whenever(mockResultSet.getString("space_id")).thenReturn(expectedTable.space_id) // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn(expectedTable.order_id) // Arrange
+            whenever(mockResultSet.getString("space_id")).thenReturn(expectedTable.spaceId) // Arrange
+            whenever(mockResultSet.getString("order_id")).thenReturn(expectedTable.orderId) // Arrange
             whenever(mockResultSet.getString("status")).thenReturn(expectedTable.status) // Arrange
             val service = TableService(mockConnection) // Arrange
             val result = service.getTableById("table-1") // Act
@@ -223,7 +223,7 @@ class TableServiceTest {
     @Test
     fun `updateTable returns false if ID is null`() {
         runBlocking {
-            val tableWithNullId = Table(id = null, name = "A Name", space_id = "space-1", order_id = "", status = "available") // Arrange
+            val tableWithNullId = Table(id = null, name = "A Name", spaceId = "space-1", orderId = "", status = "available") // Arrange
             val service = TableService(mockConnection) // Arrange
             val result = service.updateTable(tableWithNullId) // Act
             assertFalse(result) // Assert
@@ -234,7 +234,7 @@ class TableServiceTest {
     @Test
     fun `updateTable returns false if space does not exist`() {
         runBlocking {
-            val tableToUpdate = Table(id = "table-1", name = "A Name", space_id = "non-existent-space", order_id = "", status = "available")
+            val tableToUpdate = Table(id = "table-1", name = "A Name", spaceId = "non-existent-space", orderId = "", status = "available")
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
@@ -247,7 +247,7 @@ class TableServiceTest {
     @Test
     fun `updateTable returns false if name already exists in space`() {
         runBlocking {
-            val tableToUpdate = Table(id = "table-1", name = "Existing Name", space_id = "space-1", order_id = "", status = "available")
+            val tableToUpdate = Table(id = "table-1", name = "Existing Name", spaceId = "space-1", orderId = "", status = "available")
             val spaceCheckStatement: PreparedStatement = mock() // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("FROM spaces"))).thenReturn(spaceCheckStatement) // Arrange
@@ -269,7 +269,7 @@ class TableServiceTest {
     @Test
     fun `updateTable returns false if status is invalid`() {
         runBlocking {
-            val tableToUpdate = Table(id = "table-1", name = "A Name", space_id = "space-1", order_id = "", status = "invalid-status")
+            val tableToUpdate = Table(id = "table-1", name = "A Name", spaceId = "space-1", orderId = "", status = "invalid-status")
             val spaceCheckStatement: PreparedStatement = mock() // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("FROM spaces"))).thenReturn(spaceCheckStatement) // Arrange
@@ -292,7 +292,7 @@ class TableServiceTest {
     fun `updateTable returns true on success`() {
         runBlocking {
             val tableToUpdate =
-                Table(id = "table-1", name = "Updated Name", space_id = "space-1", order_id = "order-1", status = "occupied") // Arrange
+                Table(id = "table-1", name = "Updated Name", spaceId = "space-1", orderId = "order-1", status = "occupied") // Arrange
             val spaceCheckStatement: PreparedStatement = mock() // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
@@ -318,7 +318,7 @@ class TableServiceTest {
     fun `updateTable returns false when database update fails`() {
         runBlocking {
             val tableToUpdate =
-                Table(id = "table-1", name = "Updated Name", space_id = "space-1", order_id = "order-1", status = "occupied") // Arrange
+                Table(id = "table-1", name = "Updated Name", spaceId = "space-1", orderId = "order-1", status = "occupied") // Arrange
             val spaceCheckStatement: PreparedStatement = mock() // Arrange
             val nameCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange

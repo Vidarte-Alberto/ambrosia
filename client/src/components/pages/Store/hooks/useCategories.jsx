@@ -3,8 +3,10 @@ import { useState, useEffect, useCallback } from "react";
 
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
+import { useFetchList } from "@/lib/http/useFetchList";
 
 export function useCategories(type = "product") {
+  const { fetchList } = useFetchList();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,20 +16,20 @@ export function useCategories(type = "product") {
     setError(null);
 
     try {
-      const response = await httpClient(`/categories?type=${type}`);
-      const data = await parseJsonResponse(response, []);
-      setCategories(toArray(data));
+      const categoryList = await fetchList(`/categories?type=${type}`);
+      if (categoryList === null) return;
+      setCategories(toArray(categoryList));
     } catch (error) {
       console.error("Error fetching categories:", error);
       setError(error);
     } finally {
       setLoading(false);
     }
-  }, [type]);
+  }, [fetchList, type]);
 
   const createCategory = useCallback(
     async (name, categoryType) => {
-      const response = await httpClient("/categories", {
+      const createCategoryResponse = await httpClient("/categories", {
         method: "POST",
         body: JSON.stringify({ name, type: categoryType || type }),
         headers: {
@@ -35,9 +37,10 @@ export function useCategories(type = "product") {
         },
         notShowError: false,
       });
+      const createdCategory = await parseJsonResponse(createCategoryResponse, {});
 
       await fetchCategories();
-      return response?.id;
+      return createdCategory?.id;
     },
     [fetchCategories, type],
   );

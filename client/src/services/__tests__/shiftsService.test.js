@@ -27,7 +27,7 @@ describe("shiftsService", () => {
     });
 
     it("returns the shift object on 200", async () => {
-      const shift = { id: 1, shift_date: "2026-03-04", start_time: "09:00:00" };
+      const shift = { id: 1, shiftDate: "2026-03-04", startTime: "09:00:00" };
       httpClient.mockResolvedValue(makeResponse(200));
       parseJsonResponse.mockResolvedValue(shift);
 
@@ -59,7 +59,7 @@ describe("shiftsService", () => {
       parseJsonResponse.mockResolvedValue({ id: 5 });
     });
 
-    it("sends POST to /shifts with user_id and initial_amount", async () => {
+    it("sends POST to /shifts with userId and initialAmount", async () => {
       await openTurn(42, 150);
 
       const [url, options] = httpClient.mock.calls[0];
@@ -67,32 +67,32 @@ describe("shiftsService", () => {
 
       expect(url).toBe("/shifts");
       expect(options.method).toBe("POST");
-      expect(body.user_id).toBe(42);
-      expect(body.initial_amount).toBe(150);
+      expect(body.userId).toBe(42);
+      expect(body.initialAmount).toBe(150);
     });
 
-    it("defaults initial_amount to 0 when not provided", async () => {
+    it("defaults initialAmount to 0 when not provided", async () => {
       await openTurn(1);
 
       const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.initial_amount).toBe(0);
+      expect(body.initialAmount).toBe(0);
     });
 
-    it("sends shift_date as YYYY-MM-DD local date format", async () => {
+    it("sends shiftDate as YYYY-MM-DD local date format", async () => {
       await openTurn(1, 0);
 
       const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.shift_date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(body.shiftDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
-    it("sends start_time as HH:mm:ss format", async () => {
+    it("sends startTime as HH:mm:ss format", async () => {
       await openTurn(1, 0);
 
       const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.start_time).toMatch(/^\d{2}:\d{2}:\d{2}/);
+      expect(body.startTime).toMatch(/^\d{2}:\d{2}:\d{2}/);
     });
 
-    it("uses local date components (not UTC toISOString) for shift_date", async () => {
+    it("uses local date components (not UTC toISOString) for shiftDate", async () => {
       jest.useFakeTimers();
       jest.setSystemTime(new Date(2026, 2, 4, 20, 0, 0));
 
@@ -105,7 +105,7 @@ describe("shiftsService", () => {
         String(now.getMonth() + 1).padStart(2, "0"),
         String(now.getDate()).padStart(2, "0"),
       ].join("-");
-      expect(body.shift_date).toBe(expected);
+      expect(body.shiftDate).toBe(expected);
 
       jest.useRealTimers();
     });
@@ -128,7 +128,7 @@ describe("shiftsService", () => {
 
       expect(url).toBe("/shifts/7/close");
       expect(options.method).toBe("POST");
-      expect(body.final_amount).toBe(150.5);
+      expect(body.finalAmount).toBe(150.5);
       expect(body.difference).toBe(-10.2);
     });
 
@@ -139,7 +139,7 @@ describe("shiftsService", () => {
       await closeTurn(3);
 
       const body = JSON.parse(httpClient.mock.calls[0][1].body);
-      expect(body.final_amount).toBeNull();
+      expect(body.finalAmount).toBeNull();
       expect(body.difference).toBeNull();
     });
 

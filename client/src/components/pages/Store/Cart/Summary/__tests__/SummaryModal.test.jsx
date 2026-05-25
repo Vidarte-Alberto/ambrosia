@@ -15,6 +15,14 @@ jest.mock("@heroui/react", () => ({
   ModalBody: ({ children }) => <div data-testid="modal-body">{children}</div>,
 }));
 
+jest.mock("@/components/shared/DeleteButton", () => ({
+  DeleteButton: ({ onPress, children }) => (
+    <button aria-label="clear-cart" onClick={onPress}>
+      {children}
+    </button>
+  ),
+}));
+
 jest.mock("../SummaryContent", () => ({
   SummaryContent: ({ cartItems }) => (
     <div data-testid="summary-content" data-items={cartItems?.length ?? 0} />
@@ -32,6 +40,7 @@ const defaultProps = {
   isPaying: false,
   paymentError: "",
   onClearPaymentError: jest.fn(),
+  onClearCart: jest.fn(),
 };
 
 beforeEach(() => {
@@ -71,5 +80,13 @@ describe("SummaryModal", () => {
 
     fireEvent.click(screen.getByLabelText("close"));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("calls onClearCart when clear cart button is pressed", () => {
+    const onClearCart = jest.fn();
+    render(<SummaryModal {...defaultProps} onClearCart={onClearCart} />);
+
+    fireEvent.click(screen.getByLabelText("clear-cart"));
+    expect(onClearCart).toHaveBeenCalled();
   });
 });

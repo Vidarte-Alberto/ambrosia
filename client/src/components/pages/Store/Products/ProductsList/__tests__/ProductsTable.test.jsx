@@ -29,7 +29,7 @@ jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
 
-const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
+const mockStoredAssetUrl = jest.fn((url) => (url ? `cdn${url}` : null));
 jest.mock("@/components/utils/storedAssetUrl", () => ({
   __esModule: true,
   storedAssetUrl: (...args) => mockStoredAssetUrl(...args),
@@ -45,20 +45,20 @@ const products = [
     name: "Jade Wallet",
     description: "Hardware wallet",
     SKU: "jade-wallet",
-    category_ids: ["cat-1"],
-    price_cents: 1600,
+    categoryIds: ["cat-1"],
+    priceCents: 1600,
     quantity: 10,
-    image_url: "/images/jade.png",
+    imageUrl: "/images/jade.png",
   },
   {
     id: 2,
     name: "No Cat",
     description: "Missing category",
     SKU: "no-cat",
-    category_ids: ["missing"],
-    price_cents: 0,
+    categoryIds: ["missing"],
+    priceCents: 0,
     quantity: 0,
-    image_url: "/images/no-cat.png",
+    imageUrl: "/images/no-cat.png",
   },
 ];
 
@@ -137,6 +137,14 @@ describe("ProductsTable", () => {
 
     expect(mockStoredAssetUrl).toHaveBeenCalledWith("/images/jade.png");
     expect(screen.getByRole("img", { name: "Jade Wallet" }).getAttribute("data-src")).toBe("cdn/images/jade.png");
+  });
+
+  it("renders an image placeholder when imageUrl is missing", () => {
+    renderTable({
+      products: [{ ...products[0], imageUrl: null }],
+    });
+
+    expect(screen.getByTestId("product-table-image-placeholder-1")).toBeInTheDocument();
   });
 
   it("calls onEditProduct when edit button is clicked", () => {

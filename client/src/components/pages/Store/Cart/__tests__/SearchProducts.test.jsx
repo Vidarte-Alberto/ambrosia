@@ -20,29 +20,36 @@ const products = [
     id: 1,
     name: "Jade Wallet",
     SKU: "jade-wallet",
-    category_ids: ["cat-1"],
+    categoryIds: ["cat-1"],
     quantity: 5,
   },
   {
     id: 2,
     name: "M5 Stick",
     SKU: "m5-stick",
-    category_ids: ["cat-2"],
+    categoryIds: ["cat-2"],
     quantity: 2,
   },
   {
     id: 3,
     name: "Out of Stock",
     SKU: "empty",
-    category_ids: ["cat-1"],
+    categoryIds: ["cat-1"],
     quantity: 0,
   },
   {
     id: 4,
     name: "Unknown Category",
     SKU: "unknown-cat",
-    category_ids: ["missing"],
+    categoryIds: ["missing"],
     quantity: 1,
+  },
+  {
+    id: 5,
+    name: "No SKU Product",
+    SKU: null,
+    categoryIds: ["cat-1"],
+    quantity: 10,
   },
 ];
 
@@ -95,6 +102,21 @@ describe("SearchProducts", () => {
       target: { value: "hardware" },
     });
     expect(screen.getByTestId("product-list").textContent).toContain("Jade Wallet");
+  });
+
+  it("handles products with null SKU during search", () => {
+    render(
+      <SearchProducts
+        products={products}
+        categories={categories}
+        onAddProduct={jest.fn()}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("search.label"), {
+      target: { value: "No SKU" },
+    });
+    expect(screen.getByTestId("product-list").textContent).toContain("No SKU Product");
   });
 
   it("filters by category selection", () => {

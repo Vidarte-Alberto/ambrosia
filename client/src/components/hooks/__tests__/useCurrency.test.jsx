@@ -27,7 +27,7 @@ function TestComponent() {
       <span data-testid="acronym">{currency.acronym}</span>
       <span data-testid="symbol">{currency.symbol}</span>
       <span data-testid="locale">{currency.locale}</span>
-      <span data-testid="country_code">{currency.country_code ?? "null"}</span>
+      <span data-testid="countryCode">{currency.countryCode ?? "null"}</span>
     </div>
   );
 }
@@ -40,7 +40,7 @@ describe("useCurrency", () => {
   describe("Initial fetch", () => {
     it("fetches currency from /base-currency on mount", async () => {
       httpClient.mockResolvedValueOnce({});
-      parseJsonResponse.mockResolvedValueOnce({ acronym: "MXN", symbol: "$", country_code: "MX" });
+      parseJsonResponse.mockResolvedValueOnce({ acronym: "MXN", symbol: "$", countryCode: "MX" });
 
       render(<TestComponent />);
 
@@ -73,9 +73,9 @@ describe("useCurrency", () => {
   });
 
   describe("parseCurrencyData", () => {
-    it("uses currency_id when id is absent", async () => {
+    it("uses currencyId when id is absent", async () => {
       httpClient.mockResolvedValueOnce({});
-      parseJsonResponse.mockResolvedValueOnce({ currency_id: 42, acronym: "EUR", symbol: "€" });
+      parseJsonResponse.mockResolvedValueOnce({ currencyId: 42, acronym: "EUR", symbol: "€" });
 
       render(<TestComponent />);
 
@@ -85,15 +85,15 @@ describe("useCurrency", () => {
       });
     });
 
-    it("derives locale from country_code", async () => {
+    it("derives locale from countryCode", async () => {
       httpClient.mockResolvedValueOnce({});
-      parseJsonResponse.mockResolvedValueOnce({ acronym: "MXN", symbol: "$", country_code: "MX" });
+      parseJsonResponse.mockResolvedValueOnce({ acronym: "MXN", symbol: "$", countryCode: "MX" });
 
       render(<TestComponent />);
 
       await waitFor(() => {
         expect(screen.getByTestId("locale")).toHaveTextContent("mx-MX");
-        expect(screen.getByTestId("country_code")).toHaveTextContent("MX");
+        expect(screen.getByTestId("countryCode")).toHaveTextContent("MX");
       });
     });
 
@@ -116,7 +116,7 @@ describe("useCurrency", () => {
       parseJsonResponse.mockResolvedValueOnce({
         acronym: "USD",
         symbol: "$",
-        country_code: "US",
+        countryCode: "US",
         locale: "en-US",
       });
       render(<TestComponent />);

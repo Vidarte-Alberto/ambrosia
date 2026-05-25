@@ -6,22 +6,16 @@ import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { httpClient } from "@/lib/http";
+import { useTurn } from "@/hooks/turn/useTurn";
 
-import { useOrders } from "../../hooks/useOrders";
 import { usePayments } from "../../hooks/usePayments";
 import { usePrinters } from "../../hooks/usePrinter";
-import { useTickets } from "../../hooks/useTickets";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
 
 import {
   ensureCartReady,
-  buildOrderPayload,
-  buildTicketPayload,
-  buildPaymentPayload,
   normalizeAmounts,
 } from "./paymentBuilders";
-import { createOrderAndTicket, processBasePayment } from "./paymentFlows";
 import {
   buildHandlePay,
   buildHandleBtcInvoiceReady,
@@ -39,11 +33,10 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const t = useTranslations("cart.payment");
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
+  const { refreshShiftTickets } = useTurn();
   const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
   const { paymentMethods } = usePaymentMethods();
-  const { createOrder, updateOrder } = useOrders();
-  const { createPayment, linkPaymentToTicket, getPaymentCurrencyById } = usePayments();
-  const { createTicket } = useTickets();
+  const { getPaymentCurrencyById } = usePayments();
 
   const [{ isPaying, error: paymentError }, dispatch] = useReducer(
     paymentStateReducer,
@@ -57,25 +50,10 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
 
   const notifyError = useMemo(() => createErrorNotifier(dispatch), [dispatch]);
 
-  const decrementProductStock = useCallback(async (items) => {
-    const adjustments = (items || [])
-      .map((item) => ({
-        product_id: String(item?.id ?? ""),
-        quantity: Number(item?.quantity) || 0,
-      }))
-      .filter((adjustment) => adjustment.product_id && adjustment.quantity > 0);
-    if (!adjustments.length) return;
-    await httpClient("/products/stock", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(adjustments),
-    });
-  }, []);
-
   const paymentMethodMap = useMemo(
-    () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}), [paymentMethods]);
+    () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}),
+    [paymentMethods],
+  );
 
   const hasCustomerPrinter = useMemo(() => {
     if (!Array.isArray(printerConfigs)) return false;
@@ -129,9 +107,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setBtcPaymentConfig,
       setCashPaymentConfig,
       setCardPaymentConfig,
-      processBasePayment,
-      decrementProductStock,
-      updateOrder,
       onResetCart,
       onPay,
       notifyError,
@@ -139,40 +114,26 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       user,
       ensureCartReady,
       normalizeAmounts,
-      buildOrderPayload,
-      buildTicketPayload,
-      buildPaymentPayload,
-      createOrder,
-      createTicket,
-      createPayment,
-      linkPaymentToTicket,
       printCustomerReceipt,
-      decrementProductStock,
+      refreshShiftTickets,
     }),
     [
       currency,
       formatAmount,
       getPaymentCurrencyById,
-      decrementProductStock,
       notifyError,
       onPay,
       onResetCart,
       paymentMethodMap,
       t,
-      updateOrder,
       user,
-      createOrder,
-      createTicket,
-      createPayment,
-      linkPaymentToTicket,
       printCustomerReceipt,
+      refreshShiftTickets,
     ],
   );
 
   const handleBtcInvoiceReady = useMemo(
-    () => buildHandleBtcInvoiceReady({
-      setBtcPaymentConfig,
-    }),
+    () => buildHandleBtcInvoiceReady({ setBtcPaymentConfig }),
     [],
   );
 
@@ -180,15 +141,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     () => buildHandleBtcComplete({
       btcPaymentConfig,
       dispatch,
-      createOrderAndTicket,
-      buildOrderPayload,
-      buildTicketPayload,
-      createOrder,
-      createTicket,
-      buildPaymentPayload,
-      createPayment,
-      linkPaymentToTicket,
-      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
@@ -196,21 +148,18 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       user,
       setBtcPaymentConfig,
       printCustomerReceipt,
+      refreshShiftTickets,
     }),
     [
       btcPaymentConfig,
       dispatch,
-      createOrder,
-      createTicket,
-      createPayment,
-      linkPaymentToTicket,
-      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
       t,
       user,
       printCustomerReceipt,
+      refreshShiftTickets,
     ],
   );
 
@@ -222,16 +171,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     () => buildHandleCashComplete({
       cashPaymentConfig,
       dispatch,
-      processBasePayment,
-      buildOrderPayload,
-      buildTicketPayload,
-      createOrder,
-      createTicket,
-      buildPaymentPayload,
-      createPayment,
-      linkPaymentToTicket,
-      updateOrder,
-      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
@@ -239,6 +178,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setCashPaymentConfig,
       printCustomerReceipt,
       user,
+      refreshShiftTickets,
     }),
     [
       cashPaymentConfig,
@@ -248,13 +188,8 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       onResetCart,
       printCustomerReceipt,
       t,
-      updateOrder,
-      createOrder,
-      createTicket,
-      createPayment,
-      linkPaymentToTicket,
-      decrementProductStock,
       user,
+      refreshShiftTickets,
     ],
   );
 
@@ -266,16 +201,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     () => buildHandleCardComplete({
       cardPaymentConfig,
       dispatch,
-      processBasePayment,
-      buildOrderPayload,
-      buildTicketPayload,
-      createOrder,
-      createTicket,
-      buildPaymentPayload,
-      createPayment,
-      linkPaymentToTicket,
-      updateOrder,
-      decrementProductStock,
       onPay,
       onResetCart,
       notifyError,
@@ -283,6 +208,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       setCardPaymentConfig,
       printCustomerReceipt,
       user,
+      refreshShiftTickets,
     }),
     [
       cardPaymentConfig,
@@ -292,13 +218,8 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       onResetCart,
       printCustomerReceipt,
       t,
-      updateOrder,
-      createOrder,
-      createTicket,
-      createPayment,
-      linkPaymentToTicket,
-      decrementProductStock,
       user,
+      refreshShiftTickets,
     ],
   );
 

@@ -47,31 +47,29 @@ class IngredientService(
     private fun mapResultSetToIngredient(resultSet: java.sql.ResultSet): Ingredient =
         Ingredient(
             id = resultSet.getString("id"),
-            name = resultSet.getString("name"), // CORREGIDO: era "naame"
-            category_id = resultSet.getString("category_id"),
-            quantity = resultSet.getDouble("quantity"), // CORREGIDO: era Float
+            name = resultSet.getString("name"),
+            categoryId = resultSet.getString("category_id"),
+            quantity = resultSet.getDouble("quantity"),
             unit = resultSet.getString("unit"),
-            low_stock_threshold =
-                resultSet.getDouble("low_stock_threshold"), // CORREGIDO: era Float
-            cost_per_unit = resultSet.getDouble("cost_per_unit"), // CORREGIDO: era Float
+            lowStockThreshold =
+                resultSet.getDouble("low_stock_threshold"),
+            costPerUnit = resultSet.getDouble("cost_per_unit"),
         )
 
     suspend fun addIngredient(ingredient: Ingredient): String? {
-        // Verificar que la categoría existe
-        if (!categoryExists(ingredient.category_id)) {
-            logger.error("Category does not exist: ${ingredient.category_id}")
+        if (!categoryExists(ingredient.categoryId)) {
+            logger.error("Category does not exist: ${ingredient.categoryId}")
             return null
         }
 
-        // Validar datos
         if (ingredient.name.isBlank()) {
             logger.error("Ingredient name cannot be blank")
             return null
         }
 
         if (ingredient.quantity < 0 ||
-            ingredient.low_stock_threshold < 0 ||
-            ingredient.cost_per_unit < 0
+            ingredient.lowStockThreshold < 0 ||
+            ingredient.costPerUnit < 0
         ) {
             logger.error("Quantity, threshold and cost cannot be negative")
             return null
@@ -84,12 +82,12 @@ class IngredientService(
         val statement = connection.prepareStatement(ADD_INGREDIENT)
 
         statement.setString(1, generatedId)
-        statement.setString(2, ingredient.name) // CORREGIDO: era ingredient.naame
-        statement.setString(3, ingredient.category_id)
-        statement.setDouble(4, ingredient.quantity) // CORREGIDO: era setFloat
+        statement.setString(2, ingredient.name)
+        statement.setString(3, ingredient.categoryId)
+        statement.setDouble(4, ingredient.quantity)
         statement.setString(5, ingredient.unit)
-        statement.setDouble(6, ingredient.low_stock_threshold) // CORREGIDO: era setFloat
-        statement.setDouble(7, ingredient.cost_per_unit) // CORREGIDO: era setFloat
+        statement.setDouble(6, ingredient.lowStockThreshold)
+        statement.setDouble(7, ingredient.costPerUnit)
 
         val rowsAffected = statement.executeUpdate()
 
@@ -143,21 +141,19 @@ class IngredientService(
             return false
         }
 
-        // Verificar que la categoría existe
-        if (!categoryExists(ingredient.category_id)) {
-            logger.error("Category does not exist: ${ingredient.category_id}")
+        if (!categoryExists(ingredient.categoryId)) {
+            logger.error("Category does not exist: ${ingredient.categoryId}")
             return false
         }
 
-        // Validar datos
         if (ingredient.name.isBlank()) {
             logger.error("Ingredient name cannot be blank")
             return false
         }
 
         if (ingredient.quantity < 0 ||
-            ingredient.low_stock_threshold < 0 ||
-            ingredient.cost_per_unit < 0
+            ingredient.lowStockThreshold < 0 ||
+            ingredient.costPerUnit < 0
         ) {
             logger.error("Quantity, threshold and cost cannot be negative")
             return false
@@ -165,11 +161,11 @@ class IngredientService(
 
         val statement = connection.prepareStatement(UPDATE_INGREDIENT)
         statement.setString(1, ingredient.name)
-        statement.setString(2, ingredient.category_id)
+        statement.setString(2, ingredient.categoryId)
         statement.setDouble(3, ingredient.quantity)
         statement.setString(4, ingredient.unit)
-        statement.setDouble(5, ingredient.low_stock_threshold)
-        statement.setDouble(6, ingredient.cost_per_unit)
+        statement.setDouble(5, ingredient.lowStockThreshold)
+        statement.setDouble(6, ingredient.costPerUnit)
         statement.setString(7, ingredient.id)
 
         val rowsUpdated = statement.executeUpdate()
@@ -182,7 +178,6 @@ class IngredientService(
     }
 
     suspend fun deleteIngredient(id: String): Boolean {
-        // Verificar que el ingrediente no esté siendo usado en platos
         if (ingredientInUse(id)) {
             logger.error("Cannot delete ingredient $id: it's being used in dishes")
             return false

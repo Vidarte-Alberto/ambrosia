@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from "@testing-library/react";
 
 import * as useAuthHook from "@/hooks/auth/useAuth";
-import * as useModulesHook from "@/hooks/useModules";
+import * as useNavigationHook from "@/hooks/useNavigation";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import * as configurationsProvider from "@/providers/configurations/configurationsProvider";
 
@@ -15,10 +15,10 @@ const mockHandlePay = jest.fn();
 jest.mock("../SearchProducts", () => ({
   SearchProducts: ({ onAddProduct }) => (
     <div>
-      <button onClick={() => onAddProduct({ id: 1, name: "Jade Wallet", price_cents: 100 })}>
+      <button onClick={() => onAddProduct({ id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", priceCents: 100 })}>
         add-existing
       </button>
-      <button onClick={() => onAddProduct({ id: 2, name: "M5 Stick", price_cents: 200 })}>
+      <button onClick={() => onAddProduct({ id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", priceCents: 200 })}>
         add-new
       </button>
     </div>
@@ -126,10 +126,10 @@ beforeEach(() => {
 
   jest.clearAllMocks();
 
-  jest.spyOn(useModulesHook, "useModules").mockReturnValue({
-    availableModules: {},
+  jest.spyOn(useNavigationHook, "useNavigation").mockReturnValue({
+    availableFeatures: {},
     availableNavigation: defaultNavigation,
-    checkRouteAccess: jest.fn(),
+
     isAuth: true,
     isAdmin: false,
     isLoading: false,
@@ -148,7 +148,7 @@ beforeEach(() => {
   jest.spyOn(useAuthHook, "useAuth").mockReturnValue({
     isAuth: true,
     isLoading: false,
-    user: { user_id: "user-1", name: "Tester" },
+    user: { userId: "user-1", name: "Tester" },
     permissions: [],
     logout: jest.fn(),
   });
@@ -175,13 +175,13 @@ describe("Cart page", () => {
 
     fireEvent.click(screen.getByText("add-existing"));
     expect(mockSetCart).toHaveBeenCalledWith([
-      { id: 1, name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 },
+      { id: 1, imageUrl: "/uploads/jade.png", name: "Jade Wallet", price: 100, quantity: 2, subtotal: 200 },
     ]);
 
     fireEvent.click(screen.getByText("add-new"));
     expect(mockSetCart).toHaveBeenCalledWith([
       { id: 1, name: "Jade Wallet", price: 100, quantity: 1, subtotal: 100 },
-      { id: 2, name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
+      { id: 2, imageUrl: "/uploads/m5.png", name: "M5 Stick", price: 200, quantity: 1, subtotal: 200 },
     ]);
   });
 

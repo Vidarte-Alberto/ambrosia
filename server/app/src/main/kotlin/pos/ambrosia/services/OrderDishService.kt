@@ -41,24 +41,22 @@ class OrderDishService(
     private fun mapResultSetToOrderDish(resultSet: java.sql.ResultSet): OrderDish =
         OrderDish(
             id = resultSet.getString("id"),
-            order_id = resultSet.getString("order_id"),
-            dish_id = resultSet.getString("dish_id"),
-            price_at_order = resultSet.getDouble("price_at_order"),
+            orderId = resultSet.getString("order_id"),
+            dishId = resultSet.getString("dish_id"),
+            priceAtOrder = resultSet.getDouble("price_at_order"),
             notes = resultSet.getString("notes"),
             status = resultSet.getString("status"),
-            should_prepare = resultSet.getBoolean("should_prepare"),
+            shouldPrepare = resultSet.getBoolean("should_prepare"),
         )
 
     suspend fun addOrderDish(orderDish: OrderDish): String? {
-        // Verificar que la orden existe
-        if (!orderExists(orderDish.order_id)) {
-            logger.error("Order does not exist: ${orderDish.order_id}")
+        if (!orderExists(orderDish.orderId)) {
+            logger.error("Order does not exist: ${orderDish.orderId}")
             return null
         }
 
-        // Verificar que el plato existe
-        if (!dishExists(orderDish.dish_id)) {
-            logger.error("Dish does not exist: ${orderDish.dish_id}")
+        if (!dishExists(orderDish.dishId)) {
+            logger.error("Dish does not exist: ${orderDish.dishId}")
             return null
         }
 
@@ -66,12 +64,12 @@ class OrderDishService(
         val statement = connection.prepareStatement(ADD_ORDER_DISH)
 
         statement.setString(1, generatedId)
-        statement.setString(2, orderDish.order_id)
-        statement.setString(3, orderDish.dish_id)
-        statement.setDouble(4, orderDish.price_at_order)
+        statement.setString(2, orderDish.orderId)
+        statement.setString(3, orderDish.dishId)
+        statement.setDouble(4, orderDish.priceAtOrder)
         statement.setString(5, orderDish.notes)
         statement.setString(6, orderDish.status)
-        statement.setBoolean(7, orderDish.should_prepare)
+        statement.setBoolean(7, orderDish.shouldPrepare)
 
         val rowsAffected = statement.executeUpdate()
 
@@ -115,10 +113,10 @@ class OrderDishService(
         }
 
         val statement = connection.prepareStatement(UPDATE_ORDER_DISH)
-        statement.setDouble(1, orderDish.price_at_order)
+        statement.setDouble(1, orderDish.priceAtOrder)
         statement.setString(2, orderDish.notes)
         statement.setString(3, orderDish.status)
-        statement.setBoolean(4, orderDish.should_prepare)
+        statement.setBoolean(4, orderDish.shouldPrepare)
         statement.setString(5, orderDish.id)
 
         val rowsUpdated = statement.executeUpdate()
@@ -153,7 +151,7 @@ class OrderDishService(
         } else {
             logger.info("No dishes found for order: $orderId")
         }
-        return true // Return true even if no rows deleted (order might not have dishes)
+        return true
     }
 
     suspend fun checkOrderDishStatus(

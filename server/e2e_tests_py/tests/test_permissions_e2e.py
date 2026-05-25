@@ -20,11 +20,11 @@ async def test_user_with_read_permission_can_read_but_not_write(client_factory):
 
     # 2. Should NOT be able to create (POST) - Expecting 403 Forbidden
     dummy_order = {
-        "user_id": "some-id",
+        "userId": "some-id",
         "waiter": "some-waiter",
         "status": "pending",
         "total": 100.0,
-        "created_at": "2023-01-01T00:00:00Z",
+        "createdAt": "2023-01-01T00:00:00Z",
     }
     response = await viewer_client.post("/orders", json=dummy_order)
     assert_status_code(

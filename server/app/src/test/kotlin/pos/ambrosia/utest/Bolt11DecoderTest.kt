@@ -46,4 +46,37 @@ class Bolt11DecoderTest {
     fun `given valid invoice with readable description returns description`() {
         assertEquals("1 cup coffee", Bolt11Decoder.extractDescription(invoiceWithDescription))
     }
+
+    @Test
+    fun `decodeInvoice returns null for null input`() {
+        assertNull(Bolt11Decoder.decodeInvoice(null))
+    }
+
+    @Test
+    fun `decodeInvoice returns null for blank input`() {
+        assertNull(Bolt11Decoder.decodeInvoice(""))
+        assertNull(Bolt11Decoder.decodeInvoice("   "))
+    }
+
+    @Test
+    fun `decodeInvoice returns null for malformed invoice`() {
+        assertNull(Bolt11Decoder.decodeInvoice("not-a-bolt11-invoice"))
+        assertNull(Bolt11Decoder.decodeInvoice("lnbc1randomgarbage"))
+    }
+
+    @Test
+    fun `decodeInvoice extracts amount and description from valid invoice`() {
+        val result = Bolt11Decoder.decodeInvoice(invoiceWithDescription)
+        assert(result != null)
+        assertEquals(250000L, result!!.amountSat)
+        assertEquals("1 cup coffee", result.description)
+    }
+
+    @Test
+    fun `decodeInvoice handles invoice with description hash`() {
+        val result = Bolt11Decoder.decodeInvoice(invoiceWithDescriptionHash)
+        assert(result != null)
+        assertEquals(2000000L, result!!.amountSat)
+        assertNull(result.description)
+    }
 }

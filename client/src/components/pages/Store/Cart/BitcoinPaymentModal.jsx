@@ -9,10 +9,11 @@ import {
   ModalHeader,
   Spinner,
 } from "@heroui/react";
-import { CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { QRCode } from "react-qr-code";
 
+import { CopyButton } from "@/components/shared/CopyButton";
 import { usePaymentWebsocket } from "@/hooks/usePaymentWebsocket";
 
 import { useBitcoinInvoice } from "./hooks/useBitcoinInvoice";
@@ -28,7 +29,7 @@ export function BitcoinPaymentModal({
   invoiceDescription,
   displayTotal,
 }) {
-  const t = useTranslations("cart.paymentModal.bitcoin");
+  const bitcoinTranslations = useTranslations("cart.paymentModal.bitcoin");
   const { setInvoiceHash, onPayment, connected } = usePaymentWebsocket();
 
   const [paymentReceived, setPaymentReceived] = useState(false);
@@ -41,7 +42,6 @@ export function BitcoinPaymentModal({
     invoice,
     satsAmount,
     loading,
-    error,
     generateInvoice,
     reset,
   } = useBitcoinInvoice({
@@ -105,42 +105,55 @@ export function BitcoinPaymentModal({
       <ModalContent>
         <ModalHeader className="flex flex-col">
           <span className="text-base font-semibold text-green-900">
-            {t("title")}
+            {bitcoinTranslations("title")}
           </span>
-          {!paymentReceived && (
+          {!paymentReceived && invoice?.serialized && (
             <span className="text-sm text-gray-600">
-              {t("subtitle")}
+              {bitcoinTranslations("subtitle")}
             </span>
           )}
         </ModalHeader>
         <ModalBody className="space-y-4">
           {loading && !paymentReceived && (
             <div className="flex items-center justify-center py-6">
-              <Spinner color="warning" label={t("generating")} />
+              <Spinner color="warning" label={bitcoinTranslations("generating")} />
             </div>
           )}
 
-          {!loading && !paymentReceived && error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded">
-              <p className="text-sm">{error}</p>
-              <Button className="mt-3" color="warning" onPress={generateInvoice}>
-                {t("retry")}
-              </Button>
+          {!loading && !paymentReceived && !invoice?.serialized && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p className="text-sm">{bitcoinTranslations("serviceUnavailable")}</p>
+              </div>
             </div>
           )}
 
-          {!loading && !paymentReceived && !error && invoice && (
+          {!loading && !paymentReceived && invoice?.serialized && (
             <>
-              <div className="flex justify-center">
+              <div className="flex flex-col space-y-4 justify-center items-center">
                 <div className="bg-white p-4 rounded-lg border w-full max-w-60 sm:max-w-[280px] mx-auto">
                   <QRCode
                     value={invoice?.serialized || ""}
                     style={{ width: "100%", height: "auto", display: "block" }}
                   />
                 </div>
+                <div className="flex items-center justify-between w-full max-w-60 sm:max-w-[280px]">
+                  <span className="text-sm text-gray-500 font-medium">
+                    {bitcoinTranslations("invoice")}
+                  </span>
+                  <CopyButton
+                    value={invoice.serialized}
+                    label={bitcoinTranslations("copyButton")}
+                    size="sm"
+                  />
+                </div>
+                <div className="bg-gray-100 rounded p-2 text-xs font-mono w-full max-w-60 sm:max-w-[280px] truncate select-none">
+                  {invoice.serialized}
+                </div>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">{t("totalLabel")}</p>
+                <p className="text-sm text-gray-600">{bitcoinTranslations("totalLabel")}</p>
                 <p className="text-xl font-semibold text-green-900">
                   {displayTotal}
                 </p>
@@ -151,7 +164,7 @@ export function BitcoinPaymentModal({
               {paymentAwaiting && (
                 <div className="flex items-center justify-center space-x-2 text-sm text-forest">
                   <Spinner size="sm" color="success" />
-                  <span>{t("waitingPayment")}</span>
+                  <span>{bitcoinTranslations("waitingPayment")}</span>
                 </div>
               )}
             </>
@@ -162,11 +175,11 @@ export function BitcoinPaymentModal({
               <CheckCircle className="h-16 w-16 text-forest" />
               <div className="text-center space-y-1">
                 <p className="text-xl font-semibold text-deep">
-                  {t("confirmed")}
+                  {bitcoinTranslations("confirmed")}
                 </p>
                 {paymentCompletedAt && (
                   <p className="text-sm text-gray-500">
-                    {t("paidAt", { time: new Date(paymentCompletedAt).toLocaleTimeString() })}
+                    {bitcoinTranslations("paidAt", { time: new Date(paymentCompletedAt).toLocaleTimeString() })}
                   </p>
                 )}
               </div>
@@ -181,13 +194,19 @@ export function BitcoinPaymentModal({
             isDisabled={loading}
             onPress={handleClose}
           >
-            {paymentReceived ? t("close") : t("cancel")}
+            {paymentReceived ? bitcoinTranslations("close") : bitcoinTranslations("cancel")}
           </Button>
-          {paymentAwaiting && !connected && (
+          {!loading && !paymentReceived && !invoice?.serialized && (
+            <Button color="danger" onPress={generateInvoice}>
+              {bitcoinTranslations("retry")}
+            </Button>
+          )}
+          {!loading && paymentAwaiting && !connected && (
             <Button
               color="primary"
               className="bg-green-800"
               onPress={() => {
+                if (completedRef.current) return;
                 completedRef.current = true;
                 setPaymentReceived(true);
                 setPaymentAwaiting(false);
@@ -195,7 +214,7 @@ export function BitcoinPaymentModal({
                 onComplete?.({ invoice, satoshis: satsAmount, paymentId, auto: false });
               }}
             >
-              {t("markAsPaid")}
+              {bitcoinTranslations("markAsPaid")}
             </Button>
           )}
         </ModalFooter>

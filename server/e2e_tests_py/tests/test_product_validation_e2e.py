@@ -12,11 +12,11 @@ logger = logging.getLogger(__name__)
 VALID_PRODUCT = {
     "SKU": "SKU-TEST-001",
     "name": "Test Product",
-    "cost_cents": 500,
-    "price_cents": 1000,
+    "costCents": 500,
+    "priceCents": 1000,
     "quantity": 10,
-    "min_stock_threshold": 2,
-    "max_stock_threshold": 50,
+    "minStockThreshold": 2,
+    "maxStockThreshold": 50,
 }
 
 
@@ -46,7 +46,7 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"test_product_{uid}",
-                "category_ids": [category_id],
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(response, 201, "Failed to create test product fixture")
@@ -61,7 +61,7 @@ class TestProductValidation:
         """POST /products with a blank name should return 400."""
         response = await admin_client.post(
             "/products",
-            json={**VALID_PRODUCT, "name": "", "category_ids": [category_id]},
+            json={**VALID_PRODUCT, "name": "", "categoryIds": [category_id]},
         )
         assert_status_code(
             response, 400, "Blank product name should be rejected on create"
@@ -69,8 +69,10 @@ class TestProductValidation:
         logger.info("✓ Blank product name correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_product_with_blank_sku_fails(self, admin_client, category_id):
-        """POST /products with a blank SKU should return 400."""
+    async def test_create_product_with_blank_sku_succeeds(
+        self, admin_client, category_id
+    ):
+        """POST /products with a blank SKU should return 201."""
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/products",
@@ -78,11 +80,31 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": "",
                 "name": f"product_{uid}",
-                "category_ids": [category_id],
+                "categoryIds": [category_id],
             },
         )
-        assert_status_code(response, 400, "Blank SKU should be rejected on create")
-        logger.info("✓ Blank SKU correctly rejected on create")
+        assert_status_code(response, 201, "Blank SKU should be accepted on create")
+        await admin_client.delete(f"/products/{response.json()['id']}")
+        logger.info("✓ Blank SKU correctly accepted on create")
+
+    @pytest.mark.asyncio
+    async def test_create_product_with_null_sku_succeeds(
+        self, admin_client, category_id
+    ):
+        """POST /products with a null SKU should return 201."""
+        uid = str(uuid.uuid4())[:8]
+        response = await admin_client.post(
+            "/products",
+            json={
+                **VALID_PRODUCT,
+                "SKU": None,
+                "name": f"product_{uid}",
+                "categoryIds": [category_id],
+            },
+        )
+        assert_status_code(response, 201, "Null SKU should be accepted on create")
+        await admin_client.delete(f"/products/{response.json()['id']}")
+        logger.info("✓ Null SKU correctly accepted on create")
 
     @pytest.mark.asyncio
     async def test_create_product_with_negative_cost_fails(
@@ -96,8 +118,8 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"product_{uid}",
-                "cost_cents": -1,
-                "category_ids": [category_id],
+                "costCents": -1,
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(
@@ -117,8 +139,8 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"product_{uid}",
-                "price_cents": -1,
-                "category_ids": [category_id],
+                "priceCents": -1,
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(
@@ -139,7 +161,7 @@ class TestProductValidation:
                 "SKU": f"SKU-{uid}",
                 "name": f"product_{uid}",
                 "quantity": -1,
-                "category_ids": [category_id],
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(
@@ -148,8 +170,8 @@ class TestProductValidation:
         logger.info("✓ Negative quantity correctly rejected on create")
 
     @pytest.mark.asyncio
-    async def test_create_product_with_empty_category_ids_fails(self, admin_client):
-        """POST /products with empty category_ids should return 400."""
+    async def test_create_product_with_empty_category_ids_succeeds(self, admin_client):
+        """POST /products with empty category_ids should return 201."""
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/products",
@@ -157,13 +179,14 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"product_{uid}",
-                "category_ids": [],
+                "categoryIds": [],
             },
         )
         assert_status_code(
-            response, 400, "Empty category_ids should be rejected on create"
+            response, 201, "Empty category_ids should be accepted on create"
         )
-        logger.info("✓ Empty category_ids correctly rejected on create")
+        await admin_client.delete(f"/products/{response.json()['id']}")
+        logger.info("✓ Empty category_ids correctly accepted on create")
 
     @pytest.mark.asyncio
     async def test_create_product_with_min_threshold_exceeding_max_fails(
@@ -177,9 +200,9 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"product_{uid}",
-                "min_stock_threshold": 50,
-                "max_stock_threshold": 10,
-                "category_ids": [category_id],
+                "minStockThreshold": 50,
+                "maxStockThreshold": 10,
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(
@@ -201,7 +224,7 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"valid_product_{uid}",
-                "category_ids": [category_id],
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(
@@ -217,7 +240,7 @@ class TestProductValidation:
         """PUT /products/{id} with a blank name should return 400."""
         response = await admin_client.put(
             f"/products/{existing_product}",
-            json={**VALID_PRODUCT, "name": "", "category_ids": [category_id]},
+            json={**VALID_PRODUCT, "name": "", "categoryIds": [category_id]},
         )
         assert_status_code(
             response, 400, "Blank product name should be rejected on update"
@@ -225,30 +248,30 @@ class TestProductValidation:
         logger.info("✓ Blank product name correctly rejected on update")
 
     @pytest.mark.asyncio
-    async def test_update_product_with_blank_sku_fails(
+    async def test_update_product_with_blank_sku_succeeds(
         self, admin_client, existing_product, category_id
     ):
-        """PUT /products/{id} with a blank SKU should return 400."""
+        """PUT /products/{id} with a blank SKU should return 200."""
         response = await admin_client.put(
             f"/products/{existing_product}",
-            json={**VALID_PRODUCT, "SKU": "", "category_ids": [category_id]},
+            json={**VALID_PRODUCT, "SKU": "", "categoryIds": [category_id]},
         )
-        assert_status_code(response, 400, "Blank SKU should be rejected on update")
-        logger.info("✓ Blank SKU correctly rejected on update")
+        assert_status_code(response, 200, "Blank SKU should be accepted on update")
+        logger.info("✓ Blank SKU correctly accepted on update")
 
     @pytest.mark.asyncio
-    async def test_update_product_with_empty_category_ids_fails(
+    async def test_update_product_with_empty_category_ids_succeeds(
         self, admin_client, existing_product
     ):
-        """PUT /products/{id} with empty category_ids should return 400."""
+        """PUT /products/{id} with empty category_ids should return 200."""
         response = await admin_client.put(
             f"/products/{existing_product}",
-            json={**VALID_PRODUCT, "category_ids": []},
+            json={**VALID_PRODUCT, "categoryIds": []},
         )
         assert_status_code(
-            response, 400, "Empty category_ids should be rejected on update"
+            response, 200, "Empty category_ids should be accepted on update"
         )
-        logger.info("✓ Empty category_ids correctly rejected on update")
+        logger.info("✓ Empty category_ids correctly accepted on update")
 
     @pytest.mark.asyncio
     async def test_update_product_with_valid_data_succeeds(
@@ -262,7 +285,7 @@ class TestProductValidation:
                 **VALID_PRODUCT,
                 "SKU": f"SKU-{uid}",
                 "name": f"updated_product_{uid}",
-                "category_ids": [category_id],
+                "categoryIds": [category_id],
             },
         )
         assert_status_code(

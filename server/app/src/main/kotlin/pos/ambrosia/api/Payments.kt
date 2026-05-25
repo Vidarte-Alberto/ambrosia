@@ -182,8 +182,8 @@ fun Route.payments(
             call.respond(
                 HttpStatusCode.Created,
                 mapOf(
-                    "paymentId" to ticketPayment.payment_id,
-                    "ticketId" to ticketPayment.ticket_id,
+                    "paymentId" to ticketPayment.paymentId,
+                    "ticketId" to ticketPayment.ticketId,
                     "message" to "Ticket payment relationship created successfully",
                 ),
             )

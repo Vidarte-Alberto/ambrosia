@@ -34,15 +34,15 @@ jest.mock("next/navigation", () => ({
 }));
 
 jest.mock("../OrdersFilterBar", () => ({
-  OrdersFilterBar: ({ onSearchChange, onRowsPerPageChange, onFiltersChange, onApplyFilters, onClearFilters }) => (
+  OrdersFilterBar: ({ search, pagination, onFiltersChange, onApplyFilters, onClearFilters }) => (
     <div>
-      <button type="button" onClick={() => onSearchChange("order-1")}>
+      <button type="button" onClick={() => search.onChange("order-1")}>
         search-match
       </button>
-      <button type="button" onClick={() => onSearchChange("missing")}>
+      <button type="button" onClick={() => search.onChange("missing")}>
         search-empty
       </button>
-      <button type="button" onClick={() => onRowsPerPageChange("1")}>
+      <button type="button" onClick={() => pagination.onChange("1")}>
         rows-1
       </button>
       <button type="button" onClick={() => onFiltersChange({ status: "paid" })}>
@@ -110,8 +110,8 @@ jest.mock("@heroui/react", () => {
 describe("StoreOrders", () => {
   beforeEach(() => {
     mockOrders = [
-      { id: "order-1", status: "paid", waiter: "Ana", total: 10, created_at: "2024-01-01" },
-      { id: "order-2", status: "paid", waiter: "Luis", total: 20, created_at: "2024-01-02" },
+      { id: "order-1", status: "paid", waiter: "Ana", total: 10, createdAt: "2024-01-01" },
+      { id: "order-2", status: "paid", waiter: "Luis", total: 20, createdAt: "2024-01-02" },
     ];
     mockPush.mockClear();
     mockFetchOrders.mockReset();

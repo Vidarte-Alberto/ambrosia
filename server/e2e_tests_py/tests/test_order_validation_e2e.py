@@ -1,7 +1,6 @@
 """End-to-end tests for order validation."""
 
 import logging
-import uuid
 
 import pytest
 
@@ -17,7 +16,7 @@ INVALID_STATUS = "invalid_status"
 async def _get_current_user_id(admin_client) -> str:
     response = await admin_client.get("/users/me")
     assert_status_code(response, 200, "Failed to fetch current user")
-    return response.json()["user"]["user_id"]
+    return response.json()["user"]["userId"]
 
 
 class TestOrderValidation:
@@ -34,12 +33,11 @@ class TestOrderValidation:
         response = await admin_client.post(
             "/orders",
             json={
-                "user_id": user_id,
-                "table_id": None,
-                "waiter": f"e2e_{str(uuid.uuid4())[:8]}",
+                "userId": user_id,
+                "tableId": None,
                 "status": VALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(response, 201, "Failed to create test order fixture")
@@ -53,12 +51,11 @@ class TestOrderValidation:
         response = await admin_client.post(
             "/orders",
             json={
-                "user_id": NONEXISTENT_ID,
-                "table_id": None,
-                "waiter": "e2e_test",
+                "userId": NONEXISTENT_ID,
+                "tableId": None,
                 "status": VALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(
@@ -74,12 +71,11 @@ class TestOrderValidation:
         response = await admin_client.post(
             "/orders",
             json={
-                "user_id": user_id,
-                "table_id": NONEXISTENT_ID,
-                "waiter": "e2e_test",
+                "userId": user_id,
+                "tableId": NONEXISTENT_ID,
                 "status": VALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(
@@ -93,12 +89,11 @@ class TestOrderValidation:
         response = await admin_client.post(
             "/orders",
             json={
-                "user_id": user_id,
-                "table_id": None,
-                "waiter": "e2e_test",
+                "userId": user_id,
+                "tableId": None,
                 "status": INVALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(response, 400, "Invalid status should be rejected on create")
@@ -110,12 +105,11 @@ class TestOrderValidation:
         response = await admin_client.post(
             "/orders",
             json={
-                "user_id": user_id,
-                "table_id": None,
-                "waiter": f"e2e_{str(uuid.uuid4())[:8]}",
+                "userId": user_id,
+                "tableId": None,
                 "status": VALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(
@@ -137,12 +131,11 @@ class TestOrderValidation:
         response = await admin_client.put(
             f"/orders/{existing_order}",
             json={
-                "user_id": NONEXISTENT_ID,
-                "table_id": None,
-                "waiter": "e2e_test",
+                "userId": NONEXISTENT_ID,
+                "tableId": None,
                 "status": VALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(
@@ -158,12 +151,11 @@ class TestOrderValidation:
         response = await admin_client.put(
             f"/orders/{existing_order}",
             json={
-                "user_id": user_id,
-                "table_id": None,
-                "waiter": "e2e_test",
+                "userId": user_id,
+                "tableId": None,
                 "status": INVALID_STATUS,
                 "total": 0.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(
@@ -179,12 +171,11 @@ class TestOrderValidation:
         response = await admin_client.put(
             f"/orders/{existing_order}",
             json={
-                "user_id": user_id,
-                "table_id": None,
-                "waiter": f"e2e_{str(uuid.uuid4())[:8]}",
+                "userId": user_id,
+                "tableId": None,
                 "status": "closed",
                 "total": 50.0,
-                "created_at": "2026-01-01T00:00:00",
+                "createdAt": "2026-01-01T00:00:00",
             },
         )
         assert_status_code(

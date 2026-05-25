@@ -9,10 +9,11 @@ import { useTranslations } from "next-intl";
 import { useTour } from "@/hooks/tour/useTour";
 
 const WALLET_RECEIVE_TOUR_KEY = "ambrosia:tour:wallet-receive";
+const WALLET_TOUR_KEY = "ambrosia:tour:wallet-channel";
 
 import { HistoryTab } from "./HistoryTab";
+import { PaymentTab } from "./Payment";
 import { ReceiveTab } from "./ReceiveTab";
-import { SendTab } from "./SendTab";
 
 export function Transactions({
   transactions,
@@ -31,7 +32,7 @@ export function Transactions({
     key: WALLET_RECEIVE_TOUR_KEY,
     delay: 500,
     driverOptions: {
-      allowClose: true,
+      allowClose: false,
       overlayOpacity: 0.5,
       showProgress: true,
       steps: [
@@ -64,6 +65,9 @@ export function Transactions({
           },
         },
       ],
+      onDestroyStarted: () => {
+        localStorage.setItem(WALLET_TOUR_KEY, "visited");
+      },
     },
     onBeforeStart: () => {
       document.getElementById("wallet-receive-amount")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -79,6 +83,7 @@ export function Transactions({
         <Tabs
           selectedKey={activeTab}
           onSelectionChange={setActiveTab}
+          aria-label={t("payments.title")}
           variant="underlined"
           classNames={{
             tabList: "gap-2 sm:gap-6 relative rounded-none px-4 sm:px-6 py-0 overflow-x-auto flex-nowrap w-full",
@@ -110,7 +115,7 @@ export function Transactions({
               </div>
             )}
           >
-            <SendTab
+            <PaymentTab
               fetchInfo={fetchInfo}
               fetchTransactions={fetchTransactions}
             />

@@ -9,6 +9,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import pos.ambrosia.logger
 import pos.ambrosia.models.Message
+import pos.ambrosia.models.WalletErrorResponse
 import pos.ambrosia.utils.AdminOnlyException
 import pos.ambrosia.utils.DatabaseException
 import pos.ambrosia.utils.DuplicateProductSkuException
@@ -18,6 +19,7 @@ import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
+import pos.ambrosia.utils.MissingRoleException
 import pos.ambrosia.utils.PermissionDeniedException
 import pos.ambrosia.utils.PhoenixBalanceException
 import pos.ambrosia.utils.PhoenixConnectionException
@@ -39,6 +41,13 @@ fun Application.handler() {
         exception<InvalidCredentialsException> { call, cause ->
             logger.warn("Invalid login attempt: ${cause.message}")
             call.respond(HttpStatusCode.Unauthorized, Message("Invalid credentials"))
+        }
+        exception<MissingRoleException> { call, cause ->
+            logger.warn("Login attempt with missing role: ${cause.message}")
+            call.respond(
+                HttpStatusCode.Unauthorized,
+                Message(cause.message ?: "No assigned role for this user, contact Admin"),
+            )
         }
         exception<InvalidTokenException> { call, cause ->
             logger.warn("Invalid token: ${cause.message}")
@@ -104,7 +113,15 @@ fun Application.handler() {
         }
         exception<PhoenixServiceException> { call, cause ->
             logger.error("Phoenix service error: ${cause.message}")
-            call.respond(HttpStatusCode.ServiceUnavailable, Message("Lightning node service error"))
+            val statusCode = cause.statusCode?.let(HttpStatusCode::fromValue) ?: HttpStatusCode.ServiceUnavailable
+            call.respond(
+                statusCode,
+                WalletErrorResponse(
+                    message = cause.message ?: "Lightning node service error",
+                    code = cause.code,
+                    source = cause.source,
+                ),
+            )
         }
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")

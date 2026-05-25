@@ -3,6 +3,7 @@ package pos.ambrosia.services
 import io.ktor.server.application.ApplicationEnvironment
 import pos.ambrosia.logger
 import pos.ambrosia.models.AuthResponse
+import pos.ambrosia.utils.MissingRoleException
 import pos.ambrosia.utils.SecurePinProcessor
 import java.sql.Connection
 
@@ -15,7 +16,7 @@ class AuthService(
             """
     SELECT u.id, u.name, u.pin, u.role_id as role_id, u.email, u.phone, r.role, r.isAdmin as isAdmin
     FROM users u
-    JOIN roles r ON u.role_id = r.id
+    LEFT JOIN roles r ON u.role_id = r.id AND r.is_deleted = 0
     WHERE u.name = ? AND u.is_deleted = 0
     """
 
@@ -45,10 +46,15 @@ class AuthService(
             pin.fill('\u0000')
 
             if (isValidPin) {
+                val role = resultSet.getString("role")
+                if (role == null) {
+                    throw MissingRoleException()
+                }
+
                 return AuthResponse(
                     id = userIdString,
                     name = resultSet.getString("name"),
-                    role = resultSet.getString("role"),
+                    role = role,
                     roleId = resultSet.getString("role_id"),
                     isAdmin = resultSet.getBoolean("isAdmin"),
                     email = resultSet.getString("email"),

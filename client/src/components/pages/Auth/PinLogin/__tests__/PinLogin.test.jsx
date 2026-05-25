@@ -4,8 +4,8 @@ import { act, render, screen, fireEvent } from "@testing-library/react";
 
 import { useAuth } from "@/hooks/auth/useAuth";
 import { I18nProvider } from "@/i18n/I18nProvider";
-import { getUsers } from "@/modules/auth/authService";
 import { useConfigurations } from "@/providers/configurations/configurationsProvider";
+import { getUsers } from "@/services/authService";
 
 import PinLogin from "../PinLogin";
 
@@ -23,7 +23,7 @@ jest.mock("../EmployeeSelect", () => ({
   ),
 }));
 
-jest.mock("@/modules/auth/authService", () => ({ getUsers: jest.fn() }));
+jest.mock("@/services/authService", () => ({ getUsers: jest.fn() }));
 jest.mock("@/hooks/auth/useAuth", () => ({ useAuth: jest.fn() }));
 jest.mock("@/providers/configurations/configurationsProvider", () => ({ useConfigurations: jest.fn() }));
 jest.mock("next/navigation", () => ({ useRouter: jest.fn() }));
@@ -83,10 +83,10 @@ describe("PinLogin", () => {
   });
 
   it("shows lockout message after a 429 response from the server", async () => {
-    const err = new Error("Too many requests");
-    err.status = 429;
-    err.retryAfter = 180;
-    mockLogin.mockRejectedValue(err);
+    const error = new Error("Too many requests");
+    error.status = 429;
+    error.retryAfter = 180;
+    mockLogin.mockRejectedValue(error);
 
     await renderPinLogin();
 
@@ -119,5 +119,25 @@ describe("PinLogin", () => {
     });
 
     expect(screen.queryByText(/lockout\.message/)).not.toBeInTheDocument();
+  });
+
+  it("shows the specific error message when the user's role is deleted", async () => {
+    const specificMessage = "No assigned role for this user, contact Admin";
+    const error = new Error(specificMessage);
+    mockLogin.mockRejectedValue(error);
+
+    await renderPinLogin();
+
+    fireEvent.click(screen.getByText("Alice"));
+    fireEvent.keyDown(window, { key: "1" });
+    fireEvent.keyDown(window, { key: "2" });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "4" });
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: "Enter" });
+    });
+
+    expect(screen.getByText(specificMessage)).toBeInTheDocument();
   });
 });

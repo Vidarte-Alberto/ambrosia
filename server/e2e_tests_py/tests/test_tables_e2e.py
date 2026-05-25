@@ -32,7 +32,7 @@ class TestTablesEndpoint:
         name = f"e2e_table_{uid}"
         response = await admin_client.post(
             "/tables",
-            json={"name": name, "space_id": space, "status": "available"},
+            json={"name": name, "spaceId": space, "status": "available"},
         )
         assert_status_code(response, 201, "Failed to create table fixture")
         table_id = response.json()["id"]
@@ -45,7 +45,7 @@ class TestTablesEndpoint:
         uid = str(uuid.uuid4())[:8]
         response = await admin_client.post(
             "/tables",
-            json={"name": f"e2e_table_{uid}", "space_id": space, "status": "available"},
+            json={"name": f"e2e_table_{uid}", "spaceId": space, "status": "available"},
         )
         assert_status_code(response, 201, "Creating a table should return 201")
         body = response.json()
@@ -77,7 +77,7 @@ class TestTablesEndpoint:
         body = response.json()
         assert body["id"] == table_id
         assert body["name"] == name
-        assert body["space_id"] == space
+        assert body["spaceId"] == space
         assert body["status"] == "available"
         logger.info("✓ GET /tables/{id} returns correct table data")
 
@@ -119,7 +119,7 @@ class TestTablesEndpoint:
             f"/tables/{table_id}",
             json={
                 "name": f"e2e_table_{uid}_updated",
-                "space_id": space,
+                "spaceId": space,
                 "status": "available",
             },
         )
@@ -132,7 +132,7 @@ class TestTablesEndpoint:
         table_id, name = table
         response = await admin_client.put(
             f"/tables/{table_id}",
-            json={"name": name, "space_id": space, "status": "occupied"},
+            json={"name": name, "spaceId": space, "status": "occupied"},
         )
         assert_status_code(
             response, 200, "Status transition to occupied should return 200"
@@ -148,7 +148,7 @@ class TestTablesEndpoint:
         table_id, name = table
         response = await admin_client.put(
             f"/tables/{table_id}",
-            json={"name": name, "space_id": space, "status": "reserved"},
+            json={"name": name, "spaceId": space, "status": "reserved"},
         )
         assert_status_code(
             response, 200, "Status transition to reserved should return 200"
@@ -163,7 +163,7 @@ class TestTablesEndpoint:
         """PUT /tables/{id} with a non-existent ID returns 404."""
         response = await admin_client.put(
             f"/tables/{NONEXISTENT_ID}",
-            json={"name": "ghost_table", "space_id": space, "status": "available"},
+            json={"name": "ghost_table", "spaceId": space, "status": "available"},
         )
         assert_status_code(response, 404, "Non-existent table update should return 404")
         logger.info("✓ PUT /tables/{id} with non-existent ID correctly returns 404")
@@ -174,7 +174,7 @@ class TestTablesEndpoint:
         uid = str(uuid.uuid4())[:8]
         create = await admin_client.post(
             "/tables",
-            json={"name": f"e2e_table_{uid}", "space_id": space, "status": "available"},
+            json={"name": f"e2e_table_{uid}", "spaceId": space, "status": "available"},
         )
         assert_status_code(create, 201)
         table_id = create.json()["id"]
@@ -189,7 +189,7 @@ class TestTablesEndpoint:
         uid = str(uuid.uuid4())[:8]
         create = await admin_client.post(
             "/tables",
-            json={"name": f"e2e_table_{uid}", "space_id": space, "status": "available"},
+            json={"name": f"e2e_table_{uid}", "spaceId": space, "status": "available"},
         )
         table_id = create.json()["id"]
         await admin_client.delete(f"/tables/{table_id}")

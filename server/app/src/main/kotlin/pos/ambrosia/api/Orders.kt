@@ -68,18 +68,18 @@ fun Route.orders(orderService: OrderService) {
             val filters =
                 try {
                     OrderWithPaymentFilters(
-                        startDate = parseDateQueryParam(call.request.queryParameters["start_date"], "start_date"),
-                        endDate = parseDateQueryParam(call.request.queryParameters["end_date"], "end_date"),
+                        startDate = parseDateQueryParam(call.request.queryParameters["startDate"], "startDate"),
+                        endDate = parseDateQueryParam(call.request.queryParameters["endDate"], "endDate"),
                         status = call.request.queryParameters["status"]?.takeIf { it.isNotBlank() },
-                        userId = call.request.queryParameters["user_id"]?.takeIf { it.isNotBlank() },
-                        paymentMethod = call.request.queryParameters["payment_method"]?.takeIf { it.isNotBlank() },
-                        minTotal = parseDoubleQueryParam(call.request.queryParameters["min_total"], "min_total"),
-                        maxTotal = parseDoubleQueryParam(call.request.queryParameters["max_total"], "max_total"),
-                        sortBy = call.request.queryParameters["sort_by"]?.takeIf { it.isNotBlank() },
-                        sortOrder = call.request.queryParameters["sort_order"]?.takeIf { it.isNotBlank() },
+                        userId = call.request.queryParameters["userId"]?.takeIf { it.isNotBlank() },
+                        paymentMethod = call.request.queryParameters["paymentMethod"]?.takeIf { it.isNotBlank() },
+                        minTotal = parseDoubleQueryParam(call.request.queryParameters["minTotal"], "minTotal"),
+                        maxTotal = parseDoubleQueryParam(call.request.queryParameters["maxTotal"], "maxTotal"),
+                        sortBy = call.request.queryParameters["sortBy"]?.takeIf { it.isNotBlank() },
+                        sortOrder = call.request.queryParameters["sortOrder"]?.takeIf { it.isNotBlank() },
                     ).also {
                         if (it.startDate != null && it.endDate != null && it.startDate > it.endDate) {
-                            throw IllegalArgumentException("start_date cannot be greater than end_date")
+                            throw IllegalArgumentException("startDate cannot be greater than endDate")
                         }
                     }
                 } catch (error: IllegalArgumentException) {
@@ -284,16 +284,15 @@ fun Route.orders(orderService: OrderService) {
                 return@post
             }
 
-            // Convert DTO to OrderDish objects
             val dishes =
                 dishRequests.map { request ->
                     OrderDish(
-                        order_id = orderId,
-                        dish_id = request.dish_id,
-                        price_at_order = request.price_at_order,
+                        orderId = orderId,
+                        dishId = request.dishId,
+                        priceAtOrder = request.priceAtOrder,
                         notes = request.notes,
                         status = "pending",
-                        should_prepare = true,
+                        shouldPrepare = true,
                     )
                 }
 
@@ -340,7 +339,7 @@ fun Route.orders(orderService: OrderService) {
             }
 
             val updatedDish = call.receive<OrderDish>()
-            val dishWithId = updatedDish.copy(id = dishId, order_id = orderId)
+            val dishWithId = updatedDish.copy(id = dishId, orderId = orderId)
             val isUpdated = orderService.updateOrderDish(dishWithId)
             if (!isUpdated) {
                 throw ResourceNotFoundException("Order dish $dishId not found in order $orderId")

@@ -59,7 +59,7 @@ class ProductServiceTest {
             val result = service.getProducts() // Act
             assertEquals(2, result.size) // Assert
             assertEquals("SKU-1", result[0].SKU) // Assert
-            assertEquals(499, result[1].price_cents) // Assert
+            assertEquals(499, result[1].priceCents) // Assert
         }
     }
 
@@ -190,15 +190,15 @@ class ProductServiceTest {
                 Product(
                     id = null,
                     SKU = " ",
-                    name = "",
+                    name = "Valid Name",
                     description = null,
-                    image_url = null,
-                    cost_cents = -1,
-                    category_ids = emptyList(),
+                    imageUrl = null,
+                    costCents = -1,
+                    categoryIds = emptyList(),
                     quantity = -5,
-                    min_stock_threshold = -1,
-                    max_stock_threshold = -1,
-                    price_cents = -10,
+                    minStockThreshold = -1,
+                    maxStockThreshold = -1,
+                    priceCents = -10,
                 ) // Arrange
             val service = ProductService(mockConnection) // Arrange
             val result = service.addProduct(invalid) // Act
@@ -252,6 +252,57 @@ class ProductServiceTest {
     }
 
     @Test
+    fun `addProduct succeeds with null SKU and description`() {
+        runBlocking {
+            val newProduct = Product(null, null, "No SKU Product", null, null, 100, emptyList(), 5, 1, 10, 199) // Arrange
+            val insertStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
+            stubCategoryIds() // Arrange
+            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ProductService(mockConnection) // Arrange
+            val result = service.addProduct(newProduct) // Act
+            assertNotNull(result) // Assert
+            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+        }
+    }
+
+    @Test
+    fun `addProduct succeeds with blank SKU and does not check uniqueness`() {
+        runBlocking {
+            val newProduct = Product(null, "   ", "Blank SKU Product", null, null, 100, emptyList(), 5, 1, 10, 199) // Arrange
+            val insertStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
+            stubCategoryIds() // Arrange
+            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ProductService(mockConnection) // Arrange
+            val result = service.addProduct(newProduct) // Act
+            assertNotNull(result) // Assert
+            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+        }
+    }
+
+    @Test
+    fun `addProduct returns new ID when categoryIds is empty`() {
+        runBlocking {
+            val newProduct = Product(null, "SKU-NO-CAT", "New Product", null, null, 100, emptyList(), 5, 1, 10, 199) // Arrange
+            val skuCheckStatement: PreparedStatement = mock() // Arrange
+            val insertStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("INSERT INTO products"))).thenReturn(insertStatement) // Arrange
+            stubCategoryIds() // Arrange
+            val skuCheckResultSet: ResultSet = mock() // Arrange
+            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
+            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
+            whenever(insertStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ProductService(mockConnection) // Arrange
+            val result = service.addProduct(newProduct) // Act
+            assertNotNull(result) // Assert
+            assertTrue(result!!.isNotBlank()) // Assert
+            verify(mockCatStatement, never()).addBatch() // Assert
+        }
+    }
+
+    @Test
     fun `addProduct returns null when database insert fails`() {
         runBlocking {
             val newProduct = Product(null, "SKU-NEW", "New Product", null, null, 100, listOf("cat-1"), 5, 1, 10, 199) // Arrange
@@ -278,13 +329,13 @@ class ProductServiceTest {
                     SKU = "SKU-1",
                     name = "Name",
                     description = null,
-                    image_url = null,
-                    cost_cents = 100,
-                    category_ids = listOf("cat-1"),
+                    imageUrl = null,
+                    costCents = 100,
+                    categoryIds = listOf("cat-1"),
                     quantity = 1,
-                    min_stock_threshold = 0,
-                    max_stock_threshold = 0,
-                    price_cents = 100,
+                    minStockThreshold = 0,
+                    maxStockThreshold = 0,
+                    priceCents = 100,
                 ) // Arrange
             val service = ProductService(mockConnection) // Arrange
             val result = service.updateProduct(productWithNullId) // Act
@@ -300,15 +351,15 @@ class ProductServiceTest {
                 Product(
                     id = "p-1",
                     SKU = "",
-                    name = " ",
+                    name = "Valid Name",
                     description = null,
-                    image_url = null,
-                    cost_cents = -1,
-                    category_ids = emptyList(),
+                    imageUrl = null,
+                    costCents = -1,
+                    categoryIds = emptyList(),
                     quantity = -1,
-                    min_stock_threshold = -1,
-                    max_stock_threshold = -1,
-                    price_cents = -1,
+                    minStockThreshold = -1,
+                    maxStockThreshold = -1,
+                    priceCents = -1,
                 ) // Arrange
             val service = ProductService(mockConnection) // Arrange
             val result = service.updateProduct(invalid) // Act
@@ -325,13 +376,13 @@ class ProductServiceTest {
                     SKU = "SKU-TAKEN",
                     name = "New Name",
                     description = null,
-                    image_url = null,
-                    cost_cents = 100,
-                    category_ids = listOf("cat-1"),
+                    imageUrl = null,
+                    costCents = 100,
+                    categoryIds = listOf("cat-1"),
                     quantity = 5,
-                    min_stock_threshold = 1,
-                    max_stock_threshold = 10,
-                    price_cents = 250,
+                    minStockThreshold = 1,
+                    maxStockThreshold = 10,
+                    priceCents = 250,
                 ) // Arrange
             val skuCheckStatement: PreparedStatement = mock() // Arrange
             val skuCheckResultSet: ResultSet = mock() // Arrange
@@ -364,13 +415,13 @@ class ProductServiceTest {
                     SKU = "SKU-OK",
                     name = "Updated",
                     description = null,
-                    image_url = null,
-                    cost_cents = 100,
-                    category_ids = listOf("cat-1"),
+                    imageUrl = null,
+                    costCents = 100,
+                    categoryIds = listOf("cat-1"),
                     quantity = 5,
-                    min_stock_threshold = 1,
-                    max_stock_threshold = 10,
-                    price_cents = 250,
+                    minStockThreshold = 1,
+                    maxStockThreshold = 10,
+                    priceCents = 250,
                 ) // Arrange
             val skuCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
@@ -388,6 +439,68 @@ class ProductServiceTest {
     }
 
     @Test
+    fun `updateProduct succeeds with null SKU`() {
+        runBlocking {
+            val toUpdate =
+                Product(
+                    id = "p-1",
+                    SKU = null,
+                    name = "Updated No SKU",
+                    description = "Now no SKU",
+                    imageUrl = null,
+                    costCents = 100,
+                    categoryIds = emptyList(),
+                    quantity = 5,
+                    minStockThreshold = 1,
+                    maxStockThreshold = 10,
+                    priceCents = 250,
+                ) // Arrange
+            val updateStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(updateStatement) // Arrange
+            stubCategoryIds() // Arrange
+            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ProductService(mockConnection) // Arrange
+            val result = service.updateProduct(toUpdate) // Act
+            assertTrue(result) // Assert
+            verify(mockConnection, never()).prepareStatement(contains("WHERE SKU = ?")) // Assert
+        }
+    }
+
+    @Test
+    fun `updateProduct returns true when categoryIds is empty`() {
+        runBlocking {
+            val toUpdate =
+                Product(
+                    id = "p-1",
+                    SKU = "SKU-1",
+                    name = "Updated Name",
+                    description = null,
+                    imageUrl = null,
+                    costCents = 100,
+                    categoryIds = emptyList(),
+                    quantity = 5,
+                    minStockThreshold = 1,
+                    maxStockThreshold = 10,
+                    priceCents = 250,
+                ) // Arrange
+            val skuCheckStatement: PreparedStatement = mock() // Arrange
+            val skuCheckResultSet: ResultSet = mock() // Arrange
+            val updateStatement: PreparedStatement = mock() // Arrange
+            whenever(mockConnection.prepareStatement(contains("WHERE SKU = ?"))).thenReturn(skuCheckStatement) // Arrange
+            whenever(mockConnection.prepareStatement(contains("UPDATE products"))).thenReturn(updateStatement) // Arrange
+            stubCategoryIds() // Arrange
+            whenever(skuCheckStatement.executeQuery()).thenReturn(skuCheckResultSet) // Arrange
+            whenever(skuCheckResultSet.next()).thenReturn(false) // Arrange
+            whenever(updateStatement.executeUpdate()).thenReturn(1) // Arrange
+            whenever(mockCatStatement.executeUpdate()).thenReturn(1) // Arrange
+            val service = ProductService(mockConnection) // Arrange
+            val result = service.updateProduct(toUpdate) // Act
+            assertTrue(result) // Assert
+            verify(mockCatStatement, never()).addBatch() // Assert
+        }
+    }
+
+    @Test
     fun `updateProduct returns false when database update fails`() {
         runBlocking {
             val toUpdate =
@@ -396,13 +509,13 @@ class ProductServiceTest {
                     SKU = "SKU-OK",
                     name = "Updated",
                     description = null,
-                    image_url = null,
-                    cost_cents = 100,
-                    category_ids = listOf("cat-1"),
+                    imageUrl = null,
+                    costCents = 100,
+                    categoryIds = listOf("cat-1"),
                     quantity = 5,
-                    min_stock_threshold = 1,
-                    max_stock_threshold = 10,
-                    price_cents = 250,
+                    minStockThreshold = 1,
+                    maxStockThreshold = 10,
+                    priceCents = 250,
                 ) // Arrange
             val skuCheckStatement: PreparedStatement = mock() // Arrange
             val updateStatement: PreparedStatement = mock() // Arrange
@@ -455,8 +568,8 @@ class ProductServiceTest {
             val service = ProductService(mockConnection) // Arrange
             val adjustments =
                 listOf(
-                    ProductStockAdjustment(product_id = "p-1", quantity = 2),
-                    ProductStockAdjustment(product_id = "p-2", quantity = 1),
+                    ProductStockAdjustment(productId = "p-1", quantity = 2),
+                    ProductStockAdjustment(productId = "p-2", quantity = 1),
                 )
             val result = service.adjustStock(adjustments) // Act
             assertTrue(result) // Assert
@@ -471,7 +584,7 @@ class ProductServiceTest {
             whenever(mockConnection.prepareStatement(contains("UPDATE products SET quantity = quantity -"))).thenReturn(updateStatement)
             whenever(updateStatement.executeUpdate()).thenReturn(0) // Arrange
             val service = ProductService(mockConnection) // Arrange
-            val adjustments = listOf(ProductStockAdjustment(product_id = "p-1", quantity = 2))
+            val adjustments = listOf(ProductStockAdjustment(productId = "p-1", quantity = 2))
             val result = service.adjustStock(adjustments) // Act
             assertFalse(result) // Assert
             verify(mockConnection).rollback() // Assert

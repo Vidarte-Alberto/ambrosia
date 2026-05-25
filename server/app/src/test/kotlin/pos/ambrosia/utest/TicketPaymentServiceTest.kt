@@ -41,7 +41,7 @@ class TicketPaymentServiceTest {
             val result = service.getTicketPaymentsByTicket("ticket-1") // Act
             assertNotNull(result) // Assert
             assertEquals(2, result.size) // Assert
-            assertEquals("pay-1", result[0].payment_id) // Assert
+            assertEquals("pay-1", result[0].paymentId) // Assert
         }
     }
 
@@ -97,7 +97,7 @@ class TicketPaymentServiceTest {
             val result = service.getTicketPaymentsByPayment("pay-1") // Act
             assertNotNull(result) // Assert
             assertEquals(2, result.size) // Assert
-            assertEquals("ticket-1", result[0].ticket_id) // Assert
+            assertEquals("ticket-1", result[0].ticketId) // Assert
         }
     }
 
@@ -136,9 +136,9 @@ class TicketPaymentServiceTest {
     }
 
     @Test
-    fun `addTicketPayment returns false if payment_id is blank`() {
+    fun `addTicketPayment returns false if paymentId is blank`() {
         runBlocking {
-            val ticketPayment = TicketPayment(payment_id = "", ticket_id = "ticket-1") // Arrange
+            val ticketPayment = TicketPayment(paymentId = "", ticketId = "ticket-1") // Arrange
             val service = TicketPaymentService(mockConnection) // Arrange
             val result = service.addTicketPayment(ticketPayment) // Act
             assertFalse(result) // Assert
@@ -147,9 +147,9 @@ class TicketPaymentServiceTest {
     }
 
     @Test
-    fun `addTicketPayment returns false if ticket_id is blank`() {
+    fun `addTicketPayment returns false if ticketId is blank`() {
         runBlocking {
-            val ticketPayment = TicketPayment(payment_id = "pay-1", ticket_id = "") // Arrange
+            val ticketPayment = TicketPayment(paymentId = "pay-1", ticketId = "") // Arrange
             val service = TicketPaymentService(mockConnection) // Arrange
             val result = service.addTicketPayment(ticketPayment) // Act
             assertFalse(result) // Assert
@@ -158,9 +158,9 @@ class TicketPaymentServiceTest {
     }
 
     @Test
-    fun `addTicketPayment returns false if ticket_id does not exist`() {
+    fun `addTicketPayment returns false if ticketId does not exist`() {
         runBlocking {
-            val ticketPayment = TicketPayment(payment_id = "pay-1", ticket_id = "non-existent-ticket") // Arrange
+            val ticketPayment = TicketPayment(paymentId = "pay-1", ticketId = "non-existent-ticket") // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(false) // Arrange
@@ -171,9 +171,9 @@ class TicketPaymentServiceTest {
     }
 
     @Test
-    fun `addTicketPayment returns false if payment_id does not exist`() {
+    fun `addTicketPayment returns false if paymentId does not exist`() {
         runBlocking {
-            val ticketPayment = TicketPayment(payment_id = "non-existent-pay", ticket_id = "ticket-1") // Arrange
+            val ticketPayment = TicketPayment(paymentId = "non-existent-pay", ticketId = "ticket-1") // Arrange
             val ticketCheckStatement: PreparedStatement = mock() // Arrange
             val paymentCheckStatement: PreparedStatement = mock() // Arrange
             whenever(mockConnection.prepareStatement(contains("tickets"))).thenReturn(ticketCheckStatement) // Arrange
@@ -193,7 +193,7 @@ class TicketPaymentServiceTest {
     @Test
     fun `addTicketPayment returns true on success`() {
         runBlocking {
-            val ticketPayment = TicketPayment(payment_id = "pay-1", ticket_id = "ticket-1") // Arrange
+            val ticketPayment = TicketPayment(paymentId = "pay-1", ticketId = "ticket-1") // Arrange
             val ticketCheckStatement: PreparedStatement = mock() // Arrange
             val paymentCheckStatement: PreparedStatement = mock() // Arrange
             val addStatement: PreparedStatement = mock() // Arrange
@@ -216,7 +216,7 @@ class TicketPaymentServiceTest {
     @Test
     fun `addTicketPayment returns false when database insert fails`() {
         runBlocking {
-            val ticketPayment = TicketPayment(payment_id = "pay-1", ticket_id = "ticket-1") // Arrange
+            val ticketPayment = TicketPayment(paymentId = "pay-1", ticketId = "ticket-1") // Arrange
             val ticketCheckStatement: PreparedStatement = mock() // Arrange
             val paymentCheckStatement: PreparedStatement = mock() // Arrange
             val addStatement: PreparedStatement = mock() // Arrange

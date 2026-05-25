@@ -9,12 +9,10 @@ import { useTranslations } from "next-intl";
 import { AdvancedFiltersPanel } from "./AdvancedFiltersPanel";
 
 export function OrdersFilterBar({
-  searchTerm,
-  rowsPerPage,
+  search,
+  pagination,
   filters,
   paymentMethods = [],
-  onSearchChange,
-  onRowsPerPageChange,
   onFiltersChange,
   onApplyFilters,
   onClearFilters,
@@ -38,19 +36,20 @@ export function OrdersFilterBar({
       <div className="flex flex-col lg:flex-row lg:items-center gap-3">
         <Input
           isClearable
+          aria-label={t("filter.searchLabel")}
           className="w-full lg:flex-1"
           label={t("filter.searchLabel")}
           placeholder={t("filter.searchPlaceholder")}
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          onClear={() => onSearchChange("")}
+          value={search.term}
+          onChange={(e) => search.onChange(e.target.value)}
+          onClear={() => search.onChange("")}
         />
         <div className="flex flex-col sm:flex-row gap-3 lg:contents">
           <Select
             aria-label="Rows per page"
             label={t("filter.rowsPerPage")}
-            selectedKeys={[rowsPerPage.toString()]}
-            onSelectionChange={(keys) => onRowsPerPageChange(Array.from(keys)[0])}
+            selectedKeys={[pagination.rowsPerPage.toString()]}
+            onSelectionChange={(keys) => pagination.onChange(Array.from(keys)[0])}
             className="flex-1 lg:w-48 lg:flex-none"
           >
             {[5, 10, 20, 50].map((count) => (
@@ -62,8 +61,9 @@ export function OrdersFilterBar({
 
           <Button
             variant="flat"
+            aria-expanded={isOpen}
             className="md:flex-1 lg:w-48 lg:flex-none h-14 justify-between px-3 text-foreground"
-            endContent={<ChevronDown className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} strokeWidth={1.5} />}
+            endContent={<ChevronDown aria-hidden="true" className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} strokeWidth={1.5} />}
             onPress={() => setIsOpen((v) => !v)}
           >
             {activeFilterCount > 0

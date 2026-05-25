@@ -20,12 +20,14 @@ import pos.ambrosia.models.WalletAuthResponse
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CsvExport
+import pos.ambrosia.models.phoenix.DecodeInvoiceRequest
 import pos.ambrosia.models.phoenix.PayInvoiceRequest
 import pos.ambrosia.models.phoenix.PayOfferRequest
 import pos.ambrosia.models.phoenix.PayOnchainRequest
 import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.TokenService
+import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.authenticateAdmin
 import pos.ambrosia.utils.getCurrentUser
@@ -90,6 +92,21 @@ fun Route.wallet(
             val invoice = phoenixService.createInvoice(request)
             call.respond(HttpStatusCode.OK, invoice)
         }
+        post("/decodeinvoice") {
+            val decodeInvoiceRequest = call.receive<DecodeInvoiceRequest>()
+            val decodedInvoice = Bolt11Decoder.decodeInvoice(decodeInvoiceRequest.invoice)
+            if (decodedInvoice != null) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    pos.ambrosia.models.phoenix.DecodedInvoiceResponse(
+                        amountSat = decodedInvoice.amountSat,
+                        description = decodedInvoice.description,
+                    ),
+                )
+            } else {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Could not decode invoice"))
+            }
+        }
         post("/payinvoice") {
             val request = call.receive<PayInvoiceRequest>()
             val result = phoenixService.payInvoice(request)
@@ -135,9 +152,7 @@ fun Route.wallet(
             call.respond(HttpStatusCode.OK, seed)
         }
 
-        // Payments endpoints
         route("/payments") {
-            // List incoming payments
             get("/incoming") {
                 val from = call.request.queryParameters["from"]?.toLongOrNull() ?: 0L
                 val to = call.request.queryParameters["to"]?.toLongOrNull()
@@ -150,7 +165,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payments)
             }
 
-            // Get specific incoming payment
             get("/incoming/{paymentHash}") {
                 val paymentHash =
                     call.parameters["paymentHash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing paymentHash")
@@ -158,7 +172,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payment)
             }
 
-            // List outgoing payments
             get("/outgoing") {
                 val from = call.request.queryParameters["from"]?.toLongOrNull() ?: 0L
                 val to = call.request.queryParameters["to"]?.toLongOrNull()
@@ -170,7 +183,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payments)
             }
 
-            // Get specific outgoing payment by ID
             get("/outgoing/{paymentId}") {
                 val paymentId =
                     call.parameters["paymentId"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing paymentId")
@@ -178,7 +190,6 @@ fun Route.wallet(
                 call.respond(HttpStatusCode.OK, payment)
             }
 
-            // Get specific outgoing payment by hash
             get("/outgoingbyhash/{paymentHash}") {
                 val paymentHash =
                     call.parameters["paymentHash"] ?: return@get call.respond(HttpStatusCode.BadRequest, "Missing paymentHash")

@@ -62,23 +62,23 @@ class ShiftServiceTest {
             val expectedShift =
                 Shift(
                     id = "shift-1",
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = "2pm",
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = "2pm",
                     notes = "note1",
-                    initial_amount = 0.0,
-                    final_amount = null,
+                    initialAmount = 0.0,
+                    finalAmount = null,
                     difference = null,
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(expectedShift.id) // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn(expectedShift.user_id) // Arrange
-            whenever(mockResultSet.getString("shift_date")).thenReturn(expectedShift.shift_date) // Arrange
-            whenever(mockResultSet.getString("start_time")).thenReturn(expectedShift.start_time) // Arrange
-            whenever(mockResultSet.getString("end_time")).thenReturn(expectedShift.end_time) // Arrange
+            whenever(mockResultSet.getString("user_id")).thenReturn(expectedShift.userId) // Arrange
+            whenever(mockResultSet.getString("shift_date")).thenReturn(expectedShift.shiftDate) // Arrange
+            whenever(mockResultSet.getString("start_time")).thenReturn(expectedShift.startTime) // Arrange
+            whenever(mockResultSet.getString("end_time")).thenReturn(expectedShift.endTime) // Arrange
             whenever(mockResultSet.getString("notes")).thenReturn(expectedShift.notes) // Arrange
             whenever(mockResultSet.getDouble("initial_amount")).thenReturn(0.0) // Arrange
             whenever(mockResultSet.getDouble("final_amount")).thenReturn(0.0) // Arrange
@@ -121,22 +121,22 @@ class ShiftServiceTest {
             val expectedShift =
                 Shift(
                     id = "shift-1",
-                    user_id = "user-1",
-                    shift_date = "2026-03-04",
-                    start_time = "08:00:00",
-                    end_time = null,
+                    userId = "user-1",
+                    shiftDate = "2026-03-04",
+                    startTime = "08:00:00",
+                    endTime = null,
                     notes = "",
-                    initial_amount = 100.0,
-                    final_amount = null,
+                    initialAmount = 100.0,
+                    finalAmount = null,
                     difference = null,
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(expectedShift.id) // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn(expectedShift.user_id) // Arrange
-            whenever(mockResultSet.getString("shift_date")).thenReturn(expectedShift.shift_date) // Arrange
-            whenever(mockResultSet.getString("start_time")).thenReturn(expectedShift.start_time) // Arrange
+            whenever(mockResultSet.getString("user_id")).thenReturn(expectedShift.userId) // Arrange
+            whenever(mockResultSet.getString("shift_date")).thenReturn(expectedShift.shiftDate) // Arrange
+            whenever(mockResultSet.getString("start_time")).thenReturn(expectedShift.startTime) // Arrange
             whenever(mockResultSet.getString("end_time")).thenReturn(null) // Arrange
             whenever(mockResultSet.getString("notes")).thenReturn(expectedShift.notes) // Arrange
             whenever(mockResultSet.getDouble("initial_amount")).thenReturn(100.0) // Arrange
@@ -178,10 +178,10 @@ class ShiftServiceTest {
             val newShift =
                 Shift(
                     id = null,
-                    user_id = "non-existent-user",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = "2pm",
+                    userId = "non-existent-user",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = "2pm",
                     notes = "note-1",
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
@@ -200,10 +200,10 @@ class ShiftServiceTest {
             val newShift =
                 Shift(
                     id = null,
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = null,
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = null,
                     notes = "note-1",
                 ) // Arrange
             val openShiftStatement: PreparedStatement = mock() // Arrange
@@ -234,10 +234,10 @@ class ShiftServiceTest {
             val newShift =
                 Shift(
                     id = null,
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = "2pm",
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = "2pm",
                     notes = "note-1",
                 ) // Arrange
             val openShiftStatement: PreparedStatement = mock() // Arrange
@@ -266,10 +266,10 @@ class ShiftServiceTest {
             val newShift =
                 Shift(
                     id = null,
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = "2pm",
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = "2pm",
                     notes = "note-1",
                 ) // Arrange
             val openShiftStatement: PreparedStatement = mock() // Arrange
@@ -330,10 +330,10 @@ class ShiftServiceTest {
             val shiftWithNullId =
                 Shift(
                     id = null,
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = "2pm",
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = "2pm",
                     notes = "note-1",
                 ) // Arrange
             val service = ShiftService(mockConnection) // Arrange
@@ -349,10 +349,10 @@ class ShiftServiceTest {
             val shiftToUpdate =
                 Shift(
                     id = "shift-1",
-                    user_id = "non-existent-user",
-                    shift_date = "date-1",
-                    start_time = "7am",
-                    end_time = "2pm",
+                    userId = "non-existent-user",
+                    shiftDate = "date-1",
+                    startTime = "7am",
+                    endTime = "2pm",
                     notes = "note-1",
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
@@ -370,10 +370,10 @@ class ShiftServiceTest {
             val shiftToUpdate =
                 Shift(
                     id = "shift-1",
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "8am",
-                    end_time = "3pm",
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "8am",
+                    endTime = "3pm",
                     notes = "updated note",
                 ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange
@@ -396,10 +396,10 @@ class ShiftServiceTest {
             val shiftToUpdate =
                 Shift(
                     id = "shift-1",
-                    user_id = "user-1",
-                    shift_date = "date-1",
-                    start_time = "8am",
-                    end_time = "3pm",
+                    userId = "user-1",
+                    shiftDate = "date-1",
+                    startTime = "8am",
+                    endTime = "3pm",
                     notes = "updated note",
                 ) // Arrange
             val userCheckStatement: PreparedStatement = mock() // Arrange

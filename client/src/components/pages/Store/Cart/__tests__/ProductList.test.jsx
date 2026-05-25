@@ -15,16 +15,17 @@ const products = [
     id: 1,
     name: "Jade Wallet",
     SKU: "jade-wallet",
-    category_ids: ["cat-1"],
-    price_cents: 1600,
+    categoryIds: ["cat-1"],
+    imageUrl: "/uploads/jade-wallet.png",
+    priceCents: 1600,
     quantity: 3,
   },
   {
     id: 2,
     name: "Unknown Category",
     SKU: "unknown",
-    category_ids: ["missing"],
-    price_cents: 600,
+    categoryIds: ["missing"],
+    priceCents: 600,
     quantity: 1,
   },
 ];
@@ -55,6 +56,8 @@ describe("ProductList", () => {
     expect(screen.getByText("Jade Wallet")).toBeInTheDocument();
     expect(screen.getByText("Hardware")).toBeInTheDocument();
     expect(screen.getByText("fmt-1600")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Jade Wallet" })).toHaveAttribute("src", "/uploads/jade-wallet.png");
+    expect(screen.getByTestId("product-image-placeholder-2")).toBeInTheDocument();
     expect(screen.getAllByText("SKU:")).toHaveLength(2);
     expect(screen.getByText("jade-wallet")).toBeInTheDocument();
     expect(screen.getByText("card.errors.unknownCategory")).toBeInTheDocument();

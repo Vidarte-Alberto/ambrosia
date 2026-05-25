@@ -14,16 +14,16 @@ NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000"
 async def _get_current_user_id(admin_client) -> str:
     response = await admin_client.get("/users/me")
     assert_status_code(response, 200, "Failed to fetch current user")
-    return response.json()["user"]["user_id"]
+    return response.json()["user"]["userId"]
 
 
 def _shift_payload(user_id: str) -> dict:
     return {
-        "user_id": user_id,
-        "shift_date": "2026-01-01",
-        "start_time": "08:00:00",
+        "userId": user_id,
+        "shiftDate": "2026-01-01",
+        "startTime": "08:00:00",
         "notes": "e2e test shift",
-        "initial_amount": 100.0,
+        "initialAmount": 100.0,
     }
 
 
@@ -102,7 +102,7 @@ class TestShiftsFlow:
         """POST /shifts/{id}/close closes the shift and returns 200."""
         response = await admin_client.post(
             f"/shifts/{open_shift}/close",
-            json={"final_amount": 250.0, "difference": 150.0},
+            json={"finalAmount": 250.0, "difference": 150.0},
         )
         assert_status_code(response, 200, "Closing a shift should return 200")
         logger.info("✓ Shift closed successfully")

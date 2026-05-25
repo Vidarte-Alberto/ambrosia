@@ -4,10 +4,10 @@ const mockProducts = [
     SKU: "jade-wallet",
     name: "Jade Wallet",
     description: "Blockstream hardware wallet",
-    category_id: "cat-hw",
-    price_cents: 1600,
+    categoryId: "cat-hw",
+    priceCents: 1600,
     quantity: 20,
-    image_url:
+    imageUrl:
       "https://store.blockstream.com/cdn/shop/files/Jade_Bitcoin_Hardware_Wallet_-_Green_-_Front.png",
   },
   {
@@ -15,17 +15,17 @@ const mockProducts = [
     SKU: "jade-plus-wallet",
     name: "Jade Plus",
     description: "Introducing Jade Plus",
-    category_id: "cat-hw",
-    price_cents: 4000,
+    categoryId: "cat-hw",
+    priceCents: 4000,
     quantity: 10,
-    image_url:
+    imageUrl:
       "https://store.blockstream.com/cdn/shop/files/Blockstream_Jade_Plus_Bitcoin_Wallet_Angled_Back_Grey.jpg",
   },
 ];
 
 const mockCategories = [{ id: "cat-hw", name: "Hardware Wallet" }];
 const mockCurrencies = [
-  { id: "currency-1", acronym: "USD", country_code: "US" },
+  { id: "currency-1", acronym: "USD", countryCode: "US" },
 ];
 
 const ResponseImpl = typeof Response !== "undefined" ? Response : null;
@@ -64,7 +64,7 @@ export function setupFetchMocks() {
     }
 
     if (path.startsWith("/api/base-currency")) {
-      return jsonResponse({ currency_id: "currency-1" });
+      return jsonResponse({ currencyId: "currency-1" });
     }
 
     if (path.startsWith("/api/currencies")) {
@@ -83,5 +83,4 @@ export function setupFetchMocks() {
   });
 }
 
-// Ensure the mock is registered when this file is loaded globally by Jest setupFiles
 setupFetchMocks();

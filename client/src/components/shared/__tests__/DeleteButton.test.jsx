@@ -58,6 +58,19 @@ describe("DeleteButton", () => {
     expect(screen.getByText("Delete")).toBeInTheDocument();
   });
 
+  it("shows full label sizing on mobile when requested", () => {
+    render(
+      <DeleteButton onPress={jest.fn()} showLabelOnMobile>
+        Delete
+      </DeleteButton>,
+    );
+
+    const btn = screen.getByRole("button");
+
+    expect(btn).toHaveClass("w-auto", "min-w-16", "px-3");
+    expect(screen.getByText("Delete")).not.toHaveClass("hidden", "sm:inline");
+  });
+
   it("uses sm size by default", () => {
     render(<DeleteButton onPress={jest.fn()} />);
 

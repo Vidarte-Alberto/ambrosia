@@ -42,30 +42,30 @@ const products = [
     sku: "jade-wallet",
     name: "Jade Wallet",
     description: "Hardware wallet",
-    category_ids: ["cat-1"],
-    price_cents: 1600,
+    categoryIds: ["cat-1"],
+    priceCents: 1600,
     quantity: 10,
-    image_url: "/images/jade.png",
+    imageUrl: "/images/jade.png",
   },
   {
     id: 2,
     sku: "jade-plus",
     name: "Jade Plus",
     description: "Hardware wallet plus",
-    category_ids: ["cat-1"],
-    price_cents: 4000,
+    categoryIds: ["cat-1"],
+    priceCents: 4000,
     quantity: 5,
-    image_url: "/images/jade-plus.png",
+    imageUrl: "/images/jade-plus.png",
   },
   {
     id: 3,
     sku: "unknown-cat",
     name: "No Cat",
     description: "Missing category",
-    category_ids: ["missing"],
-    price_cents: 0,
+    categoryIds: ["missing"],
+    priceCents: 0,
     quantity: 1,
-    image_url: "/images/no-cat.png",
+    imageUrl: "/images/no-cat.png",
   },
 ];
 
@@ -109,7 +109,7 @@ describe("ProductsList", () => {
 
   it("handles missing image url gracefully", () => {
     const productsWithoutImage = [
-      { ...products[0], image_url: undefined },
+      { ...products[0], imageUrl: undefined },
     ];
 
     renderList({ products: productsWithoutImage });

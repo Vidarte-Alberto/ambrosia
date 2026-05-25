@@ -7,9 +7,10 @@ import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 
 import { ShiftWidget } from "@/components/turn/ShiftWidget";
+import { useSeedTour } from "@/hooks/tour/useSeedTour";
 import { useWalletTour } from "@/hooks/tour/useWalletTour";
 import { storedAssetUrl } from "@components/utils/storedAssetUrl";
-import { useModules } from "@hooks/useModules";
+import { useNavigation } from "@hooks/useNavigation";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
 import { BottomNav } from "./BottomNav";
@@ -20,10 +21,11 @@ export function StoreLayout({ children }) {
   const pathname = usePathname();
   const t = useTranslations("navbar");
   const { config } = useConfigurations();
-  const { availableNavigation, isAuth, logout } = useModules();
+  const { availableNavigation, isAuth, logout } = useNavigation();
   const logoSrc = storedAssetUrl(config?.businessLogoUrl);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  useSeedTour(isAuth);
   useWalletTour(isAuth);
 
   const bottomNavItems = availableNavigation

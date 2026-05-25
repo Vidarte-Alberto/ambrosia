@@ -16,8 +16,8 @@ jest.mock("../ReceiveTab", () => ({
   ),
 }));
 
-jest.mock("../SendTab", () => ({
-  SendTab: ({ fetchInfo, fetchTransactions }) => (
+jest.mock("../Payment", () => ({
+  PaymentTab: ({ fetchInfo, fetchTransactions }) => (
     <div data-testid="send-tab">
       Send Tab
       <button onClick={() => fetchInfo?.()}>Fetch Info</button>

@@ -25,7 +25,7 @@ jest.mock("@/hooks/usePermission", () => ({
   RequirePermission: ({ children }) => children,
 }));
 
-const mockStoredAssetUrl = jest.fn((url) => `cdn${url}`);
+const mockStoredAssetUrl = jest.fn((url) => (url ? `cdn${url}` : null));
 jest.mock("@/components/utils/storedAssetUrl", () => ({
   __esModule: true,
   storedAssetUrl: (...args) => mockStoredAssetUrl(...args),
@@ -34,9 +34,9 @@ jest.mock("@/components/utils/storedAssetUrl", () => ({
 const product = {
   id: 1,
   name: "Jade Wallet",
-  price_cents: 1600,
+  priceCents: 1600,
   quantity: 10,
-  image_url: "/images/jade.png",
+  imageUrl: "/images/jade.png",
 };
 
 const defaultProps = {
@@ -91,6 +91,12 @@ describe("ProductsCard", () => {
 
     expect(mockStoredAssetUrl).toHaveBeenCalledWith("/images/jade.png");
     expect(screen.getByRole("img", { name: "Jade Wallet" }).getAttribute("data-src")).toBe("cdn/images/jade.png");
+  });
+
+  it("renders an image placeholder when imageUrl is missing", () => {
+    renderCard({ product: { ...product, imageUrl: null } });
+
+    expect(screen.getByTestId("product-card-image-placeholder-1")).toBeInTheDocument();
   });
 
   it("renders edit and delete icon buttons", () => {

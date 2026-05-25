@@ -64,11 +64,11 @@ class TicketServiceTest {
             whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
             whenever(mockResultSet.next()).thenReturn(true) // Arrange
             whenever(mockResultSet.getString("id")).thenReturn(expectedTicket.id) // Arrange
-            whenever(mockResultSet.getString("order_id")).thenReturn(expectedTicket.order_id) // Arrange
-            whenever(mockResultSet.getString("user_id")).thenReturn(expectedTicket.user_id) // Arrange
-            whenever(mockResultSet.getString("ticket_date")).thenReturn(expectedTicket.ticket_date) // Arrange
+            whenever(mockResultSet.getString("order_id")).thenReturn(expectedTicket.orderId) // Arrange
+            whenever(mockResultSet.getString("user_id")).thenReturn(expectedTicket.userId) // Arrange
+            whenever(mockResultSet.getString("ticket_date")).thenReturn(expectedTicket.ticketDate) // Arrange
             whenever(mockResultSet.getInt("status")).thenReturn(expectedTicket.status) // Arrange
-            whenever(mockResultSet.getDouble("total_amount")).thenReturn(expectedTicket.total_amount) // Arrange
+            whenever(mockResultSet.getDouble("total_amount")).thenReturn(expectedTicket.totalAmount) // Arrange
             whenever(mockResultSet.getString("notes")).thenReturn(expectedTicket.notes) // Arrange
             val service = TicketService(mockConnection) // Arrange
             val result = service.getTicketById("ticket-1") // Act
@@ -258,11 +258,11 @@ class TicketServiceTest {
             val ticket =
                 Ticket(
                     id = null,
-                    order_id = "order-1",
-                    user_id = "user-1",
-                    ticket_date = "date-1",
+                    orderId = "order-1",
+                    userId = "user-1",
+                    ticketDate = "date-1",
                     status = 1,
-                    total_amount = 100.0,
+                    totalAmount = 100.0,
                     notes = "note-1",
                 ) // Arrange
             val service = TicketService(mockConnection) // Arrange
@@ -278,11 +278,11 @@ class TicketServiceTest {
             val ticket =
                 Ticket(
                     id = "ticket-1",
-                    order_id = "non-existent-order",
-                    user_id = "user-1",
-                    ticket_date = "date-1",
+                    orderId = "non-existent-order",
+                    userId = "user-1",
+                    ticketDate = "date-1",
                     status = 1,
-                    total_amount = 100.0,
+                    totalAmount = 100.0,
                     notes = "note-1",
                 ) // Arrange
             whenever(mockConnection.prepareStatement(any())).thenReturn(mockStatement) // Arrange
@@ -300,11 +300,11 @@ class TicketServiceTest {
             val ticket =
                 Ticket(
                     id = "ticket-1",
-                    order_id = "order-1",
-                    user_id = "non-existent-user",
-                    ticket_date = "date-1",
+                    orderId = "order-1",
+                    userId = "non-existent-user",
+                    ticketDate = "date-1",
                     status = 1,
-                    total_amount = 100.0,
+                    totalAmount = 100.0,
                     notes = "note-1",
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
@@ -329,11 +329,11 @@ class TicketServiceTest {
             val ticket =
                 Ticket(
                     id = "ticket-1",
-                    order_id = "order-1",
-                    user_id = "user-1",
-                    ticket_date = "date-1",
+                    orderId = "order-1",
+                    userId = "user-1",
+                    ticketDate = "date-1",
                     status = 2,
-                    total_amount = 100.0,
+                    totalAmount = 100.0,
                     notes = "note-1",
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
@@ -358,11 +358,11 @@ class TicketServiceTest {
             val ticket =
                 Ticket(
                     id = "ticket-1",
-                    order_id = "order-1",
-                    user_id = "user-1",
-                    ticket_date = "date-1",
+                    orderId = "order-1",
+                    userId = "user-1",
+                    ticketDate = "date-1",
                     status = 1,
-                    total_amount = 150.0,
+                    totalAmount = 150.0,
                     notes = "updated note",
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange
@@ -390,11 +390,11 @@ class TicketServiceTest {
             val ticket =
                 Ticket(
                     id = "ticket-1",
-                    order_id = "order-1",
-                    user_id = "user-1",
-                    ticket_date = "date-1",
+                    orderId = "order-1",
+                    userId = "user-1",
+                    ticketDate = "date-1",
                     status = 1,
-                    total_amount = 150.0,
+                    totalAmount = 150.0,
                     notes = "updated note",
                 ) // Arrange
             val orderCheckStatement: PreparedStatement = mock() // Arrange

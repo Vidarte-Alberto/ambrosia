@@ -34,7 +34,7 @@ class BaseCurrencyTest {
         val result = service.getBaseCurrency() // Act
 
         assertNotNull(result)
-        assertEquals(expectedCurrencyId, result.currency_id) // Assert
+        assertEquals(expectedCurrencyId, result.currencyId) // Assert
     }
 
     @Test

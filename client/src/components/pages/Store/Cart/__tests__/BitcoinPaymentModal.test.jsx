@@ -2,10 +2,16 @@ import { act } from "react";
 
 import { render, screen, fireEvent } from "@testing-library/react";
 
+import * as clipboard from "@/components/pages/Store/Wallet/utils/copyToClipboard";
+
 import { BitcoinPaymentModal } from "../BitcoinPaymentModal";
 
 jest.mock("react-qr-code", () => ({
   QRCode: ({ value }) => <div data-testid="qr-code" data-value={value}>QR</div>,
+}));
+
+jest.mock("@/components/pages/Store/Wallet/utils/copyToClipboard", () => ({
+  copyToClipboard: jest.fn(),
 }));
 
 const mockSetInvoiceHash = jest.fn();
@@ -62,6 +68,7 @@ describe("BitcoinPaymentModal", () => {
     mockSetInvoiceHash.mockClear();
     mockPaymentHandlers = [];
     mockConnected = true;
+    jest.clearAllMocks();
   });
 
   describe("Loading state", () => {
@@ -81,11 +88,11 @@ describe("BitcoinPaymentModal", () => {
   });
 
   describe("Error state", () => {
-    it("shows error message", () => {
+    it("shows service unavailable message when invoice is missing", () => {
       mockInvoiceState = { ...mockInvoiceState, error: "invoice-error" };
       renderModal();
 
-      expect(screen.getByText("invoice-error")).toBeInTheDocument();
+      expect(screen.getByText("serviceUnavailable")).toBeInTheDocument();
     });
 
     it("calls generateInvoice on retry", () => {
@@ -128,6 +135,24 @@ describe("BitcoinPaymentModal", () => {
       renderModal();
 
       expect(screen.getByText("waitingPayment")).toBeInTheDocument();
+    });
+
+    it("shows invoice label and serialized invoice", () => {
+      renderModal();
+
+      expect(screen.getByText("invoice")).toBeInTheDocument();
+      expect(screen.getByText("ln-invoice")).toBeInTheDocument();
+    });
+
+    it("copies the serialized invoice when copy button is clicked", () => {
+      renderModal();
+
+      fireEvent.click(screen.getByText("copyButton"));
+
+      expect(clipboard.copyToClipboard).toHaveBeenCalledWith(
+        "ln-invoice",
+        expect.any(Function),
+      );
     });
   });
 
@@ -275,6 +300,13 @@ describe("BitcoinPaymentModal", () => {
       renderModal();
 
       fireEvent.click(screen.getByText("markAsPaid"));
+
+      expect(screen.queryByText("markAsPaid")).not.toBeInTheDocument();
+    });
+
+    it("hides button while loading even when awaiting payment", () => {
+      mockInvoiceState = { ...mockInvoiceState, loading: true };
+      renderModal();
 
       expect(screen.queryByText("markAsPaid")).not.toBeInTheDocument();
     });

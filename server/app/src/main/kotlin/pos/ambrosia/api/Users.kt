@@ -94,7 +94,7 @@ fun Route.users(
 
             val userResponse =
                 UserResponse(
-                    user_id = userInfo.id,
+                    userId = userInfo.id,
                     name = userInfo.name,
                     email = userInfo.email,
                     phone = userInfo.phone,

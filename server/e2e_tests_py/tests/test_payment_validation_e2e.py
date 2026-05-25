@@ -35,9 +35,9 @@ class TestPaymentValidation:
         response = await admin_client.post(
             "/payments",
             json={
-                "method_id": method_id,
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -54,9 +54,9 @@ class TestPaymentValidation:
         response = await admin_client.post(
             "/payments",
             json={
-                "method_id": "",
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": "",
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -73,9 +73,9 @@ class TestPaymentValidation:
         response = await admin_client.post(
             "/payments",
             json={
-                "method_id": method_id,
-                "currency_id": "",
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": "",
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -92,9 +92,9 @@ class TestPaymentValidation:
         response = await admin_client.post(
             "/payments",
             json={
-                "method_id": NONEXISTENT_ID,
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": NONEXISTENT_ID,
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -111,9 +111,9 @@ class TestPaymentValidation:
         response = await admin_client.post(
             "/payments",
             json={
-                "method_id": method_id,
-                "currency_id": NONEXISTENT_ID,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": NONEXISTENT_ID,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -130,9 +130,9 @@ class TestPaymentValidation:
         response = await admin_client.post(
             "/payments",
             json={
-                "method_id": method_id,
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -154,9 +154,9 @@ class TestPaymentValidation:
         response = await admin_client.put(
             f"/payments/{existing_payment}",
             json={
-                "method_id": "",
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": "",
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -173,9 +173,9 @@ class TestPaymentValidation:
         response = await admin_client.put(
             f"/payments/{existing_payment}",
             json={
-                "method_id": method_id,
-                "currency_id": "",
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": "",
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -192,9 +192,9 @@ class TestPaymentValidation:
         response = await admin_client.put(
             f"/payments/{existing_payment}",
             json={
-                "method_id": NONEXISTENT_ID,
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": NONEXISTENT_ID,
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -213,9 +213,9 @@ class TestPaymentValidation:
         response = await admin_client.put(
             f"/payments/{existing_payment}",
             json={
-                "method_id": method_id,
-                "currency_id": NONEXISTENT_ID,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": NONEXISTENT_ID,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 100.0,
             },
         )
@@ -234,9 +234,9 @@ class TestPaymentValidation:
         response = await admin_client.put(
             f"/payments/{existing_payment}",
             json={
-                "method_id": method_id,
-                "currency_id": currency_id,
-                "transaction_id": str(uuid.uuid4()),
+                "methodId": method_id,
+                "currencyId": currency_id,
+                "transactionId": str(uuid.uuid4()),
                 "amount": 200.0,
             },
         )

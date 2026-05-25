@@ -16,90 +16,88 @@ class TestOrdersQueryParamValidation:
 
     @pytest.mark.asyncio
     async def test_invalid_start_date_format_returns_400(self, admin_client):
-        """start_date that is not YYYY-MM-DD should return 400."""
-        response = await admin_client.get(f"{BASE}?start_date=01-01-2026")
-        assert_status_code(
-            response, 400, "Invalid start_date format should be rejected"
-        )
-        logger.info("✓ Invalid start_date format correctly rejected")
+        """startDate that is not YYYY-MM-DD should return 400."""
+        response = await admin_client.get(f"{BASE}?startDate=01-01-2026")
+        assert_status_code(response, 400, "Invalid startDate format should be rejected")
+        logger.info("✓ Invalid startDate format correctly rejected")
 
     @pytest.mark.asyncio
     async def test_invalid_end_date_format_returns_400(self, admin_client):
-        """end_date that is not YYYY-MM-DD should return 400."""
-        response = await admin_client.get(f"{BASE}?end_date=not-a-date")
-        assert_status_code(response, 400, "Invalid end_date format should be rejected")
-        logger.info("✓ Invalid end_date format correctly rejected")
+        """endDate that is not YYYY-MM-DD should return 400."""
+        response = await admin_client.get(f"{BASE}?endDate=not-a-date")
+        assert_status_code(response, 400, "Invalid endDate format should be rejected")
+        logger.info("✓ Invalid endDate format correctly rejected")
 
     @pytest.mark.asyncio
     async def test_start_date_after_end_date_returns_400(self, admin_client):
-        """start_date later than end_date should return 400."""
+        """startDate later than endDate should return 400."""
         response = await admin_client.get(
-            f"{BASE}?start_date=2026-12-31&end_date=2026-01-01"
+            f"{BASE}?startDate=2026-12-31&endDate=2026-01-01"
         )
-        assert_status_code(response, 400, "start_date > end_date should be rejected")
-        logger.info("✓ start_date > end_date correctly rejected")
+        assert_status_code(response, 400, "startDate > endDate should be rejected")
+        logger.info("✓ startDate > endDate correctly rejected")
 
     @pytest.mark.asyncio
     async def test_valid_date_range_succeeds(self, admin_client):
-        """Valid start_date and end_date should return 200."""
+        """Valid startDate and endDate should return 200."""
         response = await admin_client.get(
-            f"{BASE}?start_date=2026-01-01&end_date=2026-12-31"
+            f"{BASE}?startDate=2026-01-01&endDate=2026-12-31"
         )
         assert_status_code(response, 200, "Valid date range should be accepted")
         logger.info("✓ Valid date range correctly accepted")
 
     @pytest.mark.asyncio
     async def test_invalid_sort_by_returns_400(self, admin_client):
-        """sort_by value not in allowed set should return 400."""
-        response = await admin_client.get(f"{BASE}?sort_by=name")
-        assert_status_code(response, 400, "Invalid sort_by should be rejected")
-        logger.info("✓ Invalid sort_by correctly rejected")
+        """sortBy value not in allowed set should return 400."""
+        response = await admin_client.get(f"{BASE}?sortBy=name")
+        assert_status_code(response, 400, "Invalid sortBy should be rejected")
+        logger.info("✓ Invalid sortBy correctly rejected")
 
     @pytest.mark.asyncio
     async def test_valid_sort_by_date_succeeds(self, admin_client):
-        """sort_by=date should return 200."""
-        response = await admin_client.get(f"{BASE}?sort_by=date")
-        assert_status_code(response, 200, "sort_by=date should be accepted")
-        logger.info("✓ sort_by=date correctly accepted")
+        """sortBy=date should return 200."""
+        response = await admin_client.get(f"{BASE}?sortBy=date")
+        assert_status_code(response, 200, "sortBy=date should be accepted")
+        logger.info("✓ sortBy=date correctly accepted")
 
     @pytest.mark.asyncio
     async def test_invalid_sort_order_returns_400(self, admin_client):
-        """sort_order value not in allowed set should return 400."""
-        response = await admin_client.get(f"{BASE}?sort_order=descending")
-        assert_status_code(response, 400, "Invalid sort_order should be rejected")
-        logger.info("✓ Invalid sort_order correctly rejected")
+        """sortOrder value not in allowed set should return 400."""
+        response = await admin_client.get(f"{BASE}?sortOrder=descending")
+        assert_status_code(response, 400, "Invalid sortOrder should be rejected")
+        logger.info("✓ Invalid sortOrder correctly rejected")
 
     @pytest.mark.asyncio
     async def test_valid_sort_order_desc_succeeds(self, admin_client):
-        """sort_order=desc should return 200."""
-        response = await admin_client.get(f"{BASE}?sort_order=desc")
-        assert_status_code(response, 200, "sort_order=desc should be accepted")
-        logger.info("✓ sort_order=desc correctly accepted")
+        """sortOrder=desc should return 200."""
+        response = await admin_client.get(f"{BASE}?sortOrder=desc")
+        assert_status_code(response, 200, "sortOrder=desc should be accepted")
+        logger.info("✓ sortOrder=desc correctly accepted")
 
     @pytest.mark.asyncio
     async def test_nonnumeric_min_total_returns_400(self, admin_client):
-        """Non-numeric min_total should return 400."""
-        response = await admin_client.get(f"{BASE}?min_total=abc")
-        assert_status_code(response, 400, "Non-numeric min_total should be rejected")
-        logger.info("✓ Non-numeric min_total correctly rejected")
+        """Non-numeric minTotal should return 400."""
+        response = await admin_client.get(f"{BASE}?minTotal=abc")
+        assert_status_code(response, 400, "Non-numeric minTotal should be rejected")
+        logger.info("✓ Non-numeric minTotal correctly rejected")
 
     @pytest.mark.asyncio
     async def test_nonnumeric_max_total_returns_400(self, admin_client):
-        """Non-numeric max_total should return 400."""
-        response = await admin_client.get(f"{BASE}?max_total=abc")
-        assert_status_code(response, 400, "Non-numeric max_total should be rejected")
-        logger.info("✓ Non-numeric max_total correctly rejected")
+        """Non-numeric maxTotal should return 400."""
+        response = await admin_client.get(f"{BASE}?maxTotal=abc")
+        assert_status_code(response, 400, "Non-numeric maxTotal should be rejected")
+        logger.info("✓ Non-numeric maxTotal correctly rejected")
 
     @pytest.mark.asyncio
     async def test_min_total_greater_than_max_total_returns_400(self, admin_client):
-        """min_total greater than max_total should return 400."""
-        response = await admin_client.get(f"{BASE}?min_total=100&max_total=50")
-        assert_status_code(response, 400, "min_total > max_total should be rejected")
-        logger.info("✓ min_total > max_total correctly rejected")
+        """minTotal greater than maxTotal should return 400."""
+        response = await admin_client.get(f"{BASE}?minTotal=100&maxTotal=50")
+        assert_status_code(response, 400, "minTotal > maxTotal should be rejected")
+        logger.info("✓ minTotal > maxTotal correctly rejected")
 
     @pytest.mark.asyncio
     async def test_valid_total_range_succeeds(self, admin_client):
-        """Valid min_total and max_total should return 200."""
-        response = await admin_client.get(f"{BASE}?min_total=0&max_total=1000")
+        """Valid minTotal and maxTotal should return 200."""
+        response = await admin_client.get(f"{BASE}?minTotal=0&maxTotal=1000")
         assert_status_code(response, 200, "Valid total range should be accepted")
         logger.info("✓ Valid total range correctly accepted")
