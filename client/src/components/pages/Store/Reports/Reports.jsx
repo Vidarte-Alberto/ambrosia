@@ -16,7 +16,7 @@ import { SalesDetailCard } from "./Sales";
 import { ReportSkeleton, SummaryCard } from "./Summary";
 
 export default function Reports() {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const { fetchReport, reportData, error } = useReports();
   const { filters, handleFilters } = useFiltersState(fetchReport);
   const { formatAmount, loading: currencyLoading } = useCurrency();
@@ -29,8 +29,8 @@ export default function Reports() {
     <div className="max-w-7xl mx-auto space-y-6">
 
       <PageHeader
-        title={t("header.title")}
-        subtitle={t("header.subtitle")}
+        title={reportsTranslations("header.title")}
+        subtitle={reportsTranslations("header.subtitle")}
         actions={(
           <PeriodFilter
             filters={filters}
@@ -45,7 +45,7 @@ export default function Reports() {
           <CardBody>
             <div className="flex items-center space-x-2">
               <AlertCircle aria-hidden="true" className="w-5 h-5 text-red-600" />
-              <p className="text-red-600 font-semibold">{t("statuses.errorGenerate")}</p>
+              <p className="text-red-600 font-semibold">{reportsTranslations("statuses.errorGenerate")}</p>
             </div>
           </CardBody>
         </Card>

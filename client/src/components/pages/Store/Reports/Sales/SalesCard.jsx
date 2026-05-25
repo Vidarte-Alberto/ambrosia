@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import formatDate from "@lib/formatDate";
 
 export function SalesCard({ sale, formatCurrency }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center gap-3 p-3">
@@ -28,7 +28,7 @@ export function SalesCard({ sale, formatCurrency }) {
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xs text-gray-500">{t("sales.quantity")} ×{sale.quantity}</p>
+          <p className="text-xs text-gray-500">{reportsTranslations("sales.quantity")} ×{sale.quantity}</p>
           <p className="text-sm font-bold text-green-700">
             {formatCurrency(sale.priceAtOrder * sale.quantity)}
           </p>

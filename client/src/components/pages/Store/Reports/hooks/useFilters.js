@@ -90,13 +90,13 @@ export function useFiltersState(fetchReport) {
   );
 
   const refetch = useCallback(() => {
-    const f = latestFiltersRef.current;
+    const snapshotFilters = latestFiltersRef.current;
     fetchReport({
-      period: f.activePeriod || undefined,
-      startDate: f.activePeriod ? undefined : f.startDate || undefined,
-      endDate: f.activePeriod ? undefined : f.endDate || undefined,
-      productName: f.productName || undefined,
-      paymentMethod: f.paymentMethod || undefined,
+      period: snapshotFilters.activePeriod || undefined,
+      startDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.startDate || undefined,
+      endDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.endDate || undefined,
+      productName: snapshotFilters.productName || undefined,
+      paymentMethod: snapshotFilters.paymentMethod || undefined,
     });
   }, [fetchReport]);
 

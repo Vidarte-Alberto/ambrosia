@@ -10,16 +10,16 @@ import { useDateRangeFilters } from "../hooks/useFilters";
 const PERIODS = ["week", "month", "year"];
 
 export function PeriodFilter({ filters, onFiltersChange, disabled }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const [isOpen, setIsOpen] = useState(false);
   const { dateRangeValue, handlePeriodChange, handleDateRangeChange } =
     useDateRangeFilters(filters, onFiltersChange);
 
   const currentLabel = filters.activePeriod
-    ? t(`dates.period.${filters.activePeriod}`)
+    ? reportsTranslations(`dates.period.${filters.activePeriod}`)
     : filters.startDate && filters.endDate
       ? `${filters.startDate} – ${filters.endDate}`
-      : t("dates.title");
+      : reportsTranslations("dates.title");
 
   const handlePeriodSelect = (period) => {
     handlePeriodChange(period);
@@ -48,8 +48,8 @@ export function PeriodFilter({ filters, onFiltersChange, disabled }) {
       <PopoverContent className="p-4 w-80">
         <div className="space-y-4 w-full">
           <div>
-            <p className="text-sm font-semibold text-green-900">{t("dates.title")}</p>
-            <p className="text-xs text-default-500">{t("dates.subtitle")}</p>
+            <p className="text-sm font-semibold text-green-900">{reportsTranslations("dates.title")}</p>
+            <p className="text-xs text-default-500">{reportsTranslations("dates.subtitle")}</p>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -65,15 +65,15 @@ export function PeriodFilter({ filters, onFiltersChange, disabled }) {
               >
                 <div className="flex flex-col items-center">
                   <Calendar aria-hidden="true" className="w-3 h-3 mb-0.5" />
-                  <span className="text-xs">{t(`dates.period.${period}`)}</span>
+                  <span className="text-xs">{reportsTranslations(`dates.period.${period}`)}</span>
                 </div>
               </Button>
             ))}
           </div>
 
           <DateRangePicker
-            aria-label={t("dates.title")}
-            label={t("dates.title")}
+            aria-label={reportsTranslations("dates.title")}
+            label={reportsTranslations("dates.title")}
             value={dateRangeValue}
             onChange={handleDateRangeChange}
             isDisabled={disabled}

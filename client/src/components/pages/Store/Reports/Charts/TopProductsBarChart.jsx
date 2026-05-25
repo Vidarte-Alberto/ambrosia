@@ -3,15 +3,15 @@ import { useTranslations } from "next-intl";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export function TopProductsBarChart({ products, formatCurrency }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
 
   if (!products.length) return null;
 
   return (
     <div>
-      <h4 className="text-sm font-semibold text-gray-600 mb-4">{t("charts.topProducts")}</h4>
+      <h4 className="text-sm font-semibold text-gray-600 mb-4">{reportsTranslations("charts.topProducts")}</h4>
       <ResponsiveContainer width="100%" height={220}>
-        <BarChart aria-label={t("charts.topProducts")} data={products} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+        <BarChart aria-label={reportsTranslations("charts.topProducts")} data={products} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
           <XAxis
             type="number"
@@ -29,7 +29,7 @@ export function TopProductsBarChart({ products, formatCurrency }) {
             width={100}
           />
           <Tooltip
-            formatter={(value) => [formatCurrency(value), t("summary.revenue")]}
+            formatter={(revenueInCents) => [formatCurrency(revenueInCents), reportsTranslations("summary.revenue")]}
             labelStyle={{ color: "#374151", fontWeight: 600 }}
             contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13 }}
           />

@@ -7,15 +7,11 @@ const reportsEs = {
     dates: {
       title: "Seleccionar Período",
       subtitle: "Filtra y analiza tus ventas por período y producto",
-      filtersActive: "{count} filtros activos",
-      refresh: "Actualizar",
       period: {
         week: "Esta Semana",
         month: "Este Mes",
         year: "Este Año",
       },
-      startLabel: "Fecha de Inicio",
-      endLabel: "Fecha Final",
     },
     filters: {
       productName: "Nombre del Producto",
@@ -33,10 +29,6 @@ const reportsEs = {
       loading: "Cargando reportes...",
       errorTitle: "Error",
       errorGenerate: "No se pudo generar el reporte",
-    },
-    errors: {
-      bothDates: "Debes proporcionar fecha de inicio y fecha final",
-      invalidRange: "La fecha de inicio no puede ser posterior a la fecha final",
     },
     summary: {
       title: "Resumen",

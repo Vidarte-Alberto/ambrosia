@@ -7,15 +7,11 @@ const reportsEn = {
     dates: {
       title: "Select Period",
       subtitle: "Filter and analyze your sales by period and product",
-      filtersActive: "{count} filters active",
-      refresh: "Refresh",
       period: {
         week: "This Week",
         month: "This Month",
         year: "This Year",
       },
-      startLabel: "Start Date",
-      endLabel: "End Date",
     },
     filters: {
       productName: "Product Name",
@@ -33,10 +29,6 @@ const reportsEn = {
       loading: "Loading reports...",
       errorTitle: "Error",
       errorGenerate: "Could not generate the report",
-    },
-    errors: {
-      bothDates: "You must provide both start and end date",
-      invalidRange: "Start date cannot be after end date",
     },
     summary: {
       title: "Summary",

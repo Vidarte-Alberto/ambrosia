@@ -12,11 +12,11 @@ const PAYMENT_OPTIONS = [
 ];
 
 export function SalesFilters({ filters, onFiltersChange, disabled }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
 
-  const handlePaymentMethod = (keys) => {
-    const selected = Array.from(keys)[0] ?? "all";
-    onFiltersChange({ paymentMethod: selected === "all" ? "" : selected });
+  const handlePaymentMethodChange = (selectionKeys) => {
+    const selectedMethod = Array.from(selectionKeys)[0] ?? "all";
+    onFiltersChange({ paymentMethod: selectedMethod === "all" ? "" : selectedMethod });
   };
 
   return (
@@ -24,25 +24,25 @@ export function SalesFilters({ filters, onFiltersChange, disabled }) {
       <Input
         isClearable
         className="flex-1"
-        label={t("filters.productName")}
-        aria-label={t("filters.productName")}
-        placeholder={t("filters.productNamePlaceholder")}
+        label={reportsTranslations("filters.productName")}
+        aria-label={reportsTranslations("filters.productName")}
+        placeholder={reportsTranslations("filters.productNamePlaceholder")}
         value={filters.productName}
-        onChange={(e) => onFiltersChange({ productName: e.target.value })}
+        onChange={(event) => onFiltersChange({ productName: event.target.value })}
         onClear={() => onFiltersChange({ productName: "" })}
         isDisabled={disabled}
       />
       <Select
-        aria-label={t("filters.paymentMethod")}
-        label={t("filters.paymentMethod")}
+        aria-label={reportsTranslations("filters.paymentMethod")}
+        label={reportsTranslations("filters.paymentMethod")}
         className="sm:w-48 shrink-0"
         selectedKeys={new Set([filters.paymentMethod || "all"])}
-        onSelectionChange={handlePaymentMethod}
+        onSelectionChange={handlePaymentMethodChange}
         isDisabled={disabled}
       >
         {PAYMENT_OPTIONS.map(({ value, localeKey, icon }) => (
           <SelectItem key={value} value={value} startContent={icon}>
-            {t(`filters.paymentMethods.${localeKey}`)}
+            {reportsTranslations(`filters.paymentMethods.${localeKey}`)}
           </SelectItem>
         ))}
       </Select>

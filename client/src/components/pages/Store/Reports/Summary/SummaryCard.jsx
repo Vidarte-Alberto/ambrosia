@@ -13,14 +13,14 @@ const TONE = {
 };
 
 export function SummaryCard({ reportData, formatCurrency }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const { totalRevenue, totalItems, transactionCount, avgTicket } = useSummaryData(reportData);
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-      <SummaryStat label={t("summary.revenue")} value={formatCurrency(totalRevenue)} tone={TONE} />
-      <SummaryStat label={t("summary.items")} value={totalItems} tone={TONE} />
-      <SummaryStat label={t("summary.transactions")} value={transactionCount} tone={TONE} />
-      <SummaryStat label={t("summary.avgTicket")} value={formatCurrency(avgTicket)} tone={TONE} />
+      <SummaryStat label={reportsTranslations("summary.revenue")} value={formatCurrency(totalRevenue)} tone={TONE} />
+      <SummaryStat label={reportsTranslations("summary.items")} value={totalItems} tone={TONE} />
+      <SummaryStat label={reportsTranslations("summary.transactions")} value={transactionCount} tone={TONE} />
+      <SummaryStat label={reportsTranslations("summary.avgTicket")} value={formatCurrency(avgTicket)} tone={TONE} />
     </div>
   );
 }
