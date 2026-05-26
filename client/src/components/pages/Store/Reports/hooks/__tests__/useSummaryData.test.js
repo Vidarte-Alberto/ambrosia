@@ -2,26 +2,56 @@ import { renderHook } from "@testing-library/react";
 
 import { useSummaryData } from "../useSummaryData";
 
+const SALES = [
+  { productName: "A", quantity: 1, priceAtOrder: 1000 },
+  { productName: "B", quantity: 2, priceAtOrder: 500 },
+];
+
 describe("useSummaryData", () => {
   it("totalRevenue is 0 when reportData is null", () => {
-    const { result } = renderHook(() => useSummaryData(null));
-    expect(result.current.totalRevenue).toBe(0);
+    const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
+    expect(summaryDataHook.current.totalRevenue).toBe(0);
   });
 
   it("totalItems is 0 when reportData is null", () => {
-    const { result } = renderHook(() => useSummaryData(null));
-    expect(result.current.totalItems).toBe(0);
+    const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
+    expect(summaryDataHook.current.totalItems).toBe(0);
+  });
+
+  it("transactionCount is 0 when reportData is null", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
+    expect(summaryDataHook.current.transactionCount).toBe(0);
+  });
+
+  it("averageTicket is 0 when reportData is null", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData(null));
+    expect(summaryDataHook.current.averageTicket).toBe(0);
   });
 
   it("totalRevenue derives from reportData.totalRevenueCents", () => {
-    const { result } = renderHook(() => useSummaryData({ totalRevenueCents: 9900, totalItemsSold: 0, sales: [] }),
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 9900, totalItemsSold: 0, sales: [] }),
     );
-    expect(result.current.totalRevenue).toBe(9900);
+    expect(summaryDataHook.current.totalRevenue).toBe(9900);
   });
 
   it("totalItems derives from reportData.totalItemsSold", () => {
-    const { result } = renderHook(() => useSummaryData({ totalRevenueCents: 0, totalItemsSold: 42, sales: [] }),
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 0, totalItemsSold: 42, sales: [] }),
     );
-    expect(result.current.totalItems).toBe(42);
+    expect(summaryDataHook.current.totalItems).toBe(42);
+  });
+
+  it("transactionCount equals sales.length", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 0, totalItemsSold: 3, sales: SALES }));
+    expect(summaryDataHook.current.transactionCount).toBe(2);
+  });
+
+  it("averageTicket is 0 when there are no sales", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 5000, totalItemsSold: 5, sales: [] }));
+    expect(summaryDataHook.current.averageTicket).toBe(0);
+  });
+
+  it("averageTicket is round(totalRevenueCents / sales.length)", () => {
+    const { result: summaryDataHook } = renderHook(() => useSummaryData({ totalRevenueCents: 1000, totalItemsSold: 3, sales: SALES }));
+    expect(summaryDataHook.current.averageTicket).toBe(500);
   });
 });

@@ -7,14 +7,11 @@ const reportsEs = {
     dates: {
       title: "Seleccionar Período",
       subtitle: "Filtra y analiza tus ventas por período y producto",
-      filtersActive: "{count} filtros activos",
       period: {
         week: "Esta Semana",
         month: "Este Mes",
         year: "Este Año",
       },
-      startLabel: "Fecha de Inicio",
-      endLabel: "Fecha Final",
     },
     filters: {
       productName: "Nombre del Producto",
@@ -33,15 +30,13 @@ const reportsEs = {
       errorTitle: "Error",
       errorGenerate: "No se pudo generar el reporte",
     },
-    errors: {
-      bothDates: "Debes proporcionar fecha de inicio y fecha final",
-      invalidRange: "La fecha de inicio no puede ser posterior a la fecha final",
-    },
     summary: {
       title: "Resumen",
       subtitle: "Totales consolidados del período seleccionado",
       revenue: "Ingresos Totales",
       items: "Productos Vendidos",
+      transactions: "Transacciones",
+      averageTicket: "Ticket Promedio",
     },
     charts: {
       title: "Analítica",
@@ -56,6 +51,7 @@ const reportsEs = {
     sales: {
       title: "Detalle de Ventas",
       subtitle: "Registro completo de transacciones del período",
+      transactions: "Transacciones",
       empty: "No se encontraron ventas con los filtros seleccionados",
       export: "Exportar CSV",
       product: "Producto",
@@ -65,7 +61,13 @@ const reportsEs = {
       total: "Total",
       paymentMethod: "Método de Pago",
       date: "Fecha",
+      time: "Hora",
       rowsPerPage: "Filas por página",
+      records: "registros",
+      show: "Mostrar",
+      perPage: "por página",
+      pageLabel: "Página",
+      ofLabel: "de",
       paginationAria: "Paginación de ventas",
       tableAriaLabel: "Detalle de ventas",
     },

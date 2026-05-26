@@ -7,14 +7,11 @@ const reportsEn = {
     dates: {
       title: "Select Period",
       subtitle: "Filter and analyze your sales by period and product",
-      filtersActive: "{count} filters active",
       period: {
         week: "This Week",
         month: "This Month",
         year: "This Year",
       },
-      startLabel: "Start Date",
-      endLabel: "End Date",
     },
     filters: {
       productName: "Product Name",
@@ -33,15 +30,13 @@ const reportsEn = {
       errorTitle: "Error",
       errorGenerate: "Could not generate the report",
     },
-    errors: {
-      bothDates: "You must provide both start and end date",
-      invalidRange: "Start date cannot be after end date",
-    },
     summary: {
       title: "Summary",
       subtitle: "Consolidated totals for the selected period",
       revenue: "Total Revenue",
       items: "Items Sold",
+      transactions: "Transactions",
+      averageTicket: "Average Ticket",
     },
     charts: {
       title: "Analytics",
@@ -56,6 +51,7 @@ const reportsEn = {
     sales: {
       title: "Sales Detail",
       subtitle: "Complete transaction log for the selected period",
+      transactions: "Transactions",
       empty: "No sales found for the selected filters",
       export: "Export CSV",
       product: "Product",
@@ -65,7 +61,13 @@ const reportsEn = {
       total: "Total",
       paymentMethod: "Payment Method",
       date: "Date",
+      time: "Time",
       rowsPerPage: "Rows per page",
+      records: "records",
+      show: "Show",
+      perPage: "per page",
+      pageLabel: "Page",
+      ofLabel: "of",
       paginationAria: "Sales pagination",
       tableAriaLabel: "Sales detail",
     },

@@ -12,12 +12,6 @@ export const defaultFilters = {
 };
 
 export function useDateRangeFilters(filters, onFiltersChange) {
-  const activeFilterCount = useMemo(
-    () => [filters.activePeriod, filters.startDate, filters.endDate, filters.productName, filters.paymentMethod]
-      .filter(Boolean).length,
-    [filters],
-  );
-
   const dateRangeValue = useMemo(() => {
     if (!filters.startDate || !filters.endDate) return null;
     return { start: parseDate(filters.startDate), end: parseDate(filters.endDate) };
@@ -31,12 +25,7 @@ export function useDateRangeFilters(filters, onFiltersChange) {
     activePeriod: null,
   });
 
-  const handlePaymentMethod = (keys) => {
-    const selectedKey = Array.from(keys)[0] ?? "all";
-    onFiltersChange({ paymentMethod: selectedKey === "all" ? "" : selectedKey });
-  };
-
-  return { activeFilterCount, dateRangeValue, handlePeriodChange, handleDateRangeChange, handlePaymentMethod };
+  return { dateRangeValue, handlePeriodChange, handleDateRangeChange };
 }
 
 export function useFiltersState(fetchReport) {
@@ -100,5 +89,16 @@ export function useFiltersState(fetchReport) {
     [fetchReport],
   );
 
-  return { filters, handleFilters: handleFiltersChange };
+  const refetch = useCallback(() => {
+    const snapshotFilters = latestFiltersRef.current;
+    fetchReport({
+      period: snapshotFilters.activePeriod || undefined,
+      startDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.startDate || undefined,
+      endDate: snapshotFilters.activePeriod ? undefined : snapshotFilters.endDate || undefined,
+      productName: snapshotFilters.productName || undefined,
+      paymentMethod: snapshotFilters.paymentMethod || undefined,
+    });
+  }, [fetchReport]);
+
+  return { filters, handleFilters: handleFiltersChange, refetch };
 }
