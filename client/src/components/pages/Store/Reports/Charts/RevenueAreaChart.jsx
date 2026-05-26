@@ -2,6 +2,8 @@
 import { useTranslations } from "next-intl";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { CHART_COLORS } from "./chartColors";
+
 export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
   const reportsTranslations = useTranslations("reports");
 
@@ -14,8 +16,8 @@ export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
         <AreaChart aria-label={reportsTranslations("charts.revenueOverTime")} data={dailyRevenue} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#1c7c54" stopOpacity={0.45} />
-              <stop offset="95%" stopColor="#9ed8bc" stopOpacity={0.05} />
+              <stop offset="5%" stopColor={CHART_COLORS[0]} stopOpacity={0.45} />
+              <stop offset="95%" stopColor={CHART_COLORS[2]} stopOpacity={0.05} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -42,7 +44,7 @@ export function RevenueAreaChart({ dailyRevenue, formatCurrency }) {
           <Area
             type="natural"
             dataKey="revenue"
-            stroke="#1c7c54"
+            stroke={CHART_COLORS[0]}
             strokeWidth={2}
             fill="url(#revenueGradient)"
             dot={false}

@@ -59,7 +59,7 @@ export function SalesDetailCard({ sales, formatCurrency, filters, onFiltersChang
           {totalPages > 1 && (
             <div className="flex items-center gap-3">
               <span className="text-sm text-default-500">
-                {reportsTranslations("sales.pageOf", { page, total: totalPages })}
+                {reportsTranslations("sales.pageLabel")} {page} {reportsTranslations("sales.ofLabel")} {totalPages}
               </span>
               <Pagination
                 total={totalPages}

@@ -2,6 +2,8 @@
 import { useTranslations } from "next-intl";
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+import { CHART_COLORS } from "./chartColors";
+
 export function TopProductsBarChart({ products, formatCurrency }) {
   const reportsTranslations = useTranslations("reports");
 
@@ -35,7 +37,7 @@ export function TopProductsBarChart({ products, formatCurrency }) {
           />
           <Bar dataKey="revenue" radius={[0, 4, 4, 0]} maxBarSize={20}>
             {products.map((_, index) => (
-              <Cell key={index} fill={index === 0 ? "#1c7c54" : "#9ed8bc"} />
+              <Cell key={index} fill={index === 0 ? CHART_COLORS[0] : CHART_COLORS[2]} />
             ))}
           </Bar>
         </BarChart>

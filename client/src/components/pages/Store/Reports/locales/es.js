@@ -36,7 +36,7 @@ const reportsEs = {
       revenue: "Ingresos Totales",
       items: "Productos Vendidos",
       transactions: "Transacciones",
-      avgTicket: "Ticket Promedio",
+      averageTicket: "Ticket Promedio",
     },
     charts: {
       title: "Analítica",
@@ -66,7 +66,8 @@ const reportsEs = {
       records: "registros",
       show: "Mostrar",
       perPage: "por página",
-      pageOf: "Página {page} de {total}",
+      pageLabel: "Página",
+      ofLabel: "de",
       paginationAria: "Paginación de ventas",
       tableAriaLabel: "Detalle de ventas",
     },

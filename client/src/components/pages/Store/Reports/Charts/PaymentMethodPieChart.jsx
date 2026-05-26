@@ -2,7 +2,7 @@
 import { useTranslations } from "next-intl";
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
-const COLORS = ["#1c7c54", "#59bd8d", "#9ed8bc", "#c5e7d7", "#46985d"];
+import { CHART_COLORS } from "./chartColors";
 
 export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
   const reportsTranslations = useTranslations("reports");
@@ -25,7 +25,7 @@ export function PaymentMethodPieChart({ paymentMethods, formatCurrency }) {
             paddingAngle={3}
           >
             {paymentMethods.map((_, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+              <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
             ))}
           </Pie>
           <Tooltip

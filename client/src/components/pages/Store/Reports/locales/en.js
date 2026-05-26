@@ -36,7 +36,7 @@ const reportsEn = {
       revenue: "Total Revenue",
       items: "Items Sold",
       transactions: "Transactions",
-      avgTicket: "Avg. Ticket",
+      averageTicket: "Average Ticket",
     },
     charts: {
       title: "Analytics",
@@ -66,7 +66,8 @@ const reportsEn = {
       records: "records",
       show: "Show",
       perPage: "per page",
-      pageOf: "Page {page} of {total}",
+      pageLabel: "Page",
+      ofLabel: "of",
       paginationAria: "Sales pagination",
       tableAriaLabel: "Sales detail",
     },
