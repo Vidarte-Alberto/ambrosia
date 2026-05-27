@@ -91,7 +91,7 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
         </ModalBody>
 
         <ModalFooter className={showAddButton ? "flex justify-between" : "flex justify-end"}>
-          <Button variant="bordered" onPress={onClose}>
+          <Button variant="outline" size="sm" className="border border-green-800 text-green-800" onPress={onClose}>
             {t("close")}
           </Button>
           {showAddButton && (
