@@ -4,17 +4,19 @@ import { Button, Card, CardBody, Spinner } from "@heroui/react";
 import { ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
 import { useFormatter, useTranslations } from "next-intl";
 
+import { AmountDisplay } from "@/components/shared/AmountDisplay";
+
 import { formatSats } from "../utils/formatters";
 
-const getTransactionIcon = (type) => (
-  type === "outgoing_payment" ? (
+const getTransactionIcon = (transactionType) => (
+  transactionType === "outgoing_payment" ? (
     <ArrowUpRight className="w-4 h-4 text-red-600" />
   ) : (
     <ArrowDownLeft className="w-4 h-4 text-green-600" />
   )
 );
 
-export function HistoryTab({ transactions, loading, filter, setFilter }) {
+export function HistoryTab({ transactions, loading, filter, setFilter, currentRate }) {
   const t = useTranslations("wallet");
   const format = useFormatter();
 
@@ -65,37 +67,45 @@ export function HistoryTab({ transactions, loading, filter, setFilter }) {
           </div>
         ) : (
           <div className="space-y-3">
-            {transactions.map((tx, i) => (
-              <Card key={tx.paymentId || tx.txId || i} className="border" shadow="none">
+            {transactions.map((transaction, index) => (
+              <Card key={transaction.paymentId || transaction.txId || index} className="border" shadow="none">
                 <CardBody className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="hidden sm:flex w-10 h-10 shrink-0 bg-gray-100 rounded-full items-center justify-center">
-                      {getTransactionIcon(tx.type)}
+                      {getTransactionIcon(transaction.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-baseline gap-2">
                         <span className="text-deep">
-                          {tx.type === "outgoing_payment"
+                          {transaction.type === "outgoing_payment"
                             ? t("payments.history.sent")
                             : t("payments.history.received")}
                         </span>
                         <span className="text-xs text-gray-400 shrink-0">
-                          {format.dateTime(new Date(tx.completedAt), { dateStyle: "short" })}
+                          {format.dateTime(new Date(transaction.completedAt), { dateStyle: "short" })}
                           {" "}
-                          {format.dateTime(new Date(tx.completedAt), { timeStyle: "short" })}
+                          {format.dateTime(new Date(transaction.completedAt), { timeStyle: "short" })}
                         </span>
                       </div>
-                      <p className={`text-lg font-bold ${tx.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
-                        {formatSats(
-                          tx.type === "outgoing_payment" ? tx.sent : tx.receivedSat,
-                        )}{" "}
-                        sats
+                      <p className={`text-lg font-bold ${transaction.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
+                        {transaction.type === "incoming_payment" && transaction.exchangeRateAtPayment ? (
+                          <AmountDisplay
+                            satoshis={transaction.receivedSat}
+                            exchangeRateAtSale={transaction.exchangeRateAtPayment}
+                            currentRate={currentRate}
+                          />
+                        ) : (
+                          <>
+                            {formatSats(transaction.type === "outgoing_payment" ? transaction.sent : transaction.receivedSat)}
+                            {" "}sats
+                          </>
+                        )}
                       </p>
                       <p className="text-sm text-deep">
-                        {t("payments.history.fee")} {formatSats(Number(tx.fees) / 1000)} sats
+                        {t("payments.history.fee")} {formatSats(Number(transaction.fees) / 1000)} sats
                       </p>
-                      {tx.description && (
-                        <p className="text-sm text-deep">{tx.description}</p>
+                      {transaction.description && (
+                        <p className="text-sm text-deep">{transaction.description}</p>
                       )}
                     </div>
                   </div>

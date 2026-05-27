@@ -10,6 +10,8 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { useBitcoinPrice } from "@/components/hooks/useBitcoinPrice";
+import { useCurrency } from "@/components/hooks/useCurrency";
 import {
   getIncomingTransactions,
   getInfo,
@@ -23,6 +25,8 @@ import { InvoiceModal, Transactions } from "./Transactions";
 
 export function StoreWallet() {
   const t = useTranslations("wallet");
+  const { currency } = useCurrency();
+  const { currentRate } = useBitcoinPrice({ currencyAcronym: currency.acronym });
   const [info, setInfo] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [error, setError] = useState("");
@@ -146,6 +150,7 @@ export function StoreWallet() {
               invoiceActions={invoiceActions}
               fetchInfo={fetchInfo}
               fetchTransactions={fetchTransactions}
+              currentRate={currentRate}
             />
           </div>
 

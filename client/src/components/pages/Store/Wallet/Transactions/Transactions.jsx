@@ -23,6 +23,7 @@ export function Transactions({
   invoiceActions,
   fetchInfo,
   fetchTransactions,
+  currentRate,
 }) {
   const t = useTranslations("wallet");
   const tTour = useTranslations("walletTour");
@@ -135,6 +136,7 @@ export function Transactions({
               loading={loading}
               filter={filter}
               setFilter={setFilter}
+              currentRate={currentRate}
             />
           </Tab>
         </Tabs>
