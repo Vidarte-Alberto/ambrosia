@@ -54,7 +54,7 @@ class OrderService(
         private const val STORE_INSERT_TICKET =
             "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
         private const val STORE_INSERT_PAYMENT =
-            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount) VALUES (?, ?, ?, ?, ?)"
+            "INSERT INTO payments (id, method_id, currency_id, transaction_id, amount, satoshi_amount, exchange_rate_at_payment, payment_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         private const val STORE_INSERT_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val STORE_GET_ITEMS =
@@ -596,6 +596,9 @@ class OrderService(
                 statement.setString(3, request.currencyId)
                 statement.setString(4, request.transactionId ?: "")
                 statement.setDouble(5, request.amount)
+                if (request.satoshiAmount != null) statement.setLong(6, request.satoshiAmount) else statement.setNull(6, java.sql.Types.INTEGER)
+                if (request.exchangeRateAtPayment != null) statement.setDouble(7, request.exchangeRateAtPayment) else statement.setNull(7, java.sql.Types.REAL)
+                if (request.paymentHash != null) statement.setString(8, request.paymentHash) else statement.setNull(8, java.sql.Types.VARCHAR)
                 statement.executeUpdate()
             }
 
