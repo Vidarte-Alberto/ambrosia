@@ -75,6 +75,7 @@ export function ProductsList({ products, categories = [], onEditProduct, onDelet
       <ProductDetailsModal
         isOpen={showProductDetails}
         onClose={() => setShowProductDetails(false)}
+        showAddButton={false}
         product={selectedProduct}
         categories={categories}
       />

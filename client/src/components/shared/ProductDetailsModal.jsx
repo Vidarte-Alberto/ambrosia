@@ -1,12 +1,12 @@
 "use client";
 import { Button, Chip, Image, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
-import { ImageIcon, ShoppingCart } from "lucide-react";
+import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
-export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, categories = [] }) {
+export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButton = true, product, categories = [] }) {
   const t = useTranslations("productDetails");
   const { formatAmount } = useCurrency();
 
@@ -90,18 +90,20 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, product, ca
           )}
         </ModalBody>
 
-        <ModalFooter className="flex justify-between">
+        <ModalFooter className={showAddButton ? "flex justify-between" : "flex justify-end"}>
           <Button variant="bordered" onPress={onClose}>
             {t("close")}
           </Button>
-          <Button
-            color="primary"
-            className="bg-green-800"
-            isDisabled={isOutOfStock}
-            onPress={handleAddToCart}
-          >
-            {t("add")}
-          </Button>
+          {showAddButton && (
+            <Button
+              color="primary"
+              className="bg-green-800"
+              isDisabled={isOutOfStock}
+              onPress={handleAddToCart}
+            >
+              {t("add")}
+            </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>
