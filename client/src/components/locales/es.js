@@ -83,6 +83,11 @@ const componentsEs = {
     other: "Otro",
     loadError: "Error al cargar datos del turno",
   },
+  amountDisplay: {
+    satsLabel: "sats",
+    showCurrentRate: "Ver tipo de cambio actual",
+    showHistoricalRate: "Ver tipo de cambio al momento de la venta",
+  },
 };
 
 export default componentsEs;
