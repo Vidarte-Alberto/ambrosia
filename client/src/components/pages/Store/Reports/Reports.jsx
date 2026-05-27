@@ -114,7 +114,13 @@ export default function Reports() {
               {orders.length > 0 && (
                 <OrdersAnalyticsCard sales={sales} orders={orders} formatCurrency={formatCurrency} />
               )}
-              <OrdersDetailCard orders={orders} formatCurrency={formatCurrency} />
+              <OrdersDetailCard
+                orders={orders}
+                formatCurrency={formatCurrency}
+                filters={filters}
+                onFiltersChange={handleFilters}
+                disabled={currencyLoading}
+              />
             </div>
           )}
           {activeTab === "products" && (

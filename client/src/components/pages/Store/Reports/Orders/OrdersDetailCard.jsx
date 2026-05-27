@@ -5,11 +5,12 @@ import { useTranslations } from "next-intl";
 
 import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
 
+import { OrdersFilters } from "./OrdersFilters";
 import { OrdersList } from "./OrdersList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function OrdersDetailCard({ orders, formatCurrency }) {
+export function OrdersDetailCard({ orders, formatCurrency, filters, onFiltersChange, disabled }) {
   const reportsTranslations = useTranslations("reports");
   const { paginatedOrders, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
     useOrdersDetailData(orders, formatCurrency);
@@ -34,6 +35,8 @@ export function OrdersDetailCard({ orders, formatCurrency }) {
             {reportsTranslations("sales.export")}
           </button>
         </div>
+
+        <OrdersFilters filters={filters} onFiltersChange={onFiltersChange} disabled={disabled} orders={orders} />
 
         <OrdersList orders={paginatedOrders} formatCurrency={formatCurrency} />
 
