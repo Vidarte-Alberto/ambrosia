@@ -30,6 +30,10 @@ const reportsEs = {
       errorTitle: "Error",
       errorGenerate: "No se pudo generar el reporte",
     },
+    tabs: {
+      orders: "Órdenes",
+      products: "Productos",
+    },
     summary: {
       title: "Resumen",
       subtitle: "Totales consolidados del período seleccionado",
@@ -37,6 +41,10 @@ const reportsEs = {
       items: "Productos Vendidos",
       transactions: "Transacciones",
       averageTicket: "Ticket Promedio",
+      productLines: "Líneas de Producto",
+      uniqueProducts: "Productos Únicos",
+      orderCount: "Órdenes",
+      avgItemsPerOrder: "Items Prom. / Orden",
     },
     charts: {
       title: "Analítica",
@@ -44,6 +52,21 @@ const reportsEs = {
       revenueOverTime: "Ingresos por Día",
       topProducts: "Top Productos por Ingresos",
       paymentSplit: "Distribución de Métodos de Pago",
+      ordersOverTime: "Órdenes por Día",
+      topUsers: "Usuarios con Más Órdenes",
+    },
+    orders: {
+      title: "Órdenes",
+      count: "órdenes",
+      avgTicket: "Ticket Promedio",
+      avgItems: "Items Prom. / Orden",
+      shortId: "ID Orden",
+      products: "Productos",
+      total: "Total",
+      more: "más",
+      empty: "No se encontraron órdenes con los filtros seleccionados",
+      paginationAria: "Paginación de órdenes",
+      tableAriaLabel: "Detalle de órdenes",
     },
     payment: {
       unknown: "Desconocido",
