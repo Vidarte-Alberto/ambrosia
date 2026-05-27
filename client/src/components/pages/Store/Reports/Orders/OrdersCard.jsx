@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import formatDate from "@lib/formatDate";
 
 export function OrdersCard({ order, formatCurrency }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const productNames = order.items.map((item) => item.productName).join(", ");
 
   return (
@@ -30,7 +30,7 @@ export function OrdersCard({ order, formatCurrency }) {
           <span className="text-xs text-gray-500 mt-0.5 block">{order.paymentMethod}</span>
         </div>
         <div className="shrink-0 text-right">
-          <p className="text-xs text-gray-500">×{order.itemCount} {t("sales.quantity").toLowerCase()}</p>
+          <p className="text-xs text-gray-500">×{order.itemCount} {reportsTranslations("sales.quantity").toLowerCase()}</p>
           <p className="text-sm font-bold text-green-700">{formatCurrency(order.total)}</p>
         </div>
       </CardBody>

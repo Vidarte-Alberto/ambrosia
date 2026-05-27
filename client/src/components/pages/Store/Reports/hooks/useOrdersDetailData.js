@@ -8,7 +8,7 @@ import formatDate from "@lib/formatDate";
 const DEFAULT_ROWS_PER_PAGE = 10;
 
 export function useOrdersDetailData(orders, formatCurrency) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE);
   const [prevOrders, setPrevOrders] = useState(orders);
@@ -32,8 +32,8 @@ export function useOrdersDetailData(orders, formatCurrency) {
   const exportToCsv = useCallback(() => {
     if (!orders.length) return;
     const headers = [
-      t("orders.shortId"), t("sales.date"), t("sales.user"),
-      t("orders.products"), t("sales.quantity"), t("sales.total"), t("sales.paymentMethod"),
+      reportsTranslations("orders.shortId"), reportsTranslations("sales.date"), reportsTranslations("sales.user"),
+      reportsTranslations("orders.products"), reportsTranslations("sales.quantity"), reportsTranslations("sales.total"), reportsTranslations("sales.paymentMethod"),
     ];
     const rows = orders.map((order) => [
       order.shortId,
@@ -53,7 +53,7 @@ export function useOrdersDetailData(orders, formatCurrency) {
     link.download = `orders-report-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
-  }, [orders, formatCurrency, t]);
+  }, [orders, formatCurrency, reportsTranslations]);
 
   return { paginatedOrders, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv };
 }

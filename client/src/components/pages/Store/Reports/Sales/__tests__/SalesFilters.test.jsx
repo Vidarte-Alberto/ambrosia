@@ -88,7 +88,7 @@ describe("SalesFilters", () => {
   it("shows only methods present in sales data plus all option", () => {
     render(<SalesFilters filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} sales={SALES_WITH_METHODS} />);
     const select = screen.getByTestId("select-filters.paymentMethod");
-    const options = Array.from(select.querySelectorAll("option")).map((o) => o.value);
+    const options = Array.from(select.querySelectorAll("option")).map((option) => option.value);
     expect(options).toContain("all");
     expect(options).toContain("Cash");
     expect(options).toContain("BTC");

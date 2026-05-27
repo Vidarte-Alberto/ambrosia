@@ -28,21 +28,21 @@ describe("useOrdersChartData", () => {
 
     it("counts orders correctly per day", () => {
       const { result } = renderHook(() => useOrdersChartData(ORDERS_FIXTURE));
-      const day2 = result.current.ordersPerDay.find((d) => d.date === "2024-01-02");
-      const day3 = result.current.ordersPerDay.find((d) => d.date === "2024-01-03");
+      const day2 = result.current.ordersPerDay.find((dayEntry) => dayEntry.date === "2024-01-02");
+      const day3 = result.current.ordersPerDay.find((dayEntry) => dayEntry.date === "2024-01-03");
       expect(day2.orders).toBe(2);
       expect(day3.orders).toBe(3);
     });
 
     it("accumulates revenue correctly per day", () => {
       const { result } = renderHook(() => useOrdersChartData(ORDERS_FIXTURE));
-      const day2 = result.current.ordersPerDay.find((d) => d.date === "2024-01-02");
+      const day2 = result.current.ordersPerDay.find((dayEntry) => dayEntry.date === "2024-01-02");
       expect(day2.revenue).toBe(6500);
     });
 
     it("sorts days ascending", () => {
       const { result } = renderHook(() => useOrdersChartData(ORDERS_FIXTURE));
-      const dates = result.current.ordersPerDay.map((d) => d.date);
+      const dates = result.current.ordersPerDay.map((dayEntry) => dayEntry.date);
       expect(dates).toEqual(["2024-01-02", "2024-01-03"]);
     });
   });

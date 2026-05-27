@@ -28,13 +28,13 @@ const buildProductSummary = (items, overflowLabel) => {
 };
 
 export function OrdersList({ orders, formatCurrency }) {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
 
   if (!orders?.length) {
     return (
       <div className="text-center py-12 text-gray-500">
         <ShoppingCart aria-hidden="true" className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-        <p className="font-medium">{t("orders.empty")}</p>
+        <p className="font-medium">{reportsTranslations("orders.empty")}</p>
       </div>
     );
   }
@@ -42,7 +42,7 @@ export function OrdersList({ orders, formatCurrency }) {
   const columns = [
     {
       key: "id",
-      label: t("orders.shortId"),
+      label: reportsTranslations("orders.shortId"),
       render: (order) => (
         <span className="font-mono text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
           #{order.shortId}
@@ -51,7 +51,7 @@ export function OrdersList({ orders, formatCurrency }) {
     },
     {
       key: "date",
-      label: t("sales.date"),
+      label: reportsTranslations("sales.date"),
       render: (order) => (
         <div className="text-xs">
           <span className="text-gray-700">{formatDateOnly(order.date)}</span>
@@ -61,39 +61,39 @@ export function OrdersList({ orders, formatCurrency }) {
     },
     {
       key: "user",
-      label: t("sales.user"),
+      label: reportsTranslations("sales.user"),
       render: (order) => <span className="text-sm text-gray-700">{order.userName ?? "—"}</span>,
     },
     {
       key: "products",
-      label: t("orders.products"),
+      label: reportsTranslations("orders.products"),
       render: (order) => (
-        <span className="text-sm text-deep">{buildProductSummary(order.items, t("orders.more"))}</span>
+        <span className="text-sm text-deep">{buildProductSummary(order.items, reportsTranslations("orders.more"))}</span>
       ),
     },
     {
       key: "items",
-      label: t("sales.quantity"),
+      label: reportsTranslations("sales.quantity"),
       render: (order) => <span className="font-bold">×{order.itemCount}</span>,
     },
     {
       key: "total",
-      label: t("orders.total"),
+      label: reportsTranslations("orders.total"),
       render: (order) => (
         <span className="whitespace-nowrap font-bold text-green-700">{formatCurrency(order.total)}</span>
       ),
     },
     {
       key: "payment",
-      label: t("sales.paymentMethod"),
+      label: reportsTranslations("sales.paymentMethod"),
       render: (order) => (
-        <span className="text-sm text-gray-700">{order.paymentMethod || t("payment.unknown")}</span>
+        <span className="text-sm text-gray-700">{order.paymentMethod || reportsTranslations("payment.unknown")}</span>
       ),
     },
   ];
 
   return (
-    <section aria-label={t("orders.tableAriaLabel")} className="w-full">
+    <section aria-label={reportsTranslations("orders.tableAriaLabel")} className="w-full">
       <div className="md:hidden space-y-3">
         {orders.map((order) => (
           <OrdersCard key={order.orderId} order={order} formatCurrency={formatCurrency} />

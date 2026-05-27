@@ -31,7 +31,7 @@ export function PaymentMethodPieChart({ paymentMethods, formatCurrency, valueKey
             ))}
           </Pie>
           <Tooltip
-            formatter={(value, name) => [formatValue(value), name]}
+            formatter={(rawValue, paymentMethodName) => [formatValue(rawValue), paymentMethodName]}
             contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 13 }}
           />
           <Legend

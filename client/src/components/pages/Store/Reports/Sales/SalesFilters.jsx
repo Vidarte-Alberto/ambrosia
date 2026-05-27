@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 export function SalesFilters({ filters, onFiltersChange, disabled, sales = [] }) {
   const reportsTranslations = useTranslations("reports");
 
-  const paymentMethods = ["all", ...new Set(sales.map((s) => s.paymentMethod).filter(Boolean))];
+  const paymentMethods = ["all", ...new Set(sales.map((sale) => sale.paymentMethod).filter(Boolean))];
 
   const handlePaymentMethodChange = (selectionKeys) => {
     const selectedMethod = Array.from(selectionKeys)[0] ?? "all";

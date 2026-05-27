@@ -20,7 +20,7 @@ import { SalesDetailCard } from "./Sales";
 import { ReportSkeleton, SummaryCard } from "./Summary";
 
 export default function Reports() {
-  const t = useTranslations("reports");
+  const reportsTranslations = useTranslations("reports");
   const { fetchReport, reportData, error } = useReports();
   const { filters, handleFilters } = useFiltersState(fetchReport);
   const { formatAmount, loading: currencyLoading } = useCurrency();
@@ -36,18 +36,18 @@ export default function Reports() {
   const { totalRevenue: productsRevenue, totalItems, productLines, uniqueProducts } = useSummaryData(reportData);
 
   const orderStats = useMemo(() => [
-    { label: t("summary.revenue"), value: formatCurrency(ordersRevenue) },
-    { label: t("summary.orderCount"), value: orderCount },
-    { label: t("summary.averageTicket"), value: formatCurrency(averageTicket) },
-    { label: t("summary.avgItemsPerOrder"), value: avgItemsPerOrder },
-  ], [t, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, formatCurrency]);
+    { label: reportsTranslations("summary.revenue"), value: formatCurrency(ordersRevenue) },
+    { label: reportsTranslations("summary.orderCount"), value: orderCount },
+    { label: reportsTranslations("summary.averageTicket"), value: formatCurrency(averageTicket) },
+    { label: reportsTranslations("summary.avgItemsPerOrder"), value: avgItemsPerOrder },
+  ], [reportsTranslations, ordersRevenue, orderCount, averageTicket, avgItemsPerOrder, formatCurrency]);
 
   const productStats = useMemo(() => [
-    { label: t("summary.revenue"), value: formatCurrency(productsRevenue) },
-    { label: t("summary.items"), value: totalItems },
-    { label: t("summary.productLines"), value: productLines },
-    { label: t("summary.uniqueProducts"), value: uniqueProducts },
-  ], [t, productsRevenue, totalItems, productLines, uniqueProducts, formatCurrency]);
+    { label: reportsTranslations("summary.revenue"), value: formatCurrency(productsRevenue) },
+    { label: reportsTranslations("summary.items"), value: totalItems },
+    { label: reportsTranslations("summary.productLines"), value: productLines },
+    { label: reportsTranslations("summary.uniqueProducts"), value: uniqueProducts },
+  ], [reportsTranslations, productsRevenue, totalItems, productLines, uniqueProducts, formatCurrency]);
 
   if (currencyLoading && !reportData) return <ReportSkeleton />;
 
@@ -55,14 +55,14 @@ export default function Reports() {
     <div className="max-w-7xl mx-auto space-y-6">
 
       <PageHeader
-        title={t("header.title")}
-        subtitle={t("header.subtitle")}
+        title={reportsTranslations("header.title")}
+        subtitle={reportsTranslations("header.subtitle")}
         actions={(
           <div className="flex items-center gap-3">
-            <div className="flex bg-white rounded-xl p-1 shadow-sm" role="tablist" aria-label={t("header.title")}>
+            <div className="flex bg-white rounded-xl p-1 shadow-sm" role="tablist" aria-label={reportsTranslations("header.title")}>
               {[
-                { key: "orders", label: t("tabs.orders"), icon: <ShoppingCart aria-hidden="true" className="w-4 h-4" /> },
-                { key: "products", label: t("tabs.products"), icon: <Package aria-hidden="true" className="w-4 h-4" /> },
+                { key: "orders", label: reportsTranslations("tabs.orders"), icon: <ShoppingCart aria-hidden="true" className="w-4 h-4" /> },
+                { key: "products", label: reportsTranslations("tabs.products"), icon: <Package aria-hidden="true" className="w-4 h-4" /> },
               ].map(({ key, label, icon }) => (
                 <button
                   key={key}
@@ -100,7 +100,7 @@ export default function Reports() {
           <CardBody>
             <div className="flex items-center space-x-2">
               <AlertCircle aria-hidden="true" className="w-5 h-5 text-red-600" />
-              <p className="text-red-600 font-semibold">{t("statuses.errorGenerate")}</p>
+              <p className="text-red-600 font-semibold">{reportsTranslations("statuses.errorGenerate")}</p>
             </div>
           </CardBody>
         </Card>
