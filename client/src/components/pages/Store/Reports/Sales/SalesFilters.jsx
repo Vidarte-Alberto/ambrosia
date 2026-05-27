@@ -1,18 +1,11 @@
 "use client";
 import { Input, Select, SelectItem } from "@heroui/react";
-import { Banknote, Bitcoin, CreditCard, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-const PAYMENT_OPTIONS = [
-  { value: "all", localeKey: "all", icon: <Search className="w-4 h-4" /> },
-  { value: "Cash", localeKey: "cash", icon: <Banknote className="w-4 h-4" /> },
-  { value: "BTC", localeKey: "btc", icon: <Bitcoin className="w-4 h-4" /> },
-  { value: "Debit Card", localeKey: "debitCard", icon: <CreditCard className="w-4 h-4" /> },
-  { value: "Credit Card", localeKey: "creditCard", icon: <CreditCard className="w-4 h-4" /> },
-];
-
-export function SalesFilters({ filters, onFiltersChange, disabled }) {
+export function SalesFilters({ filters, onFiltersChange, disabled, sales = [] }) {
   const reportsTranslations = useTranslations("reports");
+
+  const paymentMethods = ["all", ...new Set(sales.map((s) => s.paymentMethod).filter(Boolean))];
 
   const handlePaymentMethodChange = (selectionKeys) => {
     const selectedMethod = Array.from(selectionKeys)[0] ?? "all";
@@ -40,9 +33,9 @@ export function SalesFilters({ filters, onFiltersChange, disabled }) {
         onSelectionChange={handlePaymentMethodChange}
         isDisabled={disabled}
       >
-        {PAYMENT_OPTIONS.map(({ value, localeKey, icon }) => (
-          <SelectItem key={value} value={value} startContent={icon}>
-            {reportsTranslations(`filters.paymentMethods.${localeKey}`)}
+        {paymentMethods.map((method) => (
+          <SelectItem key={method} value={method}>
+            {method === "all" ? reportsTranslations("filters.paymentMethods.all") : method}
           </SelectItem>
         ))}
       </Select>

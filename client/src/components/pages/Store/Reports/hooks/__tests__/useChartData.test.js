@@ -73,4 +73,13 @@ describe("useChartData", () => {
     expect(result.current.topProducts).toEqual([]);
     expect(result.current.paymentMethodSplit).toEqual([]);
   });
+
+  it("revenueByDay groups a mid-day sale under exactly one local day entry", () => {
+    const singleSale = [
+      { productName: "A", quantity: 1, priceAtOrder: 1000, userName: "u", paymentMethod: "Cash", saleDate: "2024-06-15T12:00:00" },
+    ];
+    const { result } = renderHook(() => useChartData(singleSale));
+    expect(result.current.revenueByDay).toHaveLength(1);
+    expect(result.current.revenueByDay[0].revenue).toBe(1000);
+  });
 });

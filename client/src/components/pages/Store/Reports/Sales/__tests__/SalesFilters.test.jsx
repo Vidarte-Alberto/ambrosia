@@ -42,6 +42,12 @@ const DEFAULT_FILTERS = {
   paymentMethod: "",
 };
 
+const SALES_WITH_METHODS = [
+  { paymentMethod: "Cash" },
+  { paymentMethod: "BTC" },
+  { paymentMethod: "Cash" },
+];
+
 describe("SalesFilters", () => {
   let onFiltersChange;
 
@@ -68,15 +74,25 @@ describe("SalesFilters", () => {
   });
 
   it("calls onFiltersChange with paymentMethod when a specific method is selected", () => {
-    render(<SalesFilters filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
+    render(<SalesFilters filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} sales={SALES_WITH_METHODS} />);
     fireEvent.change(screen.getByTestId("select-filters.paymentMethod"), { target: { value: "Cash" } });
     expect(onFiltersChange).toHaveBeenCalledWith({ paymentMethod: "Cash" });
   });
 
   it("calls onFiltersChange with empty string when 'all' is selected", () => {
-    render(<SalesFilters filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} />);
+    render(<SalesFilters filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} sales={SALES_WITH_METHODS} />);
     fireEvent.change(screen.getByTestId("select-filters.paymentMethod"), { target: { value: "all" } });
     expect(onFiltersChange).toHaveBeenCalledWith({ paymentMethod: "" });
+  });
+
+  it("shows only methods present in sales data plus all option", () => {
+    render(<SalesFilters filters={DEFAULT_FILTERS} onFiltersChange={onFiltersChange} sales={SALES_WITH_METHODS} />);
+    const select = screen.getByTestId("select-filters.paymentMethod");
+    const options = Array.from(select.querySelectorAll("option")).map((o) => o.value);
+    expect(options).toContain("all");
+    expect(options).toContain("Cash");
+    expect(options).toContain("BTC");
+    expect(options).toHaveLength(3);
   });
 
   it("disables inputs when disabled prop is true", () => {

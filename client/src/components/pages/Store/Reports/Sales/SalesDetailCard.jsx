@@ -36,7 +36,7 @@ export function SalesDetailCard({ sales, formatCurrency, filters, onFiltersChang
           </button>
         </div>
 
-        <SalesFilters filters={filters} onFiltersChange={onFiltersChange} disabled={disabled} />
+        <SalesFilters filters={filters} onFiltersChange={onFiltersChange} disabled={disabled} sales={sales} />
 
         <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
 
