@@ -87,6 +87,8 @@ const componentsEs = {
     satsLabel: "sats",
     showCurrentRate: "Ver tipo de cambio actual",
     showHistoricalRate: "Ver tipo de cambio al momento de la venta",
+    amountAtTimeOfPayment: "Monto al momento del cobro",
+    amountAtCurrentRate: "Monto con tasa actual",
   },
 };
 

@@ -2,10 +2,59 @@
 
 import { useState } from "react";
 
-import { Clock } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
+
+function AnimatedClockButton({ showingHistorical, onClick, ariaLabel }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="flex items-center p-2 -m-2"
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={showingHistorical ? "text-primary" : "text-foreground-400"}
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line
+          x1="12"
+          y1="12"
+          x2="12"
+          y2="6"
+          style={{
+            transformBox: "fill-box",
+            transformOrigin: "50% 100%",
+            transform: `rotate(${showingHistorical ? -720 : 0}deg)`,
+            transition: "transform 0.55s ease-out",
+          }}
+        />
+        <line
+          x1="12"
+          y1="12"
+          x2="15.5"
+          y2="12"
+          strokeWidth="2.5"
+          style={{
+            transformBox: "fill-box",
+            transformOrigin: "0% 50%",
+            transform: `rotate(${showingHistorical ? -180 : 0}deg)`,
+            transition: "transform 0.7s ease-in-out",
+          }}
+        />
+      </svg>
+    </button>
+  );
+}
 
 export function AmountDisplay({ satoshis, exchangeRateAtSale, currentRate }) {
   const [showSats, setShowSats] = useState(false);
@@ -20,7 +69,7 @@ export function AmountDisplay({ satoshis, exchangeRateAtSale, currentRate }) {
       <button
         type="button"
         onClick={() => setShowSats(false)}
-        className="text-sm tabular-nums"
+        className="tabular-nums"
       >
         {satoshis.toLocaleString()} {t("satsLabel")}
       </button>
@@ -38,27 +87,28 @@ export function AmountDisplay({ satoshis, exchangeRateAtSale, currentRate }) {
   const canToggleRate = fiatAtSaleCents != null && fiatCurrentCents != null;
 
   return (
-    <span className="inline-flex items-center gap-1">
-      <button
-        type="button"
-        onClick={() => setShowSats(true)}
-        className="text-sm tabular-nums"
-      >
-        {displayCents != null ? formatAmount(displayCents) : "—"}
-      </button>
-      {canToggleRate && (
+    <div>
+      <span className="inline-flex items-center gap-1">
         <button
           type="button"
-          onClick={() => setShowCurrentFiat((prev) => !prev)}
-          aria-label={showCurrentFiat ? t("showHistoricalRate") : t("showCurrentRate")}
-          className="flex items-center"
+          onClick={() => setShowSats(true)}
+          className="tabular-nums"
         >
-          <Clock
-            size={12}
-            className={showCurrentFiat ? "text-primary" : "text-foreground-400"}
-          />
+          {displayCents != null ? formatAmount(displayCents) : "—"}
         </button>
+        {canToggleRate && (
+          <AnimatedClockButton
+            showingHistorical={!showCurrentFiat}
+            onClick={() => setShowCurrentFiat((prev) => !prev)}
+            ariaLabel={showCurrentFiat ? t("showHistoricalRate") : t("showCurrentRate")}
+          />
+        )}
+      </span>
+      {canToggleRate && (
+        <p className="text-xs font-normal text-foreground-400 mt-0.5">
+          {showCurrentFiat ? t("amountAtCurrentRate") : t("amountAtTimeOfPayment")}
+        </p>
       )}
-    </span>
+    </div>
   );
 }

@@ -87,6 +87,8 @@ const componentsEn = {
     satsLabel: "sats",
     showCurrentRate: "Show current rate",
     showHistoricalRate: "Show rate at time of sale",
+    amountAtTimeOfPayment: "Amount at time of sale",
+    amountAtCurrentRate: "Amount at current rate",
   },
 };
 

@@ -87,7 +87,7 @@ export function HistoryTab({ transactions, loading, filter, setFilter, currentRa
                           {format.dateTime(new Date(transaction.completedAt), { timeStyle: "short" })}
                         </span>
                       </div>
-                      <p className={`text-lg font-bold ${transaction.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
+                      <div className={`text-lg font-bold ${transaction.type === "outgoing_payment" ? "text-red-700" : "text-deep"}`}>
                         {transaction.type === "incoming_payment" && transaction.exchangeRateAtPayment ? (
                           <AmountDisplay
                             satoshis={transaction.receivedSat}
@@ -100,7 +100,7 @@ export function HistoryTab({ transactions, loading, filter, setFilter, currentRa
                             {" "}sats
                           </>
                         )}
-                      </p>
+                      </div>
                       <p className="text-sm text-deep">
                         {t("payments.history.fee")} {formatSats(Number(transaction.fees) / 1000)} sats
                       </p>
