@@ -79,8 +79,8 @@ export function SalesDetailCard({ sales, formatCurrency, disabled }) {
               classNames={{ trigger: "h-7 min-h-7 py-0", value: "text-sm translate-y-0" }}
               selectedKeys={new Set([String(rowsPerPage)])}
               onSelectionChange={(keys) => {
-                const val = [...keys][0];
-                if (val) handleRowsPerPageChange(Number(val));
+                const selectedKey = [...keys][0];
+                if (selectedKey) handleRowsPerPageChange(Number(selectedKey));
               }}
             >
               {ROWS_PER_PAGE_OPTIONS.map((size) => (

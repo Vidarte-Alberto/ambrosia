@@ -21,19 +21,19 @@ describe("useOrdersData", () => {
 
   it("computes total as sum of quantity * priceAtOrder across all items", () => {
     const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
-    const orderA = result.current.find((o) => o.orderId === "order-aaa-00000001");
+    const orderA = result.current.find((order) => order.orderId === "order-aaa-00000001");
     expect(orderA.total).toBe(2 * 1000 + 1 * 500);
   });
 
   it("computes itemCount as sum of quantities across all items", () => {
     const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
-    const orderA = result.current.find((o) => o.orderId === "order-aaa-00000001");
+    const orderA = result.current.find((order) => order.orderId === "order-aaa-00000001");
     expect(orderA.itemCount).toBe(3);
   });
 
   it("collects all line items in items array", () => {
     const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
-    const orderA = result.current.find((o) => o.orderId === "order-aaa-00000001");
+    const orderA = result.current.find((order) => order.orderId === "order-aaa-00000001");
     expect(orderA.items).toHaveLength(2);
     expect(orderA.items[0].productName).toBe("Widget A");
     expect(orderA.items[1].productName).toBe("Widget B");
@@ -41,7 +41,7 @@ describe("useOrdersData", () => {
 
   it("copies userName, paymentMethod, date from the first line item", () => {
     const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
-    const orderB = result.current.find((o) => o.orderId === "order-bbb-00000002");
+    const orderB = result.current.find((order) => order.orderId === "order-bbb-00000002");
     expect(orderB.userName).toBe("bob");
     expect(orderB.paymentMethod).toBe("BTC");
     expect(orderB.date).toBe("2024-01-01T08:00:00");
@@ -49,7 +49,7 @@ describe("useOrdersData", () => {
 
   it("sets shortId as last 8 characters of orderId", () => {
     const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
-    const orderA = result.current.find((o) => o.orderId === "order-aaa-00000001");
+    const orderA = result.current.find((order) => order.orderId === "order-aaa-00000001");
     expect(orderA.shortId).toBe("00000001");
   });
 
@@ -61,7 +61,7 @@ describe("useOrdersData", () => {
 
   it("single-item order has one item in items array", () => {
     const { result } = renderHook(() => useOrdersData(SALES_FIXTURE));
-    const orderB = result.current.find((o) => o.orderId === "order-bbb-00000002");
+    const orderB = result.current.find((order) => order.orderId === "order-bbb-00000002");
     expect(orderB.items).toHaveLength(1);
     expect(orderB.total).toBe(3 * 2000);
   });

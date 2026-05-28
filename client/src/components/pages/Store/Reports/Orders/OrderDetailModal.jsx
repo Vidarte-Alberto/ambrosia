@@ -53,8 +53,8 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.items.map((item, idx) => (
-                      <tr key={idx} className="border-t border-gray-50">
+                    {order.items.map((item, index) => (
+                      <tr key={index} className="border-t border-gray-50">
                         <td className="py-2 text-gray-700">{item.productName}</td>
                         <td className="py-2 text-center text-gray-500">×{item.quantity}</td>
                         <td className="py-2 text-right text-gray-500">{formatCurrency(item.priceAtOrder)}</td>

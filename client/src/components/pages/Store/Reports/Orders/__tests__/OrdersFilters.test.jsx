@@ -83,7 +83,7 @@ describe("OrdersFilters", () => {
 
   it("shows only methods present in orders plus all option", () => {
     render(<OrdersFilters {...DEFAULT_PROPS} onSearchChange={onSearchChange} onPaymentMethodChange={onPaymentMethodChange} orders={ORDERS_WITH_METHODS} />);
-    const options = Array.from(screen.getByTestId("select-filters.paymentMethod").querySelectorAll("option")).map((o) => o.value);
+    const options = Array.from(screen.getByTestId("select-filters.paymentMethod").querySelectorAll("option")).map((option) => option.value);
     expect(options).toContain("all");
     expect(options).toContain("Cash");
     expect(options).toContain("BTC");
