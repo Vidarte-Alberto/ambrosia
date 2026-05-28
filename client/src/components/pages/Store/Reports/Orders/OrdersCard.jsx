@@ -5,12 +5,12 @@ import { useTranslations } from "next-intl";
 
 import formatDate from "@lib/formatDate";
 
-export function OrdersCard({ order, formatCurrency }) {
+export function OrdersCard({ order, formatCurrency, onClick }) {
   const reportsTranslations = useTranslations("reports");
   const productNames = order.items.map((item) => item.productName).join(", ");
 
   return (
-    <Card shadow="none" className="border border-gray-200 rounded-lg">
+    <Card shadow="none" className="border border-gray-200 rounded-lg" isPressable onPress={onClick}>
       <CardBody className="flex flex-row items-center gap-3 p-3">
         <div className="bg-forest/10 rounded-lg p-2 shrink-0">
           <ShoppingCart aria-hidden="true" className="w-4 h-4 text-forest" />

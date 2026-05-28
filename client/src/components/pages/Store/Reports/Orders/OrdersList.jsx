@@ -1,10 +1,14 @@
 "use client";
+import { useState } from "react";
+
 import { ShoppingCart } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { DataTable } from "@/components/shared/DataTable";
+import { ViewButton } from "@/components/shared/ViewButton";
 import { parseUtcDate } from "@lib/formatDate";
 
+import { OrderDetailModal } from "./OrderDetailModal";
 import { OrdersCard } from "./OrdersCard";
 
 const formatDateOnly = (dateString) => {
@@ -27,8 +31,9 @@ const buildProductSummary = (items, overflowLabel) => {
   return names.join(", ");
 };
 
-export function OrdersList({ orders, formatCurrency }) {
+export function ReportsOrdersList({ orders, formatCurrency }) {
   const reportsTranslations = useTranslations("reports");
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   if (!orders?.length) {
     return (
@@ -90,13 +95,30 @@ export function OrdersList({ orders, formatCurrency }) {
         <span className="text-sm text-gray-700">{order.paymentMethod || reportsTranslations("payment.unknown")}</span>
       ),
     },
+    {
+      key: "actions",
+      label: reportsTranslations("orders.actions"),
+      className: "text-right",
+      render: (order) => (
+        <div className="flex justify-end">
+          <ViewButton onPress={() => setSelectedOrder(order)}>
+            {reportsTranslations("orders.view")}
+          </ViewButton>
+        </div>
+      ),
+    },
   ];
 
   return (
     <section aria-label={reportsTranslations("orders.tableAriaLabel")} className="w-full">
       <div className="md:hidden space-y-3">
         {orders.map((order) => (
-          <OrdersCard key={order.orderId} order={order} formatCurrency={formatCurrency} />
+          <OrdersCard
+            key={order.orderId}
+            order={order}
+            formatCurrency={formatCurrency}
+            onClick={() => setSelectedOrder(order)}
+          />
         ))}
       </div>
       <div className="hidden md:block overflow-x-auto">
@@ -106,6 +128,11 @@ export function OrdersList({ orders, formatCurrency }) {
           getKey={(order) => order.orderId}
         />
       </div>
+      <OrderDetailModal
+        order={selectedOrder}
+        formatCurrency={formatCurrency}
+        onClose={() => setSelectedOrder(null)}
+      />
     </section>
   );
 }
