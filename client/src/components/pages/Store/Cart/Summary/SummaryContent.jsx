@@ -116,7 +116,6 @@ export function SummaryContent({
         onClose={cardPayment?.onClose}
         onComplete={cardPayment?.onComplete}
       />
-
     </>
   );
 }

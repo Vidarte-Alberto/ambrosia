@@ -1,3 +1,5 @@
+"use client";
+
 import { Button, Card, CardBody, CardFooter, CardHeader, Chip, Image } from "@heroui/react";
 import { ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -6,7 +8,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 export function ProductList({ products, onAddProduct, categories }) {
-  const t = useTranslations("cart");
+  const cardProductTranslation = useTranslations("cart");
   const { formatAmount } = useCurrency();
   const defaultMaxStock = 11;
 
@@ -15,7 +17,7 @@ export function ProductList({ products, onAddProduct, categories }) {
     const names = categories
       .filter((cat) => ids.includes(cat.id))
       .map((cat) => cat.name);
-    return names.length > 0 ? names.join(", ") : t("card.errors.unknownCategory");
+    return names.length > 0 ? names.join(", ") : cardProductTranslation("card.errors.unknownCategory");
   };
 
   const normalizeNumber = (value, fallback = 0) => {
@@ -24,15 +26,9 @@ export function ProductList({ products, onAddProduct, categories }) {
   };
 
   const stockStatus = (product) => {
-    const max = defaultMaxStock;
     const quantity = normalizeNumber(product.quantity);
-
-    if (quantity <= 0) {
-      return "out";
-    }
-    if (quantity < max) {
-      return "low";
-    }
+    if (quantity <= 0) return "out";
+    if (quantity < defaultMaxStock) return "low";
     return "ok";
   };
 
@@ -84,15 +80,15 @@ export function ProductList({ products, onAddProduct, categories }) {
                       : "bg-green-200 text-xs text-green-800 border border-green-300"
                 }
               >
-                {normalizeNumber(product.quantity)} {t("card.stock")}
+                {normalizeNumber(product.quantity)} {cardProductTranslation("card.stock")}
               </Chip>
               <Button
                 color="primary"
                 size="sm"
-                isDisabled={product.quantity == 0 ? true : false}
+                isDisabled={product.quantity === 0}
                 onPress={() => onAddProduct(product)}
               >
-                {t("card.add")}
+                {cardProductTranslation("card.add")}
               </Button>
             </CardFooter>
           </Card>
