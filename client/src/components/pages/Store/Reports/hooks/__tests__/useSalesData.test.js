@@ -4,7 +4,7 @@ import { useSalesData } from "../useSalesData";
 
 jest.mock("@lib/formatDate", () => jest.fn((date) => date));
 
-const makeSales = (count) =>
+const makeSales = (count) => (
   Array.from({ length: count }, (_, i) => ({
     productName: `Product ${i}`,
     userName: "alice",
@@ -12,7 +12,8 @@ const makeSales = (count) =>
     priceAtOrder: 1000,
     paymentMethod: "Cash",
     saleDate: "2024-01-01",
-  }));
+  }))
+);
 
 const formatCurrency = (cents) => `$${cents}`;
 

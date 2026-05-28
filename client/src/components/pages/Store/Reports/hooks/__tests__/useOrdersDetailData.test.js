@@ -4,7 +4,7 @@ import { useOrdersDetailData } from "../useOrdersDetailData";
 
 jest.mock("@lib/formatDate", () => jest.fn((date) => date));
 
-const makeOrders = (count) =>
+const makeOrders = (count) => (
   Array.from({ length: count }, (_, i) => ({
     shortId: `SH${i}`,
     date: "2024-01-01",
@@ -13,7 +13,8 @@ const makeOrders = (count) =>
     total: 1000,
     itemCount: 1,
     items: [{ productName: `Product ${i}`, quantity: 1 }],
-  }));
+  }))
+);
 
 const formatCurrency = (cents) => `$${cents}`;
 

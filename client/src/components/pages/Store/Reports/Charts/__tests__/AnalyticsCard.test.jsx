@@ -11,19 +11,19 @@ jest.mock("../../hooks/useChartData", () => ({
 }));
 
 jest.mock("../RevenueAreaChart", () => ({
-  RevenueAreaChart: ({ dailyRevenue, formatCurrency }) => (
+  RevenueAreaChart: ({ dailyRevenue }) => (
     <div data-testid="revenue-area-chart" data-length={dailyRevenue.length} />
   ),
 }));
 
 jest.mock("../TopProductsBarChart", () => ({
-  TopProductsBarChart: ({ products, formatCurrency }) => (
+  TopProductsBarChart: ({ products }) => (
     <div data-testid="top-products-bar-chart" data-length={products.length} />
   ),
 }));
 
 jest.mock("../PaymentMethodPieChart", () => ({
-  PaymentMethodPieChart: ({ paymentMethods, formatCurrency }) => (
+  PaymentMethodPieChart: ({ paymentMethods }) => (
     <div data-testid="payment-method-pie-chart" data-length={paymentMethods.length} />
   ),
 }));

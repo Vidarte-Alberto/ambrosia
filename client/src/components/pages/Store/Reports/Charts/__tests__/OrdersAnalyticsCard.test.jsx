@@ -14,7 +14,7 @@ jest.mock("../../hooks/useOrdersChartData", () => ({
 }));
 
 jest.mock("../RevenueAreaChart", () => ({
-  RevenueAreaChart: ({ dailyRevenue, formatCurrency }) => (
+  RevenueAreaChart: ({ dailyRevenue }) => (
     <div data-testid="revenue-area-chart" data-length={dailyRevenue.length} />
   ),
 }));

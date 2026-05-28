@@ -28,37 +28,27 @@ describe("useOrdersSummaryData", () => {
   });
 
   it("averageTicket is Math.round(revenue / orderCount)", () => {
-    const { result } = renderHook(() =>
-      useOrdersSummaryData({ totalRevenueCents: 10000, totalItemsSold: 0 }, ORDERS),
-    );
+    const { result } = renderHook(() => useOrdersSummaryData({ totalRevenueCents: 10000, totalItemsSold: 0 }, ORDERS));
     expect(result.current.averageTicket).toBe(Math.round(10000 / 3));
   });
 
   it("averageTicket is 0 when orderCount is 0", () => {
-    const { result } = renderHook(() =>
-      useOrdersSummaryData({ totalRevenueCents: 5000, totalItemsSold: 10 }, []),
-    );
+    const { result } = renderHook(() => useOrdersSummaryData({ totalRevenueCents: 5000, totalItemsSold: 10 }, []));
     expect(result.current.averageTicket).toBe(0);
   });
 
   it("avgItemsPerOrder is rounded to 1 decimal", () => {
-    const { result } = renderHook(() =>
-      useOrdersSummaryData({ totalRevenueCents: 0, totalItemsSold: 10 }, ORDERS),
-    );
+    const { result } = renderHook(() => useOrdersSummaryData({ totalRevenueCents: 0, totalItemsSold: 10 }, ORDERS));
     expect(result.current.avgItemsPerOrder).toBe(Math.round((10 / 3) * 10) / 10);
   });
 
   it("avgItemsPerOrder is 0 when orderCount is 0", () => {
-    const { result } = renderHook(() =>
-      useOrdersSummaryData({ totalRevenueCents: 0, totalItemsSold: 5 }, []),
-    );
+    const { result } = renderHook(() => useOrdersSummaryData({ totalRevenueCents: 0, totalItemsSold: 5 }, []));
     expect(result.current.avgItemsPerOrder).toBe(0);
   });
 
   it("avgItemsPerOrder falls back to 0 when totalItemsSold is undefined", () => {
-    const { result } = renderHook(() =>
-      useOrdersSummaryData({ totalRevenueCents: 0 }, ORDERS),
-    );
+    const { result } = renderHook(() => useOrdersSummaryData({ totalRevenueCents: 0 }, ORDERS));
     expect(result.current.avgItemsPerOrder).toBe(0);
   });
 });

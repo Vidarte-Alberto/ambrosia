@@ -94,11 +94,12 @@ jest.mock("@heroui/react", () => {
     CardBody: ({ children }) => <div>{children}</div>,
     Tabs: ({ children, selectedKey, onSelectionChange, "aria-label": ariaLabel }) => (
       <div role="tablist" aria-label={ariaLabel}>
-        {React.Children.map(children, (child) =>
-          React.cloneElement(child, {
+        {React.Children.map(
+          children,
+          (child) => React.cloneElement(child, {
             isSelected: child.key === selectedKey,
             onPress: () => onSelectionChange(child.key),
-          })
+          }),
         )}
       </div>
     ),
@@ -333,7 +334,6 @@ describe("Reports", () => {
       const items = screen.getAllByTestId("chart-sale");
       expect(items).toHaveLength(SALES_FIXTURE.length);
     });
-
   });
 
   describe("no data state", () => {

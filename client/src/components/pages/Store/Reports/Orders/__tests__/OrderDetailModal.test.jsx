@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { OrderDetailModal } from "../OrderDetailModal";
 
 jest.mock("@heroui/react", () => ({
-  Modal: ({ children, isOpen }) => isOpen ? <div data-testid="modal">{children}</div> : null,
+  Modal: ({ children, isOpen }) => (isOpen ? <div data-testid="modal">{children}</div> : null),
   ModalContent: ({ children }) => <div>{children}</div>,
   ModalHeader: ({ children }) => <div data-testid="modal-header">{children}</div>,
   ModalBody: ({ children }) => <div data-testid="modal-body">{children}</div>,

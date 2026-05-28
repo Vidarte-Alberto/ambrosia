@@ -60,40 +60,40 @@ export default function Reports() {
         actions={(
           <div className="flex items-center gap-3">
             <div className={isPending ? "pointer-events-none" : ""}>
-            <Tabs
-              selectedKey={activeTab}
-              onSelectionChange={(key) => {
-                setPendingTab(key);
-                startTransition(() => setActiveTab(key));
-              }}
-              aria-label={reportsTranslations("header.title")}
-              variant="solid"
-              classNames={{
-                base: "bg-white rounded-xl p-1 shadow-sm",
-                tabList: "gap-0 bg-transparent p-0",
-                cursor: "bg-forest shadow-none rounded-lg",
-                tab: "px-4 py-2 h-auto rounded-lg data-[hover=true]:bg-forest/10",
-                tabContent: "group-data-[selected=true]:text-white text-gray-500 group-data-[hover=true]:text-forest text-sm font-medium",
-                panel: "hidden",
-              }}
-            >
-              {[
-                { key: "orders", label: reportsTranslations("tabs.orders"), icon: <ShoppingCart aria-hidden="true" className="w-4 h-4" /> },
-                { key: "products", label: reportsTranslations("tabs.products"), icon: <Package aria-hidden="true" className="w-4 h-4" /> },
-              ].map(({ key, label, icon }) => (
-                <Tab
-                  key={key}
-                  title={
-                    <div className="flex items-center gap-2">
-                      {isPending && pendingTab === key
-                        ? <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
-                        : icon}
-                      <span className="hidden sm:inline">{label}</span>
-                    </div>
-                  }
-                />
-              ))}
-            </Tabs>
+              <Tabs
+                selectedKey={activeTab}
+                onSelectionChange={(key) => {
+                  setPendingTab(key);
+                  startTransition(() => setActiveTab(key));
+                }}
+                aria-label={reportsTranslations("header.title")}
+                variant="solid"
+                classNames={{
+                  base: "bg-white rounded-xl p-1 shadow-sm",
+                  tabList: "gap-0 bg-transparent p-0",
+                  cursor: "bg-forest shadow-none rounded-lg",
+                  tab: "px-4 py-2 h-auto rounded-lg data-[hover=true]:bg-forest/10",
+                  tabContent: "group-data-[selected=true]:text-white text-gray-500 group-data-[hover=true]:text-forest text-sm font-medium",
+                  panel: "hidden",
+                }}
+              >
+                {[
+                  { key: "orders", label: reportsTranslations("tabs.orders"), icon: <ShoppingCart aria-hidden="true" className="w-4 h-4" /> },
+                  { key: "products", label: reportsTranslations("tabs.products"), icon: <Package aria-hidden="true" className="w-4 h-4" /> },
+                ].map(({ key, label, icon }) => (
+                  <Tab
+                    key={key}
+                    title={(
+                      <div className="flex items-center gap-2">
+                        {isPending && pendingTab === key
+                          ? <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                          : icon}
+                        <span className="hidden sm:inline">{label}</span>
+                      </div>
+                    )}
+                  />
+                ))}
+              </Tabs>
             </div>
             <PeriodFilter
               filters={filters}
