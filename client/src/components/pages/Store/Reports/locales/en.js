@@ -14,6 +14,7 @@ const reportsEn = {
       },
     },
     filters: {
+      search: "Search",
       productName: "Product Name",
       productNamePlaceholder: "Search by product...",
       paymentMethod: "Payment Method",
@@ -26,7 +27,7 @@ const reportsEn = {
       },
     },
     statuses: {
-      loading: "Loading reports...",
+      loading: "Loading...",
       errorTitle: "Error",
       errorGenerate: "Could not generate the report",
     },
@@ -44,7 +45,7 @@ const reportsEn = {
       productLines: "Product Lines",
       uniqueProducts: "Unique Products",
       orderCount: "Orders",
-      avgItemsPerOrder: "Avg. Items / Order",
+      avgItemsPerOrder: "Average Items / Order",
     },
     charts: {
       title: "Analytics",
@@ -58,8 +59,8 @@ const reportsEn = {
     orders: {
       title: "Orders",
       count: "orders",
-      avgTicket: "Avg. Ticket",
-      avgItems: "Avg. Items / Order",
+      avgTicket: "Average Ticket",
+      avgItems: "Average Items / Order",
       shortId: "Order ID",
       products: "Products",
       total: "Total",
@@ -67,6 +68,11 @@ const reportsEn = {
       empty: "No orders found for the selected filters",
       paginationAria: "Orders pagination",
       tableAriaLabel: "Orders detail",
+      detailTitle: "Order Detail",
+      viewDetail: "View order details",
+      subtotal: "Subtotal",
+      actions: "Actions",
+      view: "Details",
     },
     payment: {
       unknown: "Unknown",
@@ -79,7 +85,7 @@ const reportsEn = {
       export: "Export CSV",
       product: "Product",
       user: "User",
-      quantity: "Qty",
+      quantity: "Quantity",
       price: "Unit Price",
       total: "Total",
       paymentMethod: "Payment Method",
