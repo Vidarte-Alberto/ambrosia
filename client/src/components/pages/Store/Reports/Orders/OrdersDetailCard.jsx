@@ -1,19 +1,39 @@
 "use client";
-import { Card, CardBody, Pagination } from "@heroui/react";
+import { useMemo, useState } from "react";
+
+import { Button, Card, CardBody, Pagination, Select, SelectItem } from "@heroui/react";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
 
 import { OrdersFilters } from "./OrdersFilters";
-import { OrdersList } from "./OrdersList";
+import { ReportsOrdersList } from "./OrdersList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function OrdersDetailCard({ orders, formatCurrency, filters, onFiltersChange, disabled }) {
+export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
   const reportsTranslations = useTranslations("reports");
+  const [search, setSearch] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+
+  const filteredOrders = useMemo(() => {
+    const term = search.toLowerCase();
+    return orders.filter((order) => {
+      const searchMatch = !search || (
+        order.shortId?.toLowerCase().includes(term) ||
+        order.userName?.toLowerCase().includes(term) ||
+        order.paymentMethod?.toLowerCase().includes(term) ||
+        String(order.total).includes(term) ||
+        order.items.some((item) => item.productName?.toLowerCase().includes(term))
+      );
+      const methodMatch = !paymentMethod || order.paymentMethod === paymentMethod;
+      return searchMatch && methodMatch;
+    });
+  }, [orders, search, paymentMethod]);
+
   const { paginatedOrders, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
-    useOrdersDetailData(orders, formatCurrency);
+    useOrdersDetailData(filteredOrders, formatCurrency);
 
   return (
     <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
@@ -23,36 +43,51 @@ export function OrdersDetailCard({ orders, formatCurrency, filters, onFiltersCha
           <h2 className="font-bold text-lg">
             {reportsTranslations("orders.title")}
             <span className="ml-2 text-sm font-normal text-default-400">
-              ({orders.length} {reportsTranslations("sales.records")})
+              ({filteredOrders.length} {reportsTranslations("sales.records")})
             </span>
           </h2>
-          <button
-            onClick={exportToCsv}
-            disabled={!orders.length}
-            className="flex items-center gap-1.5 text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          <Button
+            variant="bordered"
+            size="sm"
+            className="border border-green-800 text-green-800"
+            startContent={<Download aria-hidden="true" className="w-3.5 h-3.5" />}
+            isDisabled={!orders.length}
+            onPress={exportToCsv}
           >
-            <Download aria-hidden="true" className="w-3.5 h-3.5" />
             {reportsTranslations("sales.export")}
-          </button>
+          </Button>
         </div>
 
-        <OrdersFilters filters={filters} onFiltersChange={onFiltersChange} disabled={disabled} orders={orders} />
+        <OrdersFilters
+          search={search}
+          onSearchChange={setSearch}
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
+          disabled={disabled}
+          orders={orders}
+        />
 
-        <OrdersList orders={paginatedOrders} formatCurrency={formatCurrency} />
+        <ReportsOrdersList orders={paginatedOrders} formatCurrency={formatCurrency} />
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">
             <span>{reportsTranslations("sales.show")}</span>
-            <select
+            <Select
               aria-label={reportsTranslations("sales.rowsPerPage")}
-              className="text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700"
-              value={rowsPerPage}
-              onChange={(event) => handleRowsPerPageChange(parseInt(event.target.value, 10))}
+              size="sm"
+              variant="bordered"
+              className="w-20"
+              classNames={{ trigger: "h-7 min-h-7 py-0", value: "text-sm translate-y-0" }}
+              selectedKeys={new Set([String(rowsPerPage)])}
+              onSelectionChange={(keys) => {
+                const val = [...keys][0];
+                if (val) handleRowsPerPageChange(Number(val));
+              }}
             >
               {ROWS_PER_PAGE_OPTIONS.map((size) => (
-                <option key={size} value={size}>{size}</option>
+                <SelectItem key={String(size)}>{String(size)}</SelectItem>
               ))}
-            </select>
+            </Select>
             <span>{reportsTranslations("sales.perPage")}</span>
           </div>
 
@@ -67,7 +102,6 @@ export function OrdersDetailCard({ orders, formatCurrency, filters, onFiltersCha
                 onChange={setPage}
                 color="primary"
                 showControls
-                showShadow
                 size="sm"
                 aria-label={reportsTranslations("orders.paginationAria")}
               />

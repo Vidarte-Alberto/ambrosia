@@ -1,5 +1,7 @@
 "use client";
-import { Card, CardBody, Pagination } from "@heroui/react";
+import { useMemo, useState } from "react";
+
+import { Button, Card, CardBody, Pagination, Select, SelectItem } from "@heroui/react";
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -10,10 +12,27 @@ import { SalesList } from "./SalesList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function SalesDetailCard({ sales, formatCurrency, filters, onFiltersChange, disabled }) {
+export function SalesDetailCard({ sales, formatCurrency, disabled }) {
   const reportsTranslations = useTranslations("reports");
+  const [search, setSearch] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("");
+
+  const filteredSales = useMemo(() => {
+    const term = search.toLowerCase();
+    return sales.filter((sale) => {
+      const searchMatch = !search || (
+        sale.productName?.toLowerCase().includes(term) ||
+        sale.userName?.toLowerCase().includes(term) ||
+        sale.paymentMethod?.toLowerCase().includes(term) ||
+        String(sale.priceAtOrder * sale.quantity).includes(term)
+      );
+      const methodMatch = !paymentMethod || sale.paymentMethod === paymentMethod;
+      return searchMatch && methodMatch;
+    });
+  }, [sales, search, paymentMethod]);
+
   const { paginatedSales, totalPages, page, setPage, rowsPerPage, handleRowsPerPageChange, exportToCsv } =
-    useSalesData(sales, formatCurrency);
+    useSalesData(filteredSales, formatCurrency);
 
   return (
     <Card shadow="none" className="shadow-lg bg-white rounded-lg p-4 lg:p-8">
@@ -23,36 +42,51 @@ export function SalesDetailCard({ sales, formatCurrency, filters, onFiltersChang
           <h2 className="font-bold text-lg">
             {reportsTranslations("sales.transactions")}
             <span className="ml-2 text-sm font-normal text-default-400">
-              ({sales.length} {reportsTranslations("sales.records")})
+              ({filteredSales.length} {reportsTranslations("sales.records")})
             </span>
           </h2>
-          <button
-            onClick={exportToCsv}
-            disabled={!sales.length}
-            className="flex items-center gap-1.5 text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          <Button
+            variant="bordered"
+            size="sm"
+            className="border border-green-800 text-green-800"
+            startContent={<Download aria-hidden="true" className="w-3.5 h-3.5" />}
+            isDisabled={!sales.length}
+            onPress={exportToCsv}
           >
-            <Download aria-hidden="true" className="w-3.5 h-3.5" />
             {reportsTranslations("sales.export")}
-          </button>
+          </Button>
         </div>
 
-        <SalesFilters filters={filters} onFiltersChange={onFiltersChange} disabled={disabled} sales={sales} />
+        <SalesFilters
+          search={search}
+          onSearchChange={setSearch}
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
+          disabled={disabled}
+          sales={sales}
+        />
 
         <SalesList sales={paginatedSales} formatCurrency={formatCurrency} />
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">
             <span>{reportsTranslations("sales.show")}</span>
-            <select
+            <Select
               aria-label={reportsTranslations("sales.rowsPerPage")}
-              className="text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700"
-              value={rowsPerPage}
-              onChange={(event) => handleRowsPerPageChange(parseInt(event.target.value, 10))}
+              size="sm"
+              variant="bordered"
+              className="w-20"
+              classNames={{ trigger: "h-7 min-h-7 py-0", value: "text-sm translate-y-0" }}
+              selectedKeys={new Set([String(rowsPerPage)])}
+              onSelectionChange={(keys) => {
+                const val = [...keys][0];
+                if (val) handleRowsPerPageChange(Number(val));
+              }}
             >
               {ROWS_PER_PAGE_OPTIONS.map((size) => (
-                <option key={size} value={size}>{size}</option>
+                <SelectItem key={String(size)}>{String(size)}</SelectItem>
               ))}
-            </select>
+            </Select>
             <span>{reportsTranslations("sales.perPage")}</span>
           </div>
 
@@ -67,7 +101,6 @@ export function SalesDetailCard({ sales, formatCurrency, filters, onFiltersChang
                 onChange={setPage}
                 color="primary"
                 showControls
-                showShadow
                 size="sm"
                 aria-label={reportsTranslations("sales.paginationAria")}
               />
