@@ -7,6 +7,12 @@ jest.mock("@heroui/react", () => ({
   ModalContent: ({ children }) => <div>{children}</div>,
   ModalHeader: ({ children }) => <div data-testid="modal-header">{children}</div>,
   ModalBody: ({ children }) => <div data-testid="modal-body">{children}</div>,
+  Table: ({ children }) => <table>{children}</table>,
+  TableHeader: ({ children }) => <thead><tr>{children}</tr></thead>,
+  TableColumn: ({ children }) => <th>{children}</th>,
+  TableBody: ({ children }) => <tbody>{children}</tbody>,
+  TableRow: ({ children }) => <tr>{children}</tr>,
+  TableCell: ({ children, className }) => <td className={className}>{children}</td>,
 }));
 
 jest.mock("next-intl", () => ({

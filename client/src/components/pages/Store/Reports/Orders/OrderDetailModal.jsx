@@ -1,5 +1,8 @@
 "use client";
-import { Modal, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
+import {
+  Modal, ModalBody, ModalContent, ModalHeader,
+  Table, TableHeader, TableColumn, TableBody, TableRow, TableCell,
+} from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import formatDate from "@lib/formatDate";
@@ -43,26 +46,28 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
               </div>
 
               <div className="border-t border-gray-100 pt-3">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs text-gray-400">
-                      <th className="pb-2 font-medium">{t("orders.products")}</th>
-                      <th className="pb-2 font-medium text-center">{t("sales.quantity")}</th>
-                      <th className="pb-2 font-medium text-right">{t("sales.price")}</th>
-                      <th className="pb-2 font-medium text-right">{t("orders.subtotal")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table
+                  removeWrapper
+                  aria-label={t("orders.detailTitle")}
+                  classNames={{ th: "text-xs text-gray-400 bg-transparent font-medium px-0", td: "px-0" }}
+                >
+                  <TableHeader>
+                    <TableColumn align="start">{t("orders.products")}</TableColumn>
+                    <TableColumn align="center">{t("sales.quantity")}</TableColumn>
+                    <TableColumn align="end">{t("sales.price")}</TableColumn>
+                    <TableColumn align="end">{t("orders.subtotal")}</TableColumn>
+                  </TableHeader>
+                  <TableBody>
                     {order.items.map((item, index) => (
-                      <tr key={index} className="border-t border-gray-50">
-                        <td className="py-2 text-gray-700">{item.productName}</td>
-                        <td className="py-2 text-center text-gray-500">×{item.quantity}</td>
-                        <td className="py-2 text-right text-gray-500">{formatCurrency(item.priceAtOrder)}</td>
-                        <td className="py-2 text-right font-semibold">{formatCurrency(item.quantity * item.priceAtOrder)}</td>
-                      </tr>
+                      <TableRow key={index}>
+                        <TableCell className="py-2 text-gray-700">{item.productName}</TableCell>
+                        <TableCell className="py-2 text-center text-gray-500">×{item.quantity}</TableCell>
+                        <TableCell className="py-2 text-right text-gray-500">{formatCurrency(item.priceAtOrder)}</TableCell>
+                        <TableCell className="py-2 text-right font-semibold">{formatCurrency(item.quantity * item.priceAtOrder)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
