@@ -23,6 +23,11 @@ const formatDate = (dateString) => {
 
 export default formatDate;
 
+export function localDay(dateString) {
+  const date = parseUtcDate(dateString);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export const formatDateParts = (dateString) => {
   const parsed = parseUtcDate(dateString);
   if (isNaN(parsed.getTime())) return { date: "-", time: "" };

@@ -1,12 +1,7 @@
 "use client";
 import { useMemo } from "react";
 
-import { parseUtcDate } from "@lib/formatDate";
-
-function localDay(dateString) {
-  const date = parseUtcDate(dateString);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
+import { localDay } from "@lib/formatDate";
 
 export function useChartData(sales) {
   const revenueByDay = useMemo(() => {
