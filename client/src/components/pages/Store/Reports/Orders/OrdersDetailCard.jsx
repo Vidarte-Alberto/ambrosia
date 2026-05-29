@@ -8,11 +8,10 @@ import { useTranslations } from "next-intl";
 import { useOrdersDetailData } from "../hooks/useOrdersDetailData";
 
 function useMediaQuery(query) {
-  const [matches, setMatches] = useState(false);
+  const [matches, setMatches] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
   useEffect(() => {
     const media = window.matchMedia(query);
-    setMatches(media.matches);
-    const listener = (e) => setMatches(e.matches);
+    const listener = (mediaQueryEvent) => setMatches(mediaQueryEvent.matches);
     media.addEventListener("change", listener);
     return () => media.removeEventListener("change", listener);
   }, [query]);
