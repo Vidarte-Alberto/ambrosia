@@ -23,20 +23,18 @@ const formatDate = (dateString) => {
 
 export default formatDate;
 
-export function localDay(dateString) {
-  const date = parseUtcDate(dateString);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
 export const formatDateParts = (dateString) => {
-  const parsed = parseUtcDate(dateString);
-  if (isNaN(parsed.getTime())) return { date: "-", time: "" };
+  const parsedDate = parseUtcDate(dateString);
+  if (isNaN(parsedDate.getTime())) return { localDay: "", date: "-", time: "" };
   return {
+    get localDay() {
+      return `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, "0")}-${String(parsedDate.getDate()).padStart(2, "0")}`;
+    },
     get date() {
-      return parsed.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
+      return parsedDate.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
     },
     get time() {
-      return parsed.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" });
+      return parsedDate.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit" });
     },
   };
 };

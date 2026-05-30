@@ -3,7 +3,15 @@ import { renderHook } from "@testing-library/react";
 import { useOrdersChartData } from "../useOrdersChartData";
 
 jest.mock("@lib/formatDate", () => ({
-  parseUtcDate: (dateString) => new Date(dateString),
+  formatDateParts: (dateString) => {
+    const parsedDate = new Date(dateString);
+    if (isNaN(parsedDate.getTime())) return { localDay: "", date: "-", time: "" };
+    return {
+      localDay: parsedDate.toISOString().slice(0, 10),
+      date: parsedDate.toLocaleDateString(),
+      time: parsedDate.toLocaleTimeString(),
+    };
+  },
 }));
 
 const ORDERS_FIXTURE = [

@@ -5,8 +5,7 @@ import { Button, Card, CardBody, Pagination, Select, SelectItem } from "@heroui/
 import { Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { useMediaQuery } from "@hooks/useMediaQuery";
-
+import { useMediaQuery } from "../hooks/useMediaQuery";
 import { useSalesData } from "../hooks/useSalesData";
 
 import { SalesFilters } from "./SalesFilters";

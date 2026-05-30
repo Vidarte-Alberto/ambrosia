@@ -1,18 +1,13 @@
 "use client";
 import { useMemo } from "react";
 
-import { parseUtcDate } from "@lib/formatDate";
-
-function localDay(dateString) {
-  const date = parseUtcDate(dateString);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
+import { formatDateParts } from "@lib/formatDate";
 
 export function useOrdersChartData(orders) {
   const ordersPerDay = useMemo(() => {
     const byDay = {};
     for (const order of orders) {
-      const day = localDay(order.date);
+      const day = formatDateParts(order.date).localDay;
       if (!byDay[day]) byDay[day] = { date: day, orders: 0, revenue: 0 };
       byDay[day].orders += 1;
       byDay[day].revenue += order.total;

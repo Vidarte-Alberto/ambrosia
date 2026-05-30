@@ -1,13 +1,13 @@
 "use client";
 import { useMemo } from "react";
 
-import { localDay } from "@lib/formatDate";
+import { formatDateParts } from "@lib/formatDate";
 
 export function useChartData(sales) {
   const revenueByDay = useMemo(() => {
     const dailyRevenueMap = {};
     for (const sale of sales) {
-      const dateKey = localDay(sale.saleDate);
+      const dateKey = formatDateParts(sale.saleDate).localDay;
       if (!dailyRevenueMap[dateKey]) dailyRevenueMap[dateKey] = { date: dateKey, revenue: 0, count: 0 };
       dailyRevenueMap[dateKey].revenue += sale.quantity * sale.priceAtOrder;
       dailyRevenueMap[dateKey].count += sale.quantity;

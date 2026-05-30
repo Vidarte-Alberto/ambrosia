@@ -44,8 +44,12 @@ jest.mock("@lib/formatDate", () => ({
   parseUtcDate: (dateString) => new Date(dateString),
   formatDateParts: (dateString) => {
     const parsed = new Date(dateString);
-    if (isNaN(parsed.getTime())) return { date: "-", time: "" };
-    return { date: parsed.toLocaleDateString(), time: parsed.toLocaleTimeString() };
+    if (isNaN(parsed.getTime())) return { localDay: "", date: "-", time: "" };
+    return {
+      localDay: parsed.toISOString().slice(0, 10),
+      date: parsed.toLocaleDateString(),
+      time: parsed.toLocaleTimeString(),
+    };
   },
 }));
 
