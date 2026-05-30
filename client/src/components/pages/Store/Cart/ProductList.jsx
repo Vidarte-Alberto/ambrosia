@@ -123,7 +123,7 @@ export function ProductList({ products, onAddProduct, categories }) {
                 </Chip>
                 <div className="flex justify-between">
                   <div className="md:hidden">
-                    <ViewButton onPress={() => handleShowProductDetails(product)}>Ver Detalles</ViewButton>
+                    <ViewButton onPress={() => handleShowProductDetails(product)} />
                   </div>
 
                   <Button
