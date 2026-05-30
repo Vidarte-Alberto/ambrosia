@@ -10,6 +10,7 @@ const cartEs = {
     card: {
       add: "Agregar",
       stock: "en almacén",
+      showProductDetails: "Ver detalles",
       errors: {
         unknownCategory: "Categoría desconocida",
       },
