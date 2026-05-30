@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
+import { ViewButton } from "../../../shared/ViewButton";
+
 export function ProductList({ products, onAddProduct, categories }) {
   const cardProductTranslation = useTranslations("cart");
   const { formatAmount } = useCurrency();
@@ -94,7 +96,9 @@ export function ProductList({ products, onAddProduct, categories }) {
                 </Accordion>
               )}
             </CardBody>
-            <CardFooter className="flex flex-col items-stretch gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <CardFooter
+              className="flex flex-col pt-0 items-stretch gap-2 md:gap-5 sm:flex-row sm:items-center sm:justify-between"
+            >
               <Chip
                 size="sm"
                 className={
@@ -107,14 +111,21 @@ export function ProductList({ products, onAddProduct, categories }) {
               >
                 {normalizeNumber(quantity)} {cardProductTranslation("card.stock")}
               </Chip>
-              <Button
-                color="primary"
-                size="sm"
-                isDisabled={quantity === 0}
-                onPress={() => onAddProduct(product)}
-              >
-                {cardProductTranslation("card.add")}
-              </Button>
+              <div className="flex justify-between">
+                <div className="md:hidden">
+                  <ViewButton>Ver Detalles</ViewButton>
+                </div>
+
+                <Button
+                  className="w-full ml-3"
+                  color="primary"
+                  size="sm"
+                  isDisabled={quantity === 0}
+                  onPress={() => onAddProduct(product)}
+                >
+                  {cardProductTranslation("card.add")}
+                </Button>
+              </div>
             </CardFooter>
           </Card>
         );
