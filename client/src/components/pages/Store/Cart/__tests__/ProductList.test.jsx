@@ -21,6 +21,22 @@ jest.mock("@heroui/react", () => ({
   ),
 }));
 
+jest.mock("@/components/shared/ViewButton", () => ({
+  ViewButton: ({ onPress, children }) => (
+    <button data-testid="view-button" onClick={onPress}>{children}</button>
+  ),
+}));
+
+jest.mock("@/components/shared/ProductDetailsModal", () => ({
+  ProductDetailsModal: ({ isOpen, onClose, product, showAddButton }) => (isOpen ? (
+    <div data-testid="product-details-modal">
+      <span data-testid="modal-product-name">{product?.name}</span>
+      {showAddButton && <button>modal-add</button>}
+      <button onClick={onClose}>close-modal</button>
+    </div>
+  ) : null),
+}));
+
 const products = [
   {
     id: 1,
@@ -128,5 +144,71 @@ describe("ProductList", () => {
     );
 
     expect(screen.queryByText("card.showProductDescription")).not.toBeInTheDocument();
+  });
+
+  it("does not show ProductDetailsModal initially", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[productWithDescription]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    expect(screen.queryByTestId("product-details-modal")).not.toBeInTheDocument();
+  });
+
+  it("opens ProductDetailsModal with the correct product when ViewButton is clicked", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[productWithDescription]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("view-button"));
+
+    expect(screen.getByTestId("product-details-modal")).toBeInTheDocument();
+    expect(screen.getByTestId("modal-product-name")).toHaveTextContent("M5 StickPlus");
+  });
+
+  it("opens ProductDetailsModal with showAddButton=false", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[productWithDescription]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("view-button"));
+
+    expect(screen.queryByText("modal-add")).not.toBeInTheDocument();
+  });
+
+  it("closes ProductDetailsModal when onClose is called", () => {
+    render(
+      <I18nProvider>
+        <ProductList
+          products={[productWithDescription]}
+          categories={categories}
+          onAddProduct={jest.fn()}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId("view-button"));
+    expect(screen.getByTestId("product-details-modal")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("close-modal"));
+
+    expect(screen.queryByTestId("product-details-modal")).not.toBeInTheDocument();
   });
 });
