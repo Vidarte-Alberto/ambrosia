@@ -36,42 +36,43 @@ export function ProductList({ products, onAddProduct, categories }) {
     <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
       {products.map((product) => {
         const status = stockStatus(product);
-        const imageUrl = storedAssetUrl(product.imageUrl);
+        const { id, description, priceCents, name, imageUrl, SKU, categoryIds, quantity } = product;
+        const productImageUrl = storedAssetUrl(imageUrl);
         return (
           <Card
             shadow="none"
             className="bg-white rounded-lg"
-            key={product.id}
+            key={id}
           >
             <div className="h-28 md:h-36 bg-gray-100 overflow-hidden flex items-center justify-center">
-              {imageUrl ? (
+              {productImageUrl ? (
                 <Image
                   removeWrapper
-                  alt={product.name}
-                  src={imageUrl}
+                  alt={name}
+                  src={productImageUrl}
                   className="w-full h-full object-cover rounded-none"
                 />
               ) : (
-                <div data-testid={`product-image-placeholder-${product.id}`}>
+                <div data-testid={`product-image-placeholder-${id}`}>
                   <ImageIcon aria-hidden="true" className="h-8 w-8 text-gray-400" />
                 </div>
               )}
             </div>
             <CardHeader className="flex flex-col items-start pb-1">
-              <h2 className="text-sm md:text-lg font-medium">{product.name}</h2>
-              <p className="text-xs">{getCategoryNames(product.categoryIds)}</p>
+              <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+              <p className="text-xs">{getCategoryNames(categoryIds)}</p>
             </CardHeader>
             <CardBody className="py-1">
               <h2 className="text-lg md:text-2xl font-bold text-green-800">
-                {formatAmount(product.priceCents)}
+                {formatAmount(priceCents)}
               </h2>
               <p className="hidden md:block text-xs">
-                SKU: <span className="text-gray-800">{product.SKU}</span>
+                SKU: <span className="text-gray-800">{SKU}</span>
               </p>
-              {product.description && (
+              {description && (
                 <Accordion isCompact className="hidden md:block px-0 m-0 w-full">
                   <AccordionItem
-                    key={product.id}
+                    key={id}
                     indicator={<ChevronUp className="text-primary h-4 w-4" />}
                     classNames={{
                       trigger: "px-0 rounded-lg",
@@ -88,7 +89,7 @@ export function ProductList({ products, onAddProduct, categories }) {
                     title={cardProductTranslation("card.showProductDescription")}
                     className="text-gray-400 text-justify text-xs"
                   >
-                    {product.description}
+                    {description}
                   </AccordionItem>
                 </Accordion>
               )}
@@ -104,12 +105,12 @@ export function ProductList({ products, onAddProduct, categories }) {
                       : "bg-green-200 text-xs text-green-800 border border-green-300"
                 }
               >
-                {normalizeNumber(product.quantity)} {cardProductTranslation("card.stock")}
+                {normalizeNumber(quantity)} {cardProductTranslation("card.stock")}
               </Chip>
               <Button
                 color="primary"
                 size="sm"
-                isDisabled={product.quantity === 0}
+                isDisabled={quantity === 0}
                 onPress={() => onAddProduct(product)}
               >
                 {cardProductTranslation("card.add")}
