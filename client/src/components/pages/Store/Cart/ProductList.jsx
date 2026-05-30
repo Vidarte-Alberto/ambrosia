@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Card, CardBody, CardFooter, CardHeader, Chip, Image } from "@heroui/react";
-import { ImageIcon } from "lucide-react";
+import { Accordion, AccordionItem, Button, Card, CardBody, CardFooter, CardHeader, Chip, Image } from "@heroui/react";
+import { ChevronUp, ImageIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -68,6 +68,30 @@ export function ProductList({ products, onAddProduct, categories }) {
               <p className="hidden md:block text-xs">
                 SKU: <span className="text-gray-800">{product.SKU}</span>
               </p>
+              {product.description && (
+                <Accordion isCompact className="hidden md:block px-0 m-0 w-full">
+                  <AccordionItem
+                    key={product.id}
+                    indicator={<ChevronUp className="text-primary h-4 w-4" />}
+                    classNames={{
+                      trigger: "px-0 rounded-lg",
+                      content: "px-0",
+                      indicator: [
+                        "rotate-0",
+                        "data-[open=true]:rotate-180",
+                        "transition-transform",
+                        "duration-200",
+                      ].join(" "),
+                      title: "text-xs",
+                    }}
+                    aria-label={`${cardProductTranslation("card.showProductDescription")} ${product.name}`}
+                    title={cardProductTranslation("card.showProductDescription")}
+                    className="text-gray-400 text-justify text-xs"
+                  >
+                    {product.description}
+                  </AccordionItem>
+                </Accordion>
+              )}
             </CardBody>
             <CardFooter className="flex flex-col items-stretch gap-5 sm:flex-row sm:items-center sm:justify-between">
               <Chip
