@@ -94,7 +94,11 @@ class OrderService(
                    o.total,
                    o.created_at,
                    GROUP_CONCAT(DISTINCT pm.name) AS payment_method,
-                   GROUP_CONCAT(DISTINCT p.id) AS payment_method_ids
+                   GROUP_CONCAT(DISTINCT p.id) AS payment_method_ids,
+                   MAX(p.satoshi_amount) AS satoshi_amount,
+                   MAX(p.exchange_rate_at_payment) AS exchange_rate_at_payment,
+                   MAX(p.exchange_rate_currency) AS exchange_rate_currency,
+                   MAX(p.fiat_amount_at_payment) AS fiat_amount_at_payment
             FROM orders o
             LEFT JOIN users u ON u.id = o.user_id
             LEFT JOIN tickets t ON t.order_id = o.id
@@ -157,6 +161,10 @@ class OrderService(
             createdAt = resultSet.getString("created_at").replace(" ", "T"),
             paymentMethod = paymentNames,
             paymentMethodIds = paymentIds,
+            satoshiAmount = (resultSet.getObject("satoshi_amount") as? Number)?.toLong(),
+            exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
+            exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
+            fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
         )
     }
 

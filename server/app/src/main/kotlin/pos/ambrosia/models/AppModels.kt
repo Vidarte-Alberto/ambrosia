@@ -162,6 +162,8 @@ data class OrderWithPayment(
     val paymentMethodIds: List<String> = emptyList(),
     val satoshiAmount: Long? = null,
     val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
 )
 
 data class OrderWithPaymentFilters(
