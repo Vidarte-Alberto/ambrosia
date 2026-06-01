@@ -478,6 +478,8 @@ data class ProductSaleItem(
     val saleDate: String,
     val satoshiAmount: Long? = null,
     val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
     val paymentId: String? = null,
 )
 
