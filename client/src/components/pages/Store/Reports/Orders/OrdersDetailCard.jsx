@@ -13,7 +13,7 @@ import { ReportsOrdersList } from "./OrdersList";
 
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 20, 50];
 
-export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
+export function OrdersDetailCard({ orders, formatCurrency, disabled, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const [search, setSearch] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -69,7 +69,7 @@ export function OrdersDetailCard({ orders, formatCurrency, disabled }) {
           orders={orders}
         />
 
-        <ReportsOrdersList orders={paginatedOrders} formatCurrency={formatCurrency} />
+        <ReportsOrdersList orders={paginatedOrders} formatCurrency={formatCurrency} currentRate={currentRate} />
 
         <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t border-default-100">
           <div className="flex items-center gap-2 text-sm text-default-500">

@@ -19,7 +19,7 @@ const buildProductSummary = (items, overflowLabel) => {
   return names.join(", ");
 };
 
-export function ReportsOrdersList({ orders, formatCurrency }) {
+export function ReportsOrdersList({ orders, formatCurrency, currentRate }) {
   const reportsTranslations = useTranslations("reports");
   const [selectedOrder, setSelectedOrder] = useState(null);
 
@@ -122,6 +122,7 @@ export function ReportsOrdersList({ orders, formatCurrency }) {
       <OrderDetailModal
         order={selectedOrder}
         formatCurrency={formatCurrency}
+        currentRate={currentRate}
         onClose={() => setSelectedOrder(null)}
       />
     </section>

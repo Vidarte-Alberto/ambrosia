@@ -1,6 +1,6 @@
 "use client";
 import { Card, CardBody } from "@heroui/react";
-import { ShoppingCart, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { ViewButton } from "@/components/shared/ViewButton";
@@ -12,9 +12,6 @@ export function OrdersCard({ order, formatCurrency, onClick }) {
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
       <CardBody className="flex flex-row items-center gap-3 p-3">
-        <div className="bg-forest/10 rounded-lg p-2 shrink-0">
-          <ShoppingCart aria-hidden="true" className="w-4 h-4 text-forest" />
-        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">

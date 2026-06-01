@@ -5,9 +5,10 @@ import {
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
+import { AmountDisplay } from "@/components/shared/AmountDisplay";
 import formatDate from "@lib/formatDate";
 
-export function OrderDetailModal({ order, formatCurrency, onClose }) {
+export function OrderDetailModal({ order, formatCurrency, currentRate, onClose }) {
   const reportsTranslations = useTranslations("reports");
 
   return (
@@ -72,7 +73,19 @@ export function OrderDetailModal({ order, formatCurrency, onClose }) {
 
               <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
                 <span className="font-semibold text-sm">{reportsTranslations("orders.total")}</span>
-                <span className="font-bold text-green-700">{formatCurrency(order.total)}</span>
+                <div className="font-bold text-green-700">
+                  {order.satoshiAmount != null
+                    ? (
+                      <AmountDisplay
+                        satoshis={order.satoshiAmount}
+                        exchangeRateAtSale={order.exchangeRateAtPayment}
+                        exchangeRateCurrency={order.exchangeRateCurrency}
+                        fiatAmountAtPayment={order.fiatAmountAtPayment}
+                        currentRate={currentRate}
+                      />
+                      )
+                    : formatCurrency(order.total)}
+                </div>
               </div>
             </div>
           )}
