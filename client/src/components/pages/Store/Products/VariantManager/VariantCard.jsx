@@ -1,0 +1,107 @@
+"use client";
+import { useState } from "react";
+
+import { Button, Card, CardBody, Image } from "@heroui/react";
+import { ImageIcon, Pencil, Trash2, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+
+import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
+
+import { VariantForm } from "./VariantForm";
+
+export function VariantCard({ variant, currency, onSave, onDelete, isProcessing }) {
+  const t = useTranslations("products");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+
+  const handleSaveEdit = async (variantFormData) => {
+    await onSave(variant.id, variantFormData);
+    setIsEditing(false);
+  };
+
+  const imageUrl = storedAssetUrl(variant.imageUrl);
+  const price = `${currency?.acronym ?? "$"}${(variant.priceCents / 100).toFixed(2)}`;
+
+  if (isEditing) {
+    return (
+      <VariantForm
+        initial={variant}
+        currency={currency}
+        onSave={handleSaveEdit}
+        onCancel={() => setIsEditing(false)}
+        isLoading={isProcessing}
+      />
+    );
+  }
+
+  return (
+    <Card shadow="none" className="border border-gray-200 bg-white">
+      <CardBody className="p-3">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={variant.SKU ?? "variant"}
+                removeWrapper
+                className="w-full h-full object-cover rounded-none"
+              />
+            ) : (
+              <ImageIcon className="w-5 h-5 text-gray-300" />
+            )}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">
+              {variant.SKU ?? "—"}
+            </p>
+            <p className="text-xs text-gray-500">
+              {price} · {variant.quantity} {t("variantStockUnit")}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {isConfirmingDelete ? (
+              <>
+                <Button
+                  size="sm"
+                  color="danger"
+                  variant="flat"
+                  onPress={() => onDelete(variant.id)}
+                  isLoading={isProcessing}
+                >
+                  {t("deleteVariantConfirm")}
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"
+                  aria-label={t("cancelVariant")}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
