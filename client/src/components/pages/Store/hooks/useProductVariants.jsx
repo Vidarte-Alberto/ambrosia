@@ -31,8 +31,12 @@ export function useProductVariants() {
   const fetchProductDetail = useCallback(async (productId) => {
     const response = await httpClient(`/products/${productId}`);
     const data = await parseJsonResponse(response, null);
+    if (!response.ok) {
+      notifyError(response.status);
+      return null;
+    }
     return data;
-  }, []);
+  }, [notifyError]);
 
   const addVariant = useCallback(
     async (productId, variantData) => {
@@ -70,10 +74,16 @@ export function useProductVariants() {
   );
 
   const deleteVariant = useCallback(async (productId, variantId) => {
-    await httpClient(`/products/${productId}/variants/${variantId}`, {
+    const response = await httpClient(`/products/${productId}/variants/${variantId}`, {
       method: "DELETE",
+      notShowError: false,
     });
-  }, []);
+    if (!response.ok) {
+      notifyError(response.status);
+      return false;
+    }
+    return true;
+  }, [notifyError]);
 
   const addOptionType = useCallback(
     async (productId, optionData) => {
@@ -111,10 +121,16 @@ export function useProductVariants() {
   );
 
   const deleteOptionType = useCallback(async (productId, optionTypeId) => {
-    await httpClient(`/products/${productId}/options/${optionTypeId}`, {
+    const response = await httpClient(`/products/${productId}/options/${optionTypeId}`, {
       method: "DELETE",
+      notShowError: false,
     });
-  }, []);
+    if (!response.ok) {
+      notifyError(response.status);
+      return false;
+    }
+    return true;
+  }, [notifyError]);
 
   return {
     fetchProductDetail,
