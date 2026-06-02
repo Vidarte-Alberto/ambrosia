@@ -26,13 +26,12 @@ export function PaymentForm({
     setIsScanning(true);
     try {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = (fileEvent) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          const canvasContext = canvas.getContext("2d", { willReadFrequently: true });
 
-          // Downscale to 1000px for optimal QR detection
           const MAX_SIZE = 1000;
           let width = img.width;
           let height = img.height;
@@ -51,13 +50,24 @@ export function PaymentForm({
 
           canvas.width = width;
           canvas.height = height;
-          ctx.drawImage(img, 0, 0, width, height);
+          canvasContext.drawImage(img, 0, 0, width, height);
 
-          const imageData = ctx.getImageData(0, 0, width, height);
+          const imageData = canvasContext.getImageData(0, 0, width, height);
           const code = jsQR(imageData.data, imageData.width, imageData.height);
 
           if (code) {
             const cleanInvoice = code.data.replace(/^lightning:/i, "").trim();
+
+            if (!cleanInvoice.toLowerCase().startsWith("ln")) {
+              addToast({
+                title: "Invalid QR",
+                description: "The scanned QR is not a Lightning invoice.",
+                color: "danger",
+              });
+              setIsScanning(false);
+              return;
+            }
+
             onInvoiceChange(cleanInvoice);
             addToast({
               title: "QR Scanned",
@@ -73,7 +83,7 @@ export function PaymentForm({
           }
           setIsScanning(false);
         };
-        img.src = e.target.result;
+        img.src = fileEvent.target.result;
       };
       reader.readAsDataURL(file);
     } catch (err) {
