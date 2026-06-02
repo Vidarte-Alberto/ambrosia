@@ -8,6 +8,10 @@ import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 import { useFetchList } from "@/lib/http/useFetchList";
+import { resolveImageUrl } from "../Products/utils/resolveImageUrl";
+import { toFiniteNumber } from "../Products/utils/number";
+
+import { useProductVariants } from "./useProductVariants";
 
 export function useProducts() {
   const t = useTranslations("products");
@@ -16,37 +20,29 @@ export function useProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { upload, isUploading } = useUpload();
+  const { addVariant, updateVariant } = useProductVariants();
 
   const normalizeSku = (sku) => sku?.trim() || null;
 
-  const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => {
-    const minStockNumber = Number(product.productMinStock ?? 0);
-    const maxStockNumber = Number(product.productMaxStock ?? 0);
+  const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => ({
+    ...(includeId ? { id: product.productId } : {}),
+    SKU: normalizeSku(product.productSKU),
+    name: product.productName,
+    description: product.productDescription || null,
+    imageUrl,
+    categoryIds: toArray(product.productCategories),
+    hasVariants: product.hasVariants ?? false,
+    minStockThreshold: toFiniteNumber(product.productMinStock),
+    maxStockThreshold: toFiniteNumber(product.productMaxStock),
+  });
 
-    return {
-      ...(includeId ? { id: product.productId } : {}),
-      SKU: normalizeSku(product.productSKU),
-      name: product.productName,
-      description: product.productDescription || null,
-      imageUrl,
-      categoryIds: toArray(product.productCategories),
-      hasVariants: product.hasVariants ?? false,
-      minStockThreshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
-      maxStockThreshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
-    };
-  };
+  const buildDefaultVariantPayload = (product) => ({
+    SKU: normalizeSku(product.productSKU),
+    priceCents: Math.round(toFiniteNumber(product.productPrice) * 100),
+    quantity: toFiniteNumber(product.productStock),
+    isActive: true,
+  });
 
-  const buildVariantPayload = (product) => {
-    const priceNumber = Number(product.productPrice ?? 0);
-    const priceCents = Number.isFinite(priceNumber) ? Math.round(priceNumber * 100) : 0;
-    const quantityNumber = Number(product.productStock ?? 0);
-    return {
-      SKU: normalizeSku(product.productSKU),
-      priceCents,
-      quantity: Number.isFinite(quantityNumber) ? quantityNumber : 0,
-      isActive: true,
-    };
-  };
 
   const buildHttpError = (response, payload) => ({
     status: response.status,
@@ -94,11 +90,7 @@ export function useProducts() {
 
   const addProduct = async (product) => {
     try {
-      let uploadedUrl = product.productImageUrl || null;
-      if (product.productImage instanceof File) {
-        const uploads = await upload([product.productImage]);
-        uploadedUrl = uploads?.[0]?.url || uploads?.[0]?.path || null;
-      }
+      const uploadedUrl = await resolveImageUrl(product.productImage, product.productImageUrl || null, upload);
 
       const response = await httpClient("/products", {
         method: "POST",
@@ -111,11 +103,11 @@ export function useProducts() {
       const newProductId = payload?.id;
 
       if (newProductId && !product.hasVariants) {
-        await httpClient(`/products/${newProductId}/variants`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildVariantPayload(product)),
-        });
+        const newVariantId = await addVariant(newProductId, buildDefaultVariantPayload(product));
+        if (newVariantId === null) {
+          await httpClient(`/products/${newProductId}`, { method: "DELETE" });
+          throw buildHttpError({ status: 422 }, null);
+        }
       }
 
       await fetchProducts();
@@ -128,12 +120,11 @@ export function useProducts() {
 
   const updateProduct = async (product) => {
     try {
-      let uploadedUrl = product.productImageUrl || null;
-      if (product.productImage instanceof File) {
-        const uploads = await upload([product.productImage]);
-        uploadedUrl = uploads?.[0]?.url || uploads?.[0]?.path || null;
-      } else if (product.productImageRemoved) {
+      let uploadedUrl;
+      if (product.productImageRemoved) {
         uploadedUrl = null;
+      } else {
+        uploadedUrl = await resolveImageUrl(product.productImage, product.productImageUrl || null, upload);
       }
 
       const response = await httpClient(`/products/${product.productId}`, {
@@ -146,11 +137,7 @@ export function useProducts() {
       const payload = await ensureSuccess(response);
 
       if (!product.hasVariants && product.productVariantId) {
-        await httpClient(`/products/${product.productId}/variants/${product.productVariantId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(buildVariantPayload(product)),
-        });
+        await updateVariant(product.productId, product.productVariantId, buildDefaultVariantPayload(product));
       }
 
       await fetchProducts();
@@ -162,12 +149,18 @@ export function useProducts() {
   };
 
   const deleteProduct = async (product) => {
-    await httpClient(`/products/${product.id}`, {
-      method: "DELETE",
-      notShowError: false,
-    });
-
-    await fetchProducts();
+    try {
+      const response = await httpClient(`/products/${product.id}`, {
+        method: "DELETE",
+        notShowError: false,
+      });
+      await ensureSuccess(response);
+      await fetchProducts();
+      return true;
+    } catch (error) {
+      notifyMutationError(error);
+      return false;
+    }
   };
 
   useEffect(() => {

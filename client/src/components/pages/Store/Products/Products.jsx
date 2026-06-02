@@ -43,6 +43,7 @@ export function Products() {
   const [deleteProductsShowModal, setDeleteProductsShowModal] = useState(false);
   const [productForm, setProductForm] = useState(createEmptyProductForm);
   const [productToDelete, setProductToDelete] = useState(null);
+
   const { products, addProduct, updateProduct, deleteProduct, isUploading, refetch: refetchProducts } = useProducts();
   const {
     categories,
@@ -52,13 +53,7 @@ export function Products() {
     deleteCategory,
     refetch: refetchCategories,
   } = useCategories("product");
-  const {
-    fetchProductDetail,
-    addVariant,
-    updateVariant,
-    deleteVariant,
-  } = useProductVariants();
-  const [editVariants, setEditVariants] = useState([]);
+  const { fetchProductDetail } = useProductVariants();
 
   const handleProductFormChange = (newData) => {
     setProductForm((prev) => ({ ...prev, ...newData }));
@@ -79,8 +74,10 @@ export function Products() {
   };
 
   const handleEditProduct = async (product) => {
-    const detail = await fetchProductDetail(product.id);
-    const firstVariant = detail?.variants?.[0];
+    const productDetail = await fetchProductDetail(product.id);
+    if (!productDetail) return;
+
+    const defaultVariant = productDetail.variants?.[0];
 
     setProductForm({
       productId: product.id,
@@ -89,9 +86,9 @@ export function Products() {
       productCategories: toArray(product.categoryIds),
       productSKU: product.SKU ?? "",
       hasVariants: product.hasVariants ?? false,
-      productVariantId: firstVariant?.id ?? null,
-      productPrice: firstVariant?.priceCents ? firstVariant.priceCents / 100 : "",
-      productStock: firstVariant?.quantity ?? 0,
+      productVariantId: defaultVariant?.id ?? null,
+      productPrice: defaultVariant?.priceCents ? defaultVariant.priceCents / 100 : "",
+      productStock: defaultVariant?.quantity ?? 0,
       productMinStock: product.minStockThreshold ?? 0,
       productMaxStock: product.maxStockThreshold ?? 0,
       productImage: null,
@@ -99,14 +96,7 @@ export function Products() {
       productImageRemoved: false,
     });
 
-    setEditVariants(detail?.variants ?? []);
     setEditProductsShowModal(true);
-  };
-
-  const handleRefreshEditVariants = async () => {
-    if (!productForm.productId) return;
-    const detail = await fetchProductDetail(productForm.productId);
-    setEditVariants(detail?.variants ?? []);
   };
 
   const handleDeleteProduct = (product) => {
@@ -173,20 +163,15 @@ export function Products() {
         createCategory={createCategory}
         editProductsShowModal={editProductsShowModal}
         onClose={handleCloseEditProductsModal}
-        variants={editVariants}
-        onAddVariant={addVariant}
-        onUpdateVariant={updateVariant}
-        onDeleteVariant={deleteVariant}
-        onRefreshVariants={handleRefreshEditVariants}
       />
 
       <DeleteProductsModal
         product={productToDelete}
         deleteProductsShowModal={deleteProductsShowModal}
         setDeleteProductsShowModal={setDeleteProductsShowModal}
-        onConfirm={() => {
-          setDeleteProductsShowModal(false);
-          deleteProduct(productToDelete);
+        onConfirm={async () => {
+          const wasDeleted = await deleteProduct(productToDelete);
+          if (wasDeleted) setDeleteProductsShowModal(false);
         }}
       />
 
