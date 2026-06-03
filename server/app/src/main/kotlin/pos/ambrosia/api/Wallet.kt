@@ -18,6 +18,7 @@ import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.IncomingPaymentWithRate
 import pos.ambrosia.models.RolePassword
 import pos.ambrosia.models.WalletAuthResponse
+import pos.ambrosia.models.WalletInvoiceRate
 import pos.ambrosia.models.phoenix.CloseChannelRequest
 import pos.ambrosia.models.phoenix.CreateInvoiceRequest
 import pos.ambrosia.models.phoenix.CsvExport
@@ -29,6 +30,7 @@ import pos.ambrosia.services.AuthService
 import pos.ambrosia.services.PaymentService
 import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.services.TokenService
+import pos.ambrosia.services.WalletRateService
 import pos.ambrosia.utils.Bolt11Decoder
 import pos.ambrosia.utils.InvalidCredentialsException
 import pos.ambrosia.utils.authenticateAdmin
@@ -40,9 +42,10 @@ fun Application.configureWallet() {
     val phoenixService = PhoenixService(environment)
     val authService = AuthService(environment, connection)
     val tokenService = TokenService(environment, connection)
-    val paymentService = PaymentService(connection)
+    val walletRateService = WalletRateService(connection)
+    val paymentService = PaymentService(connection, walletRateService)
 
-    routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService) } }
+    routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService, walletRateService) } }
 }
 
 fun Route.wallet(
@@ -50,6 +53,7 @@ fun Route.wallet(
     tokenService: TokenService,
     authService: AuthService,
     paymentService: PaymentService,
+    walletRateService: WalletRateService,
 ) {
     authenticate("auth-jwt") {
         post("/invoice") {
@@ -94,6 +98,17 @@ fun Route.wallet(
         post("/createinvoice") {
             val request = call.receive<CreateInvoiceRequest>()
             val invoice = phoenixService.createInvoice(request)
+            if (request.exchangeRate != null && request.exchangeRateCurrency != null) {
+                walletRateService.saveInvoiceRate(
+                    WalletInvoiceRate(
+                        paymentHash = invoice.paymentHash,
+                        satoshiAmount = request.amountSat,
+                        exchangeRate = request.exchangeRate,
+                        exchangeRateCurrency = request.exchangeRateCurrency,
+                        fiatAmount = request.fiatAmount,
+                    ),
+                )
+            }
             call.respond(HttpStatusCode.OK, invoice)
         }
         post("/decodeinvoice") {
