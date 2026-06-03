@@ -491,6 +491,14 @@ data class ProductSalesReport(
     val totalBtcSatoshis: Long = 0L,
 )
 
+data class WalletInvoiceRate(
+    val paymentHash: String,
+    val satoshiAmount: Long?,
+    val exchangeRate: Double,
+    val exchangeRateCurrency: String,
+    val fiatAmount: Double?,
+)
+
 data class PaymentBitcoinData(
     val exchangeRateAtPayment: Double,
     val exchangeRateCurrency: String?,
