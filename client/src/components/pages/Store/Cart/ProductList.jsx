@@ -18,8 +18,7 @@ const DEFAULT_COLUMN_COUNT = 2;
 function useColumnCount() {
   const [columnCount, setColumnCount] = useState(DEFAULT_COLUMN_COUNT);
   useEffect(() => {
-    const syncColumnCount = () =>
-      setColumnCount(window.innerWidth >= XL_BREAKPOINT_PX ? XL_COLUMN_COUNT : DEFAULT_COLUMN_COUNT);
+    const syncColumnCount = () => setColumnCount(window.innerWidth >= XL_BREAKPOINT_PX ? XL_COLUMN_COUNT : DEFAULT_COLUMN_COUNT);
     syncColumnCount();
     window.addEventListener("resize", syncColumnCount);
     return () => window.removeEventListener("resize", syncColumnCount);
