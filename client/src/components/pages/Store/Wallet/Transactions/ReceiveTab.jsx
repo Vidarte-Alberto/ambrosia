@@ -11,7 +11,7 @@ import { createInvoice } from "@/services/walletService";
 import { AmountUnitInputFields } from "./AmountUnitInputFields";
 import { useWalletAmountInput } from "./hooks/useWalletAmountInput";
 
-export function ReceiveTab({ invoiceActions }) {
+export function ReceiveTab({ invoiceActions, currentRate }) {
   const t = useTranslations("wallet");
   const { currency } = useCurrency();
   const [invoiceDesc, setInvoiceDesc] = useState("");
@@ -44,11 +44,17 @@ export function ReceiveTab({ invoiceActions }) {
     if (amountSat === undefined) {
       return;
     }
+    const fiatAmount = amountSat != null && currentRate != null
+      ? (amountSat / 100_000_000) * currentRate
+      : null;
     try {
       setIsLoading(true);
       const res = await createInvoice({
         amountSat,
         description: invoiceDesc,
+        exchangeRate: currentRate ?? null,
+        exchangeRateCurrency: currentRate != null ? (currency?.acronym?.toLowerCase() ?? null) : null,
+        fiatAmount,
       });
       invoiceActions.createInvoice(res);
       resetAmounts();
