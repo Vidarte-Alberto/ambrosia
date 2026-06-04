@@ -491,6 +491,26 @@ data class ProductSalesReport(
     val totalBtcSatoshis: Long = 0L,
 )
 
+@Serializable
+data class OutgoingPaymentWithRate(
+    val type: String,
+    val subType: String,
+    val paymentId: String,
+    val paymentHash: String? = null,
+    val txId: String? = null,
+    val preimage: String? = null,
+    val isPaid: Boolean,
+    val sent: Long,
+    val fees: Long,
+    val invoice: String? = null,
+    val description: String? = null,
+    val completedAt: Long? = null,
+    val createdAt: Long,
+    val exchangeRateAtPayment: Double? = null,
+    val exchangeRateCurrency: String? = null,
+    val fiatAmountAtPayment: Double? = null,
+)
+
 data class WalletInvoiceRate(
     val paymentHash: String,
     val satoshiAmount: Long?,
