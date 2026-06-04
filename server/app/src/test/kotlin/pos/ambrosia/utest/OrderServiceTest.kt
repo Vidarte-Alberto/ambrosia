@@ -1,7 +1,6 @@
 package pos.ambrosia.utest
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.assertThrows
 import org.mockito.ArgumentMatchers.contains
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
@@ -926,17 +925,15 @@ class OrderServiceTest {
 
     @Test
     fun `checkout rolls back and rethrows on SQL exception`() {
-        runBlocking {
-            val orderSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(orderSt.executeUpdate()).thenThrow(SQLException("DB error")) // Arrange
-            val service = OrderService(mockConnection) // Arrange
-            assertThrows<SQLException> {
-                service.checkout(validStoreRequest())
-            }
-            verify(mockConnection).rollback() // Assert
-            verify(mockConnection, never()).commit() // Assert
+        val orderSt: PreparedStatement = mock() // Arrange
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
+        whenever(orderSt.executeUpdate()).thenThrow(SQLException("DB error")) // Arrange
+        val service = OrderService(mockConnection) // Arrange
+        assertFailsWith<SQLException> {
+            runBlocking { service.checkout(validStoreRequest()) }
         }
+        verify(mockConnection).rollback() // Assert
+        verify(mockConnection, never()).commit() // Assert
     }
 
     @Test
@@ -953,15 +950,13 @@ class OrderServiceTest {
 
     @Test
     fun `checkout restores autoCommit after rollback`() {
-        runBlocking {
-            whenever(mockConnection.autoCommit).thenReturn(true) // Arrange — prev = true
-            val orderSt: PreparedStatement = mock() // Arrange
-            whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
-            whenever(orderSt.executeUpdate()).thenThrow(SQLException("forced")) // Arrange
-            val service = OrderService(mockConnection) // Arrange
-            assertThrows<SQLException> { service.checkout(validStoreRequest()) } // Act
-            verify(mockConnection).autoCommit = true // Assert — restored even after exception
-        }
+        whenever(mockConnection.autoCommit).thenReturn(true) // Arrange — prev = true
+        val orderSt: PreparedStatement = mock() // Arrange
+        whenever(mockConnection.prepareStatement(contains("INSERT INTO orders"))).thenReturn(orderSt) // Arrange
+        whenever(orderSt.executeUpdate()).thenThrow(SQLException("forced")) // Arrange
+        val service = OrderService(mockConnection) // Arrange
+        assertFailsWith<SQLException> { runBlocking { service.checkout(validStoreRequest()) } } // Act
+        verify(mockConnection).autoCommit = true // Assert — restored even after exception
     }
 
     @Test
