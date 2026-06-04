@@ -124,7 +124,7 @@ export function AmountDisplay({
         )}
       </span>
       {displayCents != null && (
-        <p className="text-xs font-normal text-foreground-400 mt-0.5">
+        <p className="text-xs font-normal text-deep mt-0.5">
           {canToggleRate
             ? (showCurrentFiat ? t("amountAtCurrentRate") : t("amountAtTimeOfPayment"))
             : historicalCents != null
