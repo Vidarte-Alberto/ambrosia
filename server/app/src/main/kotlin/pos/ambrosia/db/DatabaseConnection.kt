@@ -24,7 +24,6 @@ object DatabaseConnection {
             jdbcUrl = "jdbc:sqlite:$dbPath"
             driverClassName = "org.sqlite.JDBC"
             maximumPoolSize = 1
-            isAutoCommit = false
             transactionIsolation = "TRANSACTION_SERIALIZABLE"
             addDataSourceProperty("journal_mode", "WAL")
             addDataSourceProperty("foreign_keys", "ON")
