@@ -45,7 +45,7 @@ export function OrdersDetailCard({ orders, formatCurrency, disabled, currentRate
           <h2 className="font-bold text-lg">
             {reportsTranslations("orders.title")}
             <span className="ml-2 text-sm font-normal text-default-400">
-              ({filteredOrders.length} {reportsTranslations("sales.records")})
+              ({filteredOrders.length} {reportsTranslations("orders.records")})
             </span>
           </h2>
           <Button
@@ -56,7 +56,7 @@ export function OrdersDetailCard({ orders, formatCurrency, disabled, currentRate
             isDisabled={!orders.length}
             onPress={exportToCsv}
           >
-            {reportsTranslations("sales.export")}
+            {reportsTranslations("orders.export")}
           </Button>
         </div>
 
