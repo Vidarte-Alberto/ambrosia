@@ -41,7 +41,7 @@ import java.sql.Connection
 fun Application.configureWallet() {
     val connection: Connection = DatabaseConnection.getConnection()
     val phoenixService = PhoenixService(environment)
-    val authService = AuthService(environment, connection)
+    val authService = AuthService(environment)
     val tokenService = TokenService(environment, connection)
     val walletRateService = WalletRateService(connection)
     val paymentService = PaymentService(connection)

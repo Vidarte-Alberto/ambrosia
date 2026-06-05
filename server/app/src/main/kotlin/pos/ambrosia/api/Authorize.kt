@@ -97,7 +97,7 @@ private object LoginRateLimiter {
 
 fun Application.configureAuth() {
     val connection: Connection = DatabaseConnection.getConnection()
-    val authService = AuthService(environment, connection)
+    val authService = AuthService(environment)
     val tokenService = TokenService(environment, connection)
     val permissionsService = PermissionsService(environment, connection)
     routing { route("/auth") { auth(tokenService, authService, permissionsService) } }
