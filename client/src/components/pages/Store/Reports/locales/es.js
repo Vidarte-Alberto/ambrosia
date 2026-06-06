@@ -74,6 +74,9 @@ const reportsEs = {
       subtotal: "Subtotal",
       actions: "Acciones",
       view: "Detalles",
+      records: "registros",
+      export: "Exportar CSV",
+      unknownUser: "Desconocido",
     },
     payment: {
       unknown: "Desconocido",

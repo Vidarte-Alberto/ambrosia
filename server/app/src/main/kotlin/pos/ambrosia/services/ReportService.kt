@@ -5,6 +5,7 @@ import pos.ambrosia.models.ProductSaleItem
 import pos.ambrosia.models.ProductSalesReport
 import java.sql.Connection
 import java.sql.PreparedStatement
+import java.sql.ResultSet
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -37,9 +38,24 @@ class ReportService(
             JOIN payment_methods pm ON pm.id = pay.method_id
             WHERE o.status = 'paid'
               AND o.is_deleted = 0
-              AND p.is_deleted = 0
             """
     }
+
+    private fun mapRowToProductSaleItem(resultSet: ResultSet): ProductSaleItem =
+        ProductSaleItem(
+            orderId = resultSet.getString("order_id"),
+            productName = resultSet.getString("product_name"),
+            quantity = resultSet.getInt("quantity"),
+            priceAtOrder = resultSet.getInt("price_at_order"),
+            userName = resultSet.getString("user_name"),
+            paymentMethod = resultSet.getString("payment_method"),
+            saleDate = resultSet.getString("sale_date").replace(" ", "T"),
+            satoshiAmount = (resultSet.getObject("satoshi_amount") as? Number)?.toLong(),
+            exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
+            exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
+            fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
+            paymentId = resultSet.getString("payment_id"),
+        )
 
     private fun bindQueryParameters(
         statement: PreparedStatement,
@@ -121,28 +137,14 @@ class ReportService(
                 append("\nORDER BY o.created_at DESC")
             }
 
-        val preparedStatement = connection.prepareStatement(query)
-        bindQueryParameters(preparedStatement, parameters)
-        val resultSet = preparedStatement.executeQuery()
-
         val sales = mutableListOf<ProductSaleItem>()
-        while (resultSet.next()) {
-            sales.add(
-                ProductSaleItem(
-                    orderId = resultSet.getString("order_id"),
-                    productName = resultSet.getString("product_name"),
-                    quantity = resultSet.getInt("quantity"),
-                    priceAtOrder = resultSet.getInt("price_at_order"),
-                    userName = resultSet.getString("user_name"),
-                    paymentMethod = resultSet.getString("payment_method"),
-                    saleDate = resultSet.getString("sale_date").replace(" ", "T"),
-                    satoshiAmount = (resultSet.getObject("satoshi_amount") as? Number)?.toLong(),
-                    exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
-                    exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
-                    fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
-                    paymentId = resultSet.getString("payment_id"),
-                ),
-            )
+        connection.prepareStatement(query).use { statement ->
+            bindQueryParameters(statement, parameters)
+            statement.executeQuery().use { resultSet ->
+                while (resultSet.next()) {
+                    sales.add(mapRowToProductSaleItem(resultSet))
+                }
+            }
         }
 
         logger.info("Product sales report: ${sales.size} line items")
