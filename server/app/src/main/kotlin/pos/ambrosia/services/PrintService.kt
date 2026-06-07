@@ -89,8 +89,9 @@ class PrintService(
                     } else {
                         configItem.templateName ?: request.templateName
                     }
-                val effectiveTemplateName = resolvedTemplateName
-                    ?.takeIf { it.isNotBlank() && !it.equals("none", ignoreCase = true) }
+                val effectiveTemplateName =
+                    resolvedTemplateName
+                        ?.takeIf { it.isNotBlank() && !it.equals("none", ignoreCase = true) }
                 if (effectiveTemplateName == null) {
                     logger.warn("No template configured for printer ${configItem.printerName}, skipping.")
                     successCount++
