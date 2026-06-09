@@ -1,6 +1,16 @@
 import { defaultCache } from "@serwist/next/worker";
 import { CacheFirst, ExpirationPlugin, NetworkFirst, Serwist } from "serwist";
 
+const ASSET_CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
+const API_CACHE_MAX_AGE_SECONDS = 5 * 60;
+const NETWORK_TIMEOUT_SECONDS = 5;
+
+import {
+  getPendingCheckouts,
+  markCheckoutCompleted,
+} from "@/lib/btcCheckoutStore";
+import { httpClient, parseJsonResponse } from "@/lib/http";
+
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   skipWaiting: true,
@@ -24,7 +34,7 @@ const serwist = new Serwist({
         plugins: [
           new ExpirationPlugin({
             maxEntries: 64,
-            maxAgeSeconds: 30 * 24 * 60 * 60,
+            maxAgeSeconds: ASSET_CACHE_MAX_AGE_SECONDS,
           }),
         ],
       }),
@@ -33,11 +43,11 @@ const serwist = new Serwist({
       matcher: /^\/api\//,
       handler: new NetworkFirst({
         cacheName: "api-cache",
-        networkTimeoutSeconds: 5,
+        networkTimeoutSeconds: NETWORK_TIMEOUT_SECONDS,
         plugins: [
           new ExpirationPlugin({
             maxEntries: 32,
-            maxAgeSeconds: 5 * 60,
+            maxAgeSeconds: API_CACHE_MAX_AGE_SECONDS,
           }),
         ],
       }),
@@ -47,6 +57,37 @@ const serwist = new Serwist({
 });
 
 serwist.addEventListeners();
+
+self.addEventListener("sync", (event) => {
+  if (event.tag === "btc-checkout") {
+    event.waitUntil(recoverPendingCheckouts());
+  }
+});
+
+async function recoverPendingCheckouts() {
+  let pending;
+  try {
+    pending = await getPendingCheckouts();
+  } catch {
+    return;
+  }
+
+  for (const entry of pending) {
+    try {
+      const response = await httpClient("payments/sync-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry.checkoutPayload),
+      });
+      const data = await parseJsonResponse(response);
+      if (response.ok && data?.status === "completed") {
+        await markCheckoutCompleted(entry.paymentHash, data);
+      }
+    } catch {
+      // Network error — Background Sync will retry automatically
+    }
+  }
+}
 
 self.addEventListener("install", (event) => {
   const requestPromises = Promise.all(

@@ -14,25 +14,12 @@ import java.sql.PreparedStatement
 import java.sql.Types
 import java.util.UUID
 
-private fun PreparedStatement.setNullableLong(
+private fun <T : Any> PreparedStatement.setNullable(
     index: Int,
-    value: Long?,
+    value: T?,
+    sqlType: Int,
 ) {
-    if (value != null) setLong(index, value) else setNull(index, Types.INTEGER)
-}
-
-private fun PreparedStatement.setNullableDouble(
-    index: Int,
-    value: Double?,
-) {
-    if (value != null) setDouble(index, value) else setNull(index, Types.REAL)
-}
-
-private fun PreparedStatement.setNullableString(
-    index: Int,
-    value: String?,
-) {
-    if (value != null) setString(index, value) else setNull(index, Types.VARCHAR)
+    if (value != null) setObject(index, value, sqlType) else setNull(index, sqlType)
 }
 
 class OrderService(
@@ -572,6 +559,29 @@ class OrderService(
         return rows > 0
     }
 
+    suspend fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? {
+        val sql =
+            """
+            SELECT p.id AS paymentId, t.id AS ticketId, o.id AS orderId
+            FROM payments p
+            JOIN ticket_payments tp ON tp.payment_id = p.id
+            JOIN tickets t ON t.id = tp.ticket_id
+            JOIN orders o ON o.id = t.order_id
+            WHERE p.payment_hash = ?
+            """.trimIndent()
+        connection.prepareStatement(sql).use { stmt ->
+            stmt.setString(1, paymentHash)
+            val rs = stmt.executeQuery()
+            if (!rs.next()) return null
+            return mapOf(
+                "status" to "completed",
+                "paymentId" to rs.getString("paymentId"),
+                "ticketId" to rs.getString("ticketId"),
+                "orderId" to rs.getString("orderId"),
+            )
+        }
+    }
+
     suspend fun checkout(request: StoreCheckoutRequest): StoreCheckoutResponse? {
         if (request.items.isEmpty()) return null
         if (request.items.any { it.quantity <= 0 }) return null
@@ -626,11 +636,11 @@ class OrderService(
                 statement.setString(3, request.currencyId)
                 statement.setString(4, request.transactionId ?: "")
                 statement.setDouble(5, request.amount)
-                statement.setNullableLong(6, request.satoshiAmount)
-                statement.setNullableDouble(7, request.exchangeRateAtPayment)
-                statement.setNullableString(8, request.paymentHash)
-                statement.setNullableString(9, request.exchangeRateCurrency)
-                statement.setNullableDouble(10, request.fiatAmountAtPayment)
+                statement.setNullable(6, request.satoshiAmount, Types.INTEGER)
+                statement.setNullable(7, request.exchangeRateAtPayment, Types.REAL)
+                statement.setNullable(8, request.paymentHash, Types.VARCHAR)
+                statement.setNullable(9, request.exchangeRateCurrency, Types.VARCHAR)
+                statement.setNullable(10, request.fiatAmountAtPayment, Types.REAL)
                 statement.executeUpdate()
             }
 

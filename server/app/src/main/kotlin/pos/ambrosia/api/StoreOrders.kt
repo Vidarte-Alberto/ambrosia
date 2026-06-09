@@ -14,16 +14,23 @@ import pos.ambrosia.db.DatabaseConnection
 import pos.ambrosia.models.Message
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.services.OrderService
+import pos.ambrosia.services.PhoenixService
 import pos.ambrosia.utils.authorizePermission
 import java.sql.Connection
+
+private const val CHECKOUT_FAILED_MSG = "Checkout failed: check items, stock levels, and payment details"
 
 fun Application.configureStoreOrders() {
     val connection: Connection = DatabaseConnection.getConnection()
     val service = OrderService(connection)
-    routing { route("/store/orders") { storeOrders(service) } }
+    val phoenixService = PhoenixService(environment)
+    routing { route("/store/orders") { storeOrders(service, phoenixService) } }
 }
 
-fun Route.storeOrders(service: OrderService) {
+fun Route.storeOrders(
+    service: OrderService,
+    phoenixService: PhoenixService,
+) {
     authorizePermission("orders_read") {
         get("") {
             val orderStatus = call.request.queryParameters["status"]
@@ -47,11 +54,45 @@ fun Route.storeOrders(service: OrderService) {
             if (checkoutResponse == null) {
                 call.respond(
                     HttpStatusCode.BadRequest,
-                    Message("Checkout failed: check items, stock levels, and payment details"),
+                    Message(CHECKOUT_FAILED_MSG),
                 )
                 return@post
             }
             call.respond(HttpStatusCode.Created, checkoutResponse)
+        }
+        post("/checkout-if-paid") {
+            val request = call.receive<StoreCheckoutRequest>()
+            val paymentHash =
+                request.paymentHash
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, Message("paymentHash required"))
+
+            val existing = service.findCheckoutByPaymentHash(paymentHash)
+            if (existing != null) {
+                return@post call.respond(HttpStatusCode.OK, existing)
+            }
+
+            val incomingPayment = runCatching { phoenixService.getIncomingPayment(paymentHash) }.getOrNull()
+            if (incomingPayment?.isPaid != true) {
+                return@post call.respond(HttpStatusCode.Accepted, mapOf("status" to "pending"))
+            }
+
+            val result = service.checkout(request)
+            if (result == null) {
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    Message(CHECKOUT_FAILED_MSG),
+                )
+            } else {
+                call.respond(
+                    HttpStatusCode.OK,
+                    mapOf(
+                        "status" to "completed",
+                        "orderId" to result.orderId,
+                        "ticketId" to result.ticketId,
+                        "paymentId" to result.paymentId,
+                    ),
+                )
+            }
         }
     }
     authorizePermission("orders_delete") {

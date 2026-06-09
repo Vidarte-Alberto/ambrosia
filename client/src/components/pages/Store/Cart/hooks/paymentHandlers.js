@@ -1,6 +1,20 @@
 import { addToast } from "@heroui/react";
 
+import {
+  markCheckoutCompleted,
+  registerBtcCheckoutSync,
+  savePendingCheckout,
+} from "@/lib/btcCheckoutStore";
+
 import { processCheckout } from "./paymentFlows";
+
+function getPaymentMethodType(paymentMethodData) {
+  const name = (paymentMethodData?.name || "").toLowerCase();
+  if (name.includes("btc")) return "btc";
+  if (name.includes("cash") || name.includes("efectivo")) return "cash";
+  if (name.includes("credit") || name.includes("debit") || name.includes("card")) return "card";
+  return "generic";
+}
 
 function buildInvoiceDescription(items = []) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -63,9 +77,9 @@ export function buildHandlePay({
       const currencyId = currency.id;
       const paymentAmounts = normalizeAmounts({ subtotal, discount, discountAmount, total, formatAmount });
       const paymentMethodData = paymentMethodMap[selectedPaymentMethod] || null;
-      const methodName = (paymentMethodData?.name || "").toLowerCase();
+      const methodType = getPaymentMethodType(paymentMethodData);
 
-      if (methodName.includes("btc")) {
+      if (methodType === "btc") {
         const currencyData = await getPaymentCurrencyById(currencyId);
         const currencyAcronym = (
           currencyData?.acronym ||
@@ -87,11 +101,12 @@ export function buildHandlePay({
           invoiceDescription,
           selectedPaymentMethod,
           currencyId,
+          userId: user.userId,
         });
         return;
       }
 
-      if (methodName.includes("cash") || methodName.includes("efectivo")) {
+      if (methodType === "cash") {
         setCashPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
@@ -103,11 +118,7 @@ export function buildHandlePay({
         return;
       }
 
-      if (
-        methodName.includes("credit") ||
-        methodName.includes("debit") ||
-        methodName.includes("card")
-      ) {
+      if (methodType === "card") {
         setCardPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
@@ -152,6 +163,29 @@ export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
   return (data) => {
     setBtcPaymentConfig((prev) => {
       if (!prev) return prev;
+
+      if (data?.invoice?.paymentHash) {
+        const checkoutPayload = {
+          paymentHash: data.invoice.paymentHash,
+          userId: prev.userId,
+          items: (prev.cartItems || []).map((item) => ({
+            productId: String(item?.id ?? ""),
+            quantity: Number(item?.quantity) || 0,
+            priceAtOrder: Number(item?.price) || 0,
+          })),
+          paymentMethodId: prev.selectedPaymentMethod,
+          currencyId: prev.currencyId,
+          amount: prev.amountFiat,
+          transactionId: data.invoice.serialized || "",
+          satoshiAmount: data.satoshis ?? null,
+          exchangeRateAtPayment: data.exchangeRate ?? null,
+          exchangeRateCurrency: prev.currencyAcronym ?? null,
+          fiatAmountAtPayment: prev.amountFiat ?? null,
+        };
+        savePendingCheckout({ paymentHash: data.invoice.paymentHash, checkoutPayload }).catch(() => {});
+        registerBtcCheckoutSync().catch(() => {});
+      }
+
       return { ...prev, invoiceData: data };
     });
   };
@@ -193,6 +227,8 @@ export function buildHandleBtcComplete({
         fiatAmountAtPayment: btcPaymentConfig.amountFiat ?? null,
         t,
       });
+
+      await markCheckoutCompleted(data?.invoice?.paymentHash, storeCheckoutResult).catch(() => {});
 
       await refreshShiftTickets?.();
       await printCustomerReceipt?.({

@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useMemo, useReducer, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
@@ -7,6 +7,12 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useTurn } from "@/hooks/turn/useTurn";
+import {
+  deleteCheckout,
+  getCompletedCheckouts,
+  getPendingCheckouts,
+  markCheckoutCompleted,
+} from "@/lib/btcCheckoutStore";
 
 import { usePayments } from "../../hooks/usePayments";
 import { usePrinters } from "../../hooks/usePrinter";
@@ -49,6 +55,44 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const clearPaymentError = useCallback(() => dispatch({ type: "clearError" }), []);
 
   const notifyError = useMemo(() => createErrorNotifier(dispatch), [dispatch]);
+
+  useEffect(() => {
+    async function recoverBtcCheckouts() {
+      try {
+        const completedEntries = await getCompletedCheckouts();
+        for (const entry of completedEntries) {
+          addToast({ color: "success", description: t("success.btcRecovered") });
+          await deleteCheckout(entry.paymentHash).catch(() => {});
+        }
+
+        const pendingEntries = await getPendingCheckouts();
+        for (const entry of pendingEntries) {
+          try {
+            const response = await fetch("/api/payments/sync-checkout", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(entry.checkoutPayload),
+            });
+            if (response.ok) {
+              const result = await response.json().catch(() => null);
+              if (result?.status === "completed") {
+                await markCheckoutCompleted(entry.paymentHash, result).catch(() => {});
+                addToast({ color: "success", description: t("success.btcRecovered") });
+                await deleteCheckout(entry.paymentHash).catch(() => {});
+              }
+            }
+          } catch {
+            // Network error — will retry on next mount
+          }
+        }
+      } catch {
+        // IndexedDB unavailable (e.g. private browsing) — skip silently
+      }
+    }
+
+    recoverBtcCheckouts();
+  }, [t]);
 
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}),

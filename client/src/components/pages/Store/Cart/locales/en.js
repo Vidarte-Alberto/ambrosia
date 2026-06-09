@@ -53,6 +53,7 @@ const cartEn = {
         btcPaid: "Bitcoin payment marked as completed",
         cashPaid: "Cash payment registered successfully",
         cardPaid: "Card payment registered successfully",
+        btcRecovered: "A pending Bitcoin payment was completed in the background",
       },
       receipt: {
         tableName: "Counter",
