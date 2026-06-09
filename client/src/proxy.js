@@ -86,11 +86,11 @@ export default async function proxy(request) {
   const csp = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""};
-    style-src-elem 'self' 'nonce-${nonce}';
+    style-src-elem 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`};
     style-src-attr 'unsafe-inline';
     img-src 'self' blob: data:;
     font-src 'self';
-    connect-src 'self' ws: wss:;
+    connect-src 'self' ws: wss: https://api.coingecko.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
