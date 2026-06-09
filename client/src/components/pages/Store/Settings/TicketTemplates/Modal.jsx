@@ -18,7 +18,7 @@ import { sampleTicket } from "./TicketElements";
 const PRINTER_TYPES = ["CUSTOMER"];
 
 export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }) {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const {
     templates,
     createTemplate,
@@ -80,10 +80,10 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           setSelectedId(created.id);
         }
       }
-      addToast({ color: "success", description: t("templates.saveSuccess") });
+      addToast({ color: "success", description: settingsTranslations("templates.saveSuccess") });
     } catch (error) {
       console.error("Failed to save template:", error);
-      addToast({ color: "danger", description: t("templates.saveError") });
+      addToast({ color: "danger", description: settingsTranslations("templates.saveError") });
     } finally {
       setSaving(false);
     }
@@ -103,8 +103,8 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
     } catch (err) {
       console.error("Error printing test ticket:", err);
       addToast({
-        title: t("templates.printErrorTitle"),
-        description: t("templates.printErrorDescription"),
+        title: settingsTranslations("templates.printErrorTitle"),
+        description: settingsTranslations("templates.printErrorDescription"),
         color: "danger",
       });
     } finally {
@@ -145,7 +145,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
       }}
     >
       <ModalContent>
-        <ModalHeader>{t("templates.title")}</ModalHeader>
+        <ModalHeader>{settingsTranslations("templates.title")}</ModalHeader>
         <ModalBody>
           <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
             <TicketTemplatesEditor
@@ -161,7 +161,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
               onElementReorder={(newArray) => setElements(newArray)}
               onElementRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
               config={config}
-              t={t}
+              t={settingsTranslations}
             />
 
             <TemplatePreview
@@ -173,7 +173,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
               onPrintTest={handlePrintTest}
               printing={printing}
               templateExists={templateExists}
-              t={t}
+              t={settingsTranslations}
             />
           </div>
         </ModalBody>
@@ -186,7 +186,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           onSave={handleSave}
           saving={saving}
           name={name}
-          t={t}
+          t={settingsTranslations}
         />
       </ModalContent>
     </Modal>
