@@ -18,7 +18,7 @@ import { sampleTicket } from "./TicketElements";
 const PRINTER_TYPES = ["CUSTOMER"];
 
 export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }) {
-  const settingsTranslations = useTranslations("settings");
+  const t = useTranslations("settings");
   const {
     templates,
     createTemplate,
@@ -80,10 +80,10 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           setSelectedId(created.id);
         }
       }
-      addToast({ color: "success", description: settingsTranslations("templates.saveSuccess") });
+      addToast({ color: "success", description: t("templates.saveSuccess") });
     } catch (error) {
       console.error("Failed to save template:", error);
-      addToast({ color: "danger", description: settingsTranslations("templates.saveError") });
+      addToast({ color: "danger", description: t("templates.saveError") });
     } finally {
       setSaving(false);
     }
@@ -103,8 +103,8 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
     } catch (err) {
       console.error("Error printing test ticket:", err);
       addToast({
-        title: settingsTranslations("templates.printErrorTitle"),
-        description: settingsTranslations("templates.printErrorDescription"),
+        title: t("templates.printErrorTitle"),
+        description: t("templates.printErrorDescription"),
         color: "danger",
       });
     } finally {
@@ -124,7 +124,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
       await deleteTemplate(selectedId);
       resetForm();
     } catch (error) {
-        console.error("Failed to delete template:", error);
+      console.error("Failed to delete template:", error);
     } finally {
       setDeleting(false);
     }
@@ -145,7 +145,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
       }}
     >
       <ModalContent>
-        <ModalHeader>{settingsTranslations("templates.title")}</ModalHeader>
+        <ModalHeader>{t("templates.title")}</ModalHeader>
         <ModalBody>
           <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
             <TicketTemplatesEditor
@@ -161,7 +161,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
               onElementReorder={(newArray) => setElements(newArray)}
               onElementRemove={(id) => setElements((prev) => prev.filter((el) => el.localId !== id))}
               config={config}
-              settingsTranslations={settingsTranslations}
+              t={t}
             />
 
             <TemplatePreview
@@ -173,7 +173,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
               onPrintTest={handlePrintTest}
               printing={printing}
               templateExists={templateExists}
-              settingsTranslations={settingsTranslations}
+              t={t}
             />
           </div>
         </ModalBody>
@@ -186,7 +186,7 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
           onSave={handleSave}
           saving={saving}
           name={name}
-          settingsTranslations={settingsTranslations}
+          t={t}
         />
       </ModalContent>
     </Modal>

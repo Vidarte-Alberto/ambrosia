@@ -13,24 +13,24 @@ export function TemplatePreview({
   onPrintTest,
   printing,
   templateExists,
-  settingsTranslations,
+  t,
 }) {
   return (
     <div className="w-full lg:flex-1 lg:sticky lg:top-0">
       <div className="flex flex-col">
         <h3 className="text-base sm:text-lg font-semibold text-green-900">
-          {settingsTranslations("templates.previewTitle")}
+          {t("templates.previewTitle")}
         </h3>
         <div className="mt-4 flex items-end gap-2">
           <Select
             className="flex-1"
-            label={settingsTranslations("templates.printTypeLabel")}
+            label={t("templates.printTypeLabel")}
             selectedKeys={printerType ? [printerType] : []}
             onChange={onPrinterTypeChange}
           >
             {printerTypes.map((type) => (
               <SelectItem key={type} value={type}>
-                {settingsTranslations(`cardPrinters.types.${type}`)}
+                {t(`cardPrinters.types.${type}`)}
               </SelectItem>
             ))}
           </Select>
@@ -39,7 +39,7 @@ export function TemplatePreview({
             onPress={onPrintTest}
             isDisabled={!templateExists || printing}
           >
-            {printing ? settingsTranslations("templates.printing") : settingsTranslations("templates.printTest")}
+            {printing ? t("templates.printing") : t("templates.printTest")}
           </Button>
         </div>
       </div>
@@ -50,7 +50,7 @@ export function TemplatePreview({
         </div>
         {!hasVisibleContent(elements) && (
           <p className="text-sm text-gray-400 italic text-center py-4">
-            {settingsTranslations("templates.previewEmpty")}
+            {t("templates.previewEmpty")}
           </p>
         )}
       </div>

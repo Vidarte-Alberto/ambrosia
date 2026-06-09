@@ -11,7 +11,7 @@ import { useTemplates } from "../../hooks/useTemplates";
 import { PrintersCard } from "./PrintersCard";
 
 export function Printers() {
-  const settingsTranslations = useTranslations("settings");
+  const t = useTranslations("settings");
   const {
     availablePrinters,
     printerConfigs,
@@ -79,9 +79,9 @@ export function Printers() {
       setTemplateName(templates?.[0]?.name ?? "");
       setIsDefault(false);
       setEnabled(true);
-      addToast({ description: settingsTranslations("cardPrinters.saveSuccess"), color: "success" });
-    } catch (error) {
-      addToast({ description: settingsTranslations("cardPrinters.saveError"), color: "danger" });
+      addToast({ description: t("cardPrinters.saveSuccess"), color: "success" });
+    } catch {
+      addToast({ description: t("cardPrinters.saveError"), color: "danger" });
     } finally {
       setSaving(false);
     }
@@ -90,27 +90,27 @@ export function Printers() {
   const handleUpdate = async (id, data) => {
     try {
       await updatePrinterConfig(id, data);
-      addToast({ description: settingsTranslations("cardPrinters.updateSuccess"), color: "success" });
-    } catch (error) {
-      addToast({ description: settingsTranslations("cardPrinters.updateError"), color: "danger" });
+      addToast({ description: t("cardPrinters.updateSuccess"), color: "success" });
+    } catch {
+      addToast({ description: t("cardPrinters.updateError"), color: "danger" });
     }
   };
 
   const handleDelete = async (id) => {
     try {
       await deletePrinterConfig(id);
-      addToast({ description: settingsTranslations("cardPrinters.deleteSuccess"), color: "success" });
-    } catch (error) {
-      addToast({ description: settingsTranslations("cardPrinters.deleteError"), color: "danger" });
+      addToast({ description: t("cardPrinters.deleteSuccess"), color: "success" });
+    } catch {
+      addToast({ description: t("cardPrinters.deleteError"), color: "danger" });
     }
   };
 
   const handleSetDefault = async (id) => {
     try {
       await setDefaultPrinterConfig(id);
-      addToast({ description: settingsTranslations("cardPrinters.updateSuccess"), color: "success" });
-    } catch (error) {
-      addToast({ description: settingsTranslations("cardPrinters.updateError"), color: "danger" });
+      addToast({ description: t("cardPrinters.updateSuccess"), color: "success" });
+    } catch {
+      addToast({ description: t("cardPrinters.updateError"), color: "danger" });
     }
   };
 
@@ -125,7 +125,8 @@ export function Printers() {
   const printerData = { availablePrinters, configRows, templates };
   const printerLoading = { available: loadingAvailable, configs: loadingConfigs, templates: loadingTemplates };
   const printerState = {
-    error, saving,
+    error,
+    saving,
     onAdd: handleAdd,
     onUpdateConfig: handleUpdate,
     onDeleteConfig: handleDelete,
