@@ -20,13 +20,13 @@ export default async function proxy(request) {
   let needsBusinessType = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
-    const url = new URL("/api/initial-setup", request.url);
+    const initialSetupUrl = new URL("/api/initial-setup", request.url);
 
-    const res = await fetch(url, { headers });
-    if (res.ok) {
-      const data = await res.json();
-      initialized = data?.initialized;
-      needsBusinessType = data?.needsBusinessType === true;
+    const setupResponse = await fetch(initialSetupUrl, { headers });
+    if (setupResponse.ok) {
+      const setupData = await setupResponse.json();
+      initialized = setupData?.initialized;
+      needsBusinessType = setupData?.needsBusinessType === true;
     }
   } catch (error) {
     console.error(error);
@@ -56,13 +56,13 @@ export default async function proxy(request) {
   let shouldClearBusinessTypeCookie = false;
   try {
     const headers = { cookie: request.headers.get("cookie") || "" };
-    const configUrl = new URL("/api/config", request.url);
-    const res = await fetch(configUrl, { headers });
-    if (res.ok) {
-      const data = await res.json();
-      const bt = data?.businessType;
-      if (bt === "store" || bt === "restaurant") {
-        businessType = bt;
+    const configurationUrl = new URL("/api/config", request.url);
+    const configResponse = await fetch(configurationUrl, { headers });
+    if (configResponse.ok) {
+      const configData = await configResponse.json();
+      const fetchedBusinessType = configData?.businessType;
+      if (fetchedBusinessType === "store" || fetchedBusinessType === "restaurant") {
+        businessType = fetchedBusinessType;
       } else {
         shouldClearBusinessTypeCookie = true;
       }
@@ -81,12 +81,12 @@ export default async function proxy(request) {
   }
 
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const isDev = process.env.NODE_ENV === "development";
+  const isDevelopment = process.env.NODE_ENV === "development";
 
-  const csp = `
+  const contentSecurityPolicy = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""};
-    style-src-elem 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`};
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDevelopment ? " 'unsafe-eval'" : ""};
+    style-src-elem 'self' ${isDevelopment ? "'unsafe-inline'" : `'nonce-${nonce}'`};
     style-src-attr 'unsafe-inline';
     img-src 'self' blob: data:;
     font-src 'self';
@@ -100,18 +100,18 @@ export default async function proxy(request) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
 
-  const next = NextResponse.next({ request: { headers: requestHeaders } });
-  next.headers.set("Content-Security-Policy", csp);
+  const nextResponse = NextResponse.next({ request: { headers: requestHeaders } });
+  nextResponse.headers.set("Content-Security-Policy", contentSecurityPolicy);
 
   if (businessType) {
-    next.headers.set("x-business-type", businessType);
-    next.cookies.set("businessType", businessType, { path: "/" });
+    nextResponse.headers.set("x-business-type", businessType);
+    nextResponse.cookies.set("businessType", businessType, { path: "/" });
   } else if (shouldClearBusinessTypeCookie) {
-    next.cookies.set("businessType", "", { path: "/", maxAge: 0 });
+    nextResponse.cookies.set("businessType", "", { path: "/", maxAge: 0 });
   }
-  return next;
+  return nextResponse;
 }
 
 export const config = {
