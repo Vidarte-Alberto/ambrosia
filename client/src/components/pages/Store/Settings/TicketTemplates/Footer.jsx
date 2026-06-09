@@ -12,7 +12,7 @@ export function TicketTemplatesFooter({
   onSave,
   saving,
   name,
-  t,
+  settingsTranslations,
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -23,15 +23,15 @@ export function TicketTemplatesFooter({
           confirmDelete ? (
             <>
               <Button size="sm" color="danger" onPress={onDelete} isDisabled={deleting}>
-                {t("templates.confirmDelete")}
+                {settingsTranslations("templates.confirmDelete")}
               </Button>
               <Button size="sm" variant="light" onPress={() => setConfirmDelete(false)}>
-                {t("templates.cancelDelete")}
+                {settingsTranslations("templates.cancelDelete")}
               </Button>
             </>
           ) : (
             <Button color="danger" variant="bordered" onPress={() => setConfirmDelete(true)}>
-              {t("templates.deleteTemplate")}
+              {settingsTranslations("templates.deleteTemplate")}
             </Button>
           )
         )}
@@ -42,7 +42,7 @@ export function TicketTemplatesFooter({
           className="border border-border text-foreground hover:bg-muted transition-colors"
           onPress={onClose}
         >
-          {t("templates.close")}
+          {settingsTranslations("templates.close")}
         </Button>
         <Button
           color="primary"
@@ -50,7 +50,7 @@ export function TicketTemplatesFooter({
           onPress={onSave}
           isDisabled={saving || !name.trim()}
         >
-          {selectedId ? t("templates.saveChanges") : t("templates.saveNew")}
+          {selectedId ? settingsTranslations("templates.saveChanges") : settingsTranslations("templates.saveNew")}
         </Button>
       </div>
     </ModalFooter>
