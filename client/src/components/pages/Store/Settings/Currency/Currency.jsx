@@ -26,15 +26,15 @@ export function Currency() {
     try {
       await updateCurrency({ acronym: newCurrencyAcronym });
       addToast({
-        title: settingsTranslations("cardCurrency.successTitle") || "Currency Updated",
+        title: settingsTranslations("cardCurrency.successTitle") || "Success",
         description: settingsTranslations("cardCurrency.successDescription") || `Currency changed to ${newCurrencyAcronym}`,
         color: "success",
       });
     } catch (error) {
       console.error("Failed to update currency:", error);
       addToast({
-        title: "Error",
-        description: "Failed to update currency",
+        title: settingsTranslations("cardCurrency.errorTitle") || "Error",
+        description: settingsTranslations("cardCurrency.errorDescription") || "Failed to update currency",
         color: "danger",
       });
     }

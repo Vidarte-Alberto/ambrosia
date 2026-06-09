@@ -28,9 +28,9 @@ export function CurrencyCard({ selectedCurrency, currencies, onCurrencyChange })
           }}
           defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
         >
-          {currencies.map((c) => (
-            <AutocompleteItem key={c.code} textValue={`${c.code} - ${c.name}`}>
-              {`${c.code}  -  ${c.name}`}
+          {currencies.map((currency) => (
+            <AutocompleteItem key={currency.code} textValue={`${currency.code} - ${currency.name}`}>
+              {`${currency.code}  -  ${currency.name}`}
             </AutocompleteItem>
           ))}
         </Autocomplete>
