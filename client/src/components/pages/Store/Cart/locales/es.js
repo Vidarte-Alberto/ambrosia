@@ -11,7 +11,7 @@ const cartEs = {
       add: "Agregar",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
-      showProductDescription: "Descripción",
+      showProductDescription: "Descripcion",
       errors: {
         unknownCategory: "Categoría desconocida",
       },
@@ -53,7 +53,6 @@ const cartEs = {
         btcPaid: "Pago con Bitcoin marcado como completado",
         cashPaid: "Pago en efectivo registrado correctamente",
         cardPaid: "Pago con tarjeta registrado correctamente",
-        btcRecovered: "Un pago de Bitcoin pendiente fue completado en segundo plano",
       },
       receipt: {
         tableName: "Caja",

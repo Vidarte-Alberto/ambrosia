@@ -1,11 +1,5 @@
 import { httpWrapper } from "./httpWrapper";
 
-function dispatchAuthEvent(name) {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event(name));
-  }
-}
-
 let refreshPromise = null;
 
 async function refreshToken() {
@@ -32,7 +26,7 @@ export async function httpClient(endpoint, options = {}) {
     const refreshResponse = await refreshToken();
 
     if (refreshResponse.status === 401) {
-      dispatchAuthEvent("auth:expired");
+      window.dispatchEvent(new Event("auth:expired"));
       return response;
     }
     return await httpWrapper(endpoint, httpOptions);
@@ -40,10 +34,10 @@ export async function httpClient(endpoint, options = {}) {
 
   if (response.status === 401 && !skipRefresh) {
     const event = endpoint.startsWith("/wallet") ? "wallet:unauthorized" : "auth:expired";
-    dispatchAuthEvent(event);
+    window.dispatchEvent(new Event(event));
   }
   if (response.status === 403 && !skipRefresh)
-    dispatchAuthEvent("auth:forbidden");
+    window.dispatchEvent(new Event("auth:forbidden"));
 
   return response;
 }
