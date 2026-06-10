@@ -332,4 +332,40 @@ class CheckoutServiceTest {
             assertEquals(false, result) // Assert
         }
     }
+
+    @Test
+    fun `findCheckoutByPaymentHash returns null when no payment matches the hash`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(contains("FROM payments p"))).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
+            whenever(mockResultSet.next()).thenReturn(false) // Arrange
+            val service = CheckoutService(mockConnection) // Arrange
+            val result = service.findCheckoutByPaymentHash("unknown-hash") // Act
+            assertNull(result) // Assert
+        }
+    }
+
+    @Test
+    fun `findCheckoutByPaymentHash returns existing checkout details when a payment matches`() {
+        runBlocking {
+            whenever(mockConnection.prepareStatement(contains("FROM payments p"))).thenReturn(mockStatement) // Arrange
+            whenever(mockStatement.executeQuery()).thenReturn(mockResultSet) // Arrange
+            whenever(mockResultSet.next()).thenReturn(true) // Arrange
+            whenever(mockResultSet.getString("paymentId")).thenReturn("payment-1") // Arrange
+            whenever(mockResultSet.getString("ticketId")).thenReturn("ticket-1") // Arrange
+            whenever(mockResultSet.getString("orderId")).thenReturn("order-1") // Arrange
+            val service = CheckoutService(mockConnection) // Arrange
+            val result = service.findCheckoutByPaymentHash("known-hash") // Act
+            assertEquals(
+                mapOf(
+                    "status" to "completed",
+                    "paymentId" to "payment-1",
+                    "ticketId" to "ticket-1",
+                    "orderId" to "order-1",
+                ),
+                result,
+            ) // Assert
+            verify(mockStatement).setString(1, "known-hash") // Assert
+        }
+    }
 }

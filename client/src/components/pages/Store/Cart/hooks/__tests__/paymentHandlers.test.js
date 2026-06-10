@@ -1,5 +1,11 @@
 import { addToast } from "@heroui/react";
 
+import {
+  markCheckoutCompleted,
+  registerBtcCheckoutSync,
+  savePendingCheckout,
+} from "@/lib/btcCheckoutStore";
+
 import { processCheckout } from "../paymentFlows";
 import {
   buildHandlePay,
@@ -13,6 +19,12 @@ jest.mock("@heroui/react", () => ({
   addToast: jest.fn(),
 }));
 
+jest.mock("@/lib/btcCheckoutStore", () => ({
+  savePendingCheckout: jest.fn(() => Promise.resolve()),
+  registerBtcCheckoutSync: jest.fn(() => Promise.resolve()),
+  markCheckoutCompleted: jest.fn(() => Promise.resolve()),
+}));
+
 jest.mock("../paymentFlows", () => ({
   processCheckout: jest.fn(),
 }));
@@ -23,6 +35,9 @@ describe("paymentHandlers", () => {
   beforeEach(() => {
     addToast.mockClear();
     processCheckout.mockReset();
+    savePendingCheckout.mockClear();
+    registerBtcCheckoutSync.mockClear();
+    markCheckoutCompleted.mockClear();
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -209,6 +224,90 @@ describe("paymentHandlers", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "stop" });
   });
 
+  it("configures cash payment when method name is 'efectivo'", async () => {
+    const setCashPaymentConfig = jest.fn();
+    const dispatch = jest.fn();
+
+    const handlePay = buildHandlePay({
+      t,
+      currency: { id: "cur-1" },
+      formatAmount: jest.fn(() => 100),
+      paymentMethodMap: { efectivo: { id: "efectivo", name: "Efectivo" } },
+      getPaymentCurrencyById: jest.fn(),
+      setBtcPaymentConfig: jest.fn(),
+      setCashPaymentConfig,
+      setCardPaymentConfig: jest.fn(),
+      onResetCart: jest.fn(),
+      onPay: jest.fn(),
+      notifyError: jest.fn(),
+      dispatch,
+      user: { userId: "u1" },
+      ensureCartReady: jest.fn(),
+      normalizeAmounts: jest.fn(() => ({
+        amountFiat: 1,
+        displayTotal: 100,
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+      })),
+    });
+
+    await handlePay({
+      items: [{ id: 1 }],
+      subtotal: 100,
+      total: 100,
+      selectedPaymentMethod: "efectivo",
+    });
+
+    expect(setCashPaymentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ selectedPaymentMethod: "efectivo" }),
+    );
+    expect(processCheckout).not.toHaveBeenCalled();
+  });
+
+  it("configures card payment when method name includes 'debit'", async () => {
+    const setCardPaymentConfig = jest.fn();
+    const dispatch = jest.fn();
+
+    const handlePay = buildHandlePay({
+      t,
+      currency: { id: "cur-1" },
+      formatAmount: jest.fn(() => 100),
+      paymentMethodMap: { debit: { id: "debit", name: "Debit Card" } },
+      getPaymentCurrencyById: jest.fn(),
+      setBtcPaymentConfig: jest.fn(),
+      setCashPaymentConfig: jest.fn(),
+      setCardPaymentConfig,
+      onResetCart: jest.fn(),
+      onPay: jest.fn(),
+      notifyError: jest.fn(),
+      dispatch,
+      user: { userId: "u1" },
+      ensureCartReady: jest.fn(),
+      normalizeAmounts: jest.fn(() => ({
+        amountFiat: 1,
+        displayTotal: 100,
+        subtotal: 100,
+        discount: 0,
+        discountAmount: 0,
+        total: 100,
+      })),
+    });
+
+    await handlePay({
+      items: [{ id: 1 }],
+      subtotal: 100,
+      total: 100,
+      selectedPaymentMethod: "debit",
+    });
+
+    expect(setCardPaymentConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ selectedPaymentMethod: "debit", methodLabel: "Debit Card" }),
+    );
+    expect(processCheckout).not.toHaveBeenCalled();
+  });
+
   it("notifies error when base payment processing fails", async () => {
     const notifyError = jest.fn();
     const dispatch = jest.fn();
@@ -263,6 +362,58 @@ describe("paymentHandlers", () => {
     expect(captured.invoiceData).toEqual(
       expect.objectContaining({ exchangeRate: 50000, satoshis: 20000 }),
     );
+  });
+
+  it("saves a pending checkout and registers sync when the invoice has a paymentHash", () => {
+    let captured = {
+      userId: "user-1",
+      cartItems: [{ id: "prod-1", quantity: 2, price: 500 }],
+      selectedPaymentMethod: "btc",
+      currencyId: "cur-1",
+      amountFiat: 10,
+      currencyAcronym: "mxn",
+    };
+    const setBtcPaymentConfig = jest.fn((fn) => {
+      captured = fn(captured);
+    });
+    const handle = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
+
+    handle({
+      invoice: { serialized: "ln-invoice", paymentHash: "hash-1" },
+      satoshis: 20000,
+      exchangeRate: 50000,
+    });
+
+    expect(savePendingCheckout).toHaveBeenCalledWith({
+      paymentHash: "hash-1",
+      checkoutPayload: expect.objectContaining({
+        paymentHash: "hash-1",
+        userId: "user-1",
+        items: [{ productId: "prod-1", quantity: 2, priceAtOrder: 500 }],
+        paymentMethodId: "btc",
+        currencyId: "cur-1",
+        amount: 10,
+        transactionId: "ln-invoice",
+        satoshiAmount: 20000,
+        exchangeRateAtPayment: 50000,
+        exchangeRateCurrency: "mxn",
+        fiatAmountAtPayment: 10,
+      }),
+    });
+    expect(registerBtcCheckoutSync).toHaveBeenCalled();
+  });
+
+  it("does not persist a pending checkout when the invoice has no paymentHash", () => {
+    let captured = { userId: "user-1", cartItems: [{ id: "prod-1", quantity: 1, price: 500 }] };
+    const setBtcPaymentConfig = jest.fn((fn) => {
+      captured = fn(captured);
+    });
+    const handle = buildHandleBtcInvoiceReady({ setBtcPaymentConfig });
+
+    handle({ invoice: { serialized: "ln-invoice" }, satoshis: 20000 });
+
+    expect(savePendingCheckout).not.toHaveBeenCalled();
+    expect(registerBtcCheckoutSync).not.toHaveBeenCalled();
   });
 
   it("returns early when BTC config is missing", async () => {
@@ -336,6 +487,39 @@ describe("paymentHandlers", () => {
       color: "success",
       description: "success.btcPaid",
     });
+  });
+
+  it("marks the recovery store entry completed on BTC payment success", async () => {
+    const setBtcPaymentConfig = jest.fn((fn) => fn({ paymentCompleted: false }));
+    const checkoutResult = { orderId: "order-1", ticketId: "ticket-1", paymentId: "pay-1" };
+
+    processCheckout.mockResolvedValueOnce(checkoutResult);
+
+    const handler = buildHandleBtcComplete({
+      btcPaymentConfig: {
+        amountFiat: 1,
+        selectedPaymentMethod: "btc",
+        currencyId: "cur-1",
+        cartItems: [{ id: 1 }],
+        subtotal: 1,
+        discount: 0,
+        discountAmount: 0,
+        total: 1,
+        invoiceData: { exchangeRate: 50000, satoshis: 20000 },
+      },
+      dispatch: jest.fn(),
+      onPay: jest.fn(),
+      onResetCart: jest.fn(),
+      notifyError: jest.fn(),
+      t,
+      user: { userId: "u1" },
+      setBtcPaymentConfig,
+      printCustomerReceipt: jest.fn(() => Promise.resolve()),
+    });
+
+    await handler({ invoice: { serialized: "ln", paymentHash: "hash-1" }, satoshis: 20000 });
+
+    expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-1", checkoutResult);
   });
 
   it("notifies error when BTC payment fails", async () => {
