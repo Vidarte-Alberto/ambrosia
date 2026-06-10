@@ -13,6 +13,7 @@ import {
   getPendingCheckouts,
   markCheckoutCompleted,
 } from "@/lib/btcCheckoutStore";
+import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { usePayments } from "../../hooks/usePayments";
 import { usePrinters } from "../../hooks/usePrinter";
@@ -68,19 +69,16 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
         const pendingEntries = await getPendingCheckouts();
         for (const entry of pendingEntries) {
           try {
-            const response = await fetch("/api/payments/sync-checkout", {
+            const response = await httpClient("store/orders/checkout-if-paid", {
               method: "POST",
-              credentials: "include",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(entry.checkoutPayload),
             });
-            if (response.ok) {
-              const result = await response.json().catch(() => null);
-              if (result?.status === "completed") {
-                await markCheckoutCompleted(entry.paymentHash, result).catch(() => {});
-                addToast({ color: "success", description: t("success.btcRecovered") });
-                await deleteCheckout(entry.paymentHash).catch(() => {});
-              }
+            const result = await parseJsonResponse(response);
+            if (response.ok && result?.status === "completed") {
+              await markCheckoutCompleted(entry.paymentHash, result).catch(() => {});
+              addToast({ color: "success", description: t("success.btcRecovered") });
+              await deleteCheckout(entry.paymentHash).catch(() => {});
             }
           } catch {
             // Network error — will retry on next mount

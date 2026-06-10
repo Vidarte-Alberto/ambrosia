@@ -74,7 +74,7 @@ async function recoverPendingCheckouts() {
 
   for (const entry of pending) {
     try {
-      const response = await httpClient("payments/sync-checkout", {
+      const response = await httpClient("store/orders/checkout-if-paid", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(entry.checkoutPayload),
