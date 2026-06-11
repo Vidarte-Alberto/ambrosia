@@ -2,8 +2,9 @@ package pos.ambrosia.utest
 
 import io.ktor.server.application.ApplicationEnvironment
 import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.mockito.ArgumentMatchers.anyString
-import org.mockito.ArgumentMatchers.contains
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -11,7 +12,9 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import pos.ambrosia.models.Role
 import pos.ambrosia.services.RolesService
+import pos.ambrosia.util.ExposedTestDb
 import pos.ambrosia.utils.LastAdminRemovalException
+import java.io.File
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -28,6 +31,17 @@ class RoleServiceTest {
     private val mockStatement: PreparedStatement = mock()
     private val mockResultSet: ResultSet = mock()
     private val mockEnv: ApplicationEnvironment = mock()
+    private lateinit var dbFile: File
+
+    @Before
+    fun setUp() {
+        dbFile = ExposedTestDb.connect()
+    }
+
+    @After
+    fun tearDown() {
+        ExposedTestDb.cleanup(dbFile)
+    }
 
     @Test
     fun `addRole returns null if role name is blank`() {
@@ -109,35 +123,21 @@ class RoleServiceTest {
     @Test
     fun `deleteRole unassigns users and returns true on success`() {
         runBlocking {
-            val roleId = "role-1"
-            val roleStateStatement: PreparedStatement = mock()
-            val roleStateResult: ResultSet = mock()
-            val countAdminsByRoleStatement: PreparedStatement = mock()
-            val countAdminsByRoleResult: ResultSet = mock()
-            val countAdminsStatement: PreparedStatement = mock()
-            val countAdminsResult: ResultSet = mock()
+            val roleId = ExposedTestDb.seedRole("Cashier", isAdmin = false)
             val unassignStatement: PreparedStatement = mock()
+            val unassignResult: ResultSet = mock()
             val deleteStatement: PreparedStatement = mock()
+            val deleteResult: ResultSet = mock()
             whenever(mockConnection.prepareStatement(anyString())).thenAnswer { invocation ->
                 when {
-                    invocation.getArgument<String>(0).contains("SELECT isAdmin") -> roleStateStatement
-                    invocation.getArgument<String>(0).contains("AND u.role_id = ?") -> countAdminsByRoleStatement
-                    invocation.getArgument<String>(0).contains("JOIN roles r ON u.role_id = r.id") -> countAdminsStatement
                     invocation.getArgument<String>(0).contains("UPDATE users SET role_id = NULL") -> unassignStatement
                     invocation.getArgument<String>(0).contains("UPDATE roles SET role") -> deleteStatement
                     else -> mock()
                 }
             }
-            whenever(roleStateStatement.executeQuery()).thenReturn(roleStateResult)
-            whenever(roleStateResult.next()).thenReturn(true)
-            whenever(roleStateResult.getBoolean("isAdmin")).thenReturn(false)
-            whenever(countAdminsByRoleStatement.executeQuery()).thenReturn(countAdminsByRoleResult)
-            whenever(countAdminsByRoleResult.next()).thenReturn(true)
-            whenever(countAdminsByRoleResult.getLong(1)).thenReturn(0L)
-            whenever(countAdminsStatement.executeQuery()).thenReturn(countAdminsResult)
-            whenever(countAdminsResult.next()).thenReturn(true)
-            whenever(countAdminsResult.getLong(1)).thenReturn(2L)
+            whenever(unassignStatement.executeQuery()).thenReturn(unassignResult)
             whenever(unassignStatement.executeUpdate()).thenReturn(1)
+            whenever(deleteStatement.executeQuery()).thenReturn(deleteResult)
             whenever(deleteStatement.executeUpdate()).thenReturn(1)
             val service = RolesService(mockEnv, mockConnection)
             val result = service.deleteRole(roleId)
@@ -149,22 +149,24 @@ class RoleServiceTest {
     @Test
     fun `deleteRole returns false when role not found`() {
         runBlocking {
-            val roleId = "not-found-role"
-            val roleStateStatement: PreparedStatement = mock()
-            val roleStateResult: ResultSet = mock()
+            val roleId =
+                java.util.UUID
+                    .randomUUID()
+                    .toString()
             val unassignStatement: PreparedStatement = mock()
+            val unassignResult: ResultSet = mock()
             val deleteStatement: PreparedStatement = mock()
+            val deleteResult: ResultSet = mock()
             whenever(mockConnection.prepareStatement(anyString())).thenAnswer { invocation ->
                 when {
-                    invocation.getArgument<String>(0).contains("SELECT isAdmin") -> roleStateStatement
                     invocation.getArgument<String>(0).contains("UPDATE users SET role_id = NULL") -> unassignStatement
                     invocation.getArgument<String>(0).contains("UPDATE roles SET role") -> deleteStatement
                     else -> mock()
                 }
             }
-            whenever(roleStateStatement.executeQuery()).thenReturn(roleStateResult)
-            whenever(roleStateResult.next()).thenReturn(false)
+            whenever(unassignStatement.executeQuery()).thenReturn(unassignResult)
             whenever(unassignStatement.executeUpdate()).thenReturn(0)
+            whenever(deleteStatement.executeQuery()).thenReturn(deleteResult)
             whenever(deleteStatement.executeUpdate()).thenReturn(0)
             val service = RolesService(mockEnv, mockConnection)
             val result = service.deleteRole(roleId)
@@ -175,40 +177,22 @@ class RoleServiceTest {
     @Test
     fun `deleteRole blocks deleting last admin role in use`() {
         runBlocking {
-            val roleStateStatement: PreparedStatement = mock()
-            val roleStateResult: ResultSet = mock()
-            val countAdminsByRoleStatement: PreparedStatement = mock()
-            val countAdminsByRoleResult: ResultSet = mock()
-            val countAdminsStatement: PreparedStatement = mock()
-            val countAdminsResult: ResultSet = mock()
+            val roleId = ExposedTestDb.seedRole("Admin", isAdmin = true)
+            ExposedTestDb.seedUser("admin-user", roleId = roleId)
+
             val unassignStatement: PreparedStatement = mock()
 
             whenever(mockConnection.prepareStatement(anyString())).thenAnswer { invocation ->
                 when {
-                    invocation.getArgument<String>(0).contains("SELECT isAdmin") -> roleStateStatement
-                    invocation.getArgument<String>(0).contains("AND u.role_id = ?") -> countAdminsByRoleStatement
-                    invocation.getArgument<String>(0).contains("JOIN roles r ON u.role_id = r.id") -> countAdminsStatement
                     invocation.getArgument<String>(0).contains("UPDATE users SET role_id = NULL") -> unassignStatement
                     else -> mock()
                 }
             }
 
-            whenever(roleStateStatement.executeQuery()).thenReturn(roleStateResult)
-            whenever(roleStateResult.next()).thenReturn(true)
-            whenever(roleStateResult.getBoolean("isAdmin")).thenReturn(true)
-
-            whenever(countAdminsByRoleStatement.executeQuery()).thenReturn(countAdminsByRoleResult)
-            whenever(countAdminsByRoleResult.next()).thenReturn(true)
-            whenever(countAdminsByRoleResult.getLong(1)).thenReturn(1L)
-
-            whenever(countAdminsStatement.executeQuery()).thenReturn(countAdminsResult)
-            whenever(countAdminsResult.next()).thenReturn(true)
-            whenever(countAdminsResult.getLong(1)).thenReturn(1L)
-
             val service = RolesService(mockEnv, mockConnection)
 
             assertFailsWith<LastAdminRemovalException> {
-                service.deleteRole("admin-role")
+                service.deleteRole(roleId)
             }
             verify(unassignStatement, never()).executeUpdate()
         }
@@ -217,21 +201,15 @@ class RoleServiceTest {
     @Test
     fun `updateRole blocks removing admin from last admin role in use`() {
         runBlocking {
+            val roleId = ExposedTestDb.seedRole("Admin", isAdmin = true)
+            ExposedTestDb.seedUser("admin-user", roleId = roleId)
+
             val roleExistsStatement: PreparedStatement = mock()
             val roleExistsResult: ResultSet = mock()
-            val roleStateStatement: PreparedStatement = mock()
-            val roleStateResult: ResultSet = mock()
-            val countAdminsByRoleStatement: PreparedStatement = mock()
-            val countAdminsByRoleResult: ResultSet = mock()
-            val countAdminsStatement: PreparedStatement = mock()
-            val countAdminsResult: ResultSet = mock()
 
             whenever(mockConnection.prepareStatement(anyString())).thenAnswer { invocation ->
                 when {
                     invocation.getArgument<String>(0).contains("SELECT id FROM roles WHERE role = ? AND id != ?") -> roleExistsStatement
-                    invocation.getArgument<String>(0).contains("SELECT isAdmin") -> roleStateStatement
-                    invocation.getArgument<String>(0).contains("AND u.role_id = ?") -> countAdminsByRoleStatement
-                    invocation.getArgument<String>(0).contains("JOIN roles r ON u.role_id = r.id") -> countAdminsStatement
                     else -> mock()
                 }
             }
@@ -239,22 +217,10 @@ class RoleServiceTest {
             whenever(roleExistsStatement.executeQuery()).thenReturn(roleExistsResult)
             whenever(roleExistsResult.next()).thenReturn(false)
 
-            whenever(roleStateStatement.executeQuery()).thenReturn(roleStateResult)
-            whenever(roleStateResult.next()).thenReturn(true)
-            whenever(roleStateResult.getBoolean("isAdmin")).thenReturn(true)
-
-            whenever(countAdminsByRoleStatement.executeQuery()).thenReturn(countAdminsByRoleResult)
-            whenever(countAdminsByRoleResult.next()).thenReturn(true)
-            whenever(countAdminsByRoleResult.getLong(1)).thenReturn(1L)
-
-            whenever(countAdminsStatement.executeQuery()).thenReturn(countAdminsResult)
-            whenever(countAdminsResult.next()).thenReturn(true)
-            whenever(countAdminsResult.getLong(1)).thenReturn(1L)
-
             val service = RolesService(mockEnv, mockConnection)
 
             assertFailsWith<LastAdminRemovalException> {
-                service.updateRole("admin-role", Role(role = "Cashier", isAdmin = false))
+                service.updateRole(roleId, Role(role = "Cashier", isAdmin = false))
             }
         }
     }

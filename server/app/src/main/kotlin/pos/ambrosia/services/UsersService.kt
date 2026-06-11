@@ -15,7 +15,7 @@ class UsersService(
     private val env: ApplicationEnvironment,
     private val connection: Connection,
 ) {
-    private val adminGuard = AdminGuardService(connection)
+    private val adminGuard = AdminGuardService()
 
     companion object {
         private const val ADD_USER =
