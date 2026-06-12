@@ -41,11 +41,19 @@ import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
 
+/**
+ * Minimal payment-verification surface consumed by [pos.ambrosia.services.CheckoutService].
+ * Extracted as an interface so checkout logic can be unit-tested without a real Phoenix node.
+ */
+interface PaymentVerifier {
+    suspend fun getIncomingPayment(paymentHash: String): IncomingPayment
+}
+
 /** Service for interacting with Phoenix Lightning node */
 class PhoenixService(
     app: ApplicationEnvironment,
     private val httpClient: HttpClient,
-) {
+) : PaymentVerifier {
     private data class PhoenixPaymentErrorResolution(
         val code: String,
         val statusCode: Int,
@@ -257,7 +265,7 @@ class PhoenixService(
     }
 
     /** Get a specific incoming payment by payment hash */
-    suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
+    override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
         try {
             val response: HttpResponse = httpClient.get("$phoenixdUrl/payments/incoming/$paymentHash")
             if (response.status.value != 200) {
