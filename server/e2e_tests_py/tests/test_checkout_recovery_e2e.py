@@ -1,4 +1,9 @@
-"""End-to-end tests for the BTC payment recovery checkout-if-paid endpoint."""
+"""End-to-end tests for the idempotent BTC checkout recovery flow.
+
+Covers GET /store/orders/payment-status/{hash} and the idempotent
+POST /store/orders/checkout used by both the foreground "payment complete"
+handler and the background recovery sync.
+"""
 
 import logging
 import uuid
@@ -35,8 +40,8 @@ def _checkout_payload(
     }
 
 
-class TestCheckoutIfPaid:
-    """Tests for POST /store/orders/checkout-if-paid."""
+class TestCheckoutRecovery:
+    """Tests for GET /store/orders/payment-status/{hash} and POST /store/orders/checkout."""
 
     @pytest.fixture
     async def user_id(self, admin_client):
@@ -93,71 +98,70 @@ class TestCheckoutIfPaid:
         await admin_client.delete(f"/products/{pid}")
 
     @pytest.mark.asyncio
-    async def test_checkout_if_paid_without_payment_hash_returns_400(
-        self, admin_client, user_id, method_id, currency_id
-    ):
-        """POST /store/orders/checkout-if-paid without paymentHash should return 400."""
-        payload = _checkout_payload(user_id, method_id, currency_id, payment_hash=None)
-
-        response = await admin_client.post(
-            "/store/orders/checkout-if-paid", json=payload
-        )
-
-        assert_status_code(response, 400, "Missing paymentHash should be rejected")
-        logger.info("✓ Missing paymentHash correctly rejected with 400")
-
-    @pytest.mark.asyncio
-    async def test_checkout_if_paid_with_unknown_payment_hash_returns_pending(
-        self, admin_client, user_id, method_id, currency_id
-    ):
-        """An unrecorded, unpaid paymentHash should return 202 pending without creating an order."""
+    async def test_payment_status_for_unknown_hash_returns_pending(self, admin_client):
+        """An unrecorded paymentHash should report status=pending without creating anything."""
         unknown_hash = f"unknown-{uuid.uuid4()}"
-        payload = _checkout_payload(
-            user_id, method_id, currency_id, payment_hash=unknown_hash
+
+        response = await admin_client.get(
+            f"/store/orders/payment-status/{unknown_hash}"
         )
 
-        response = await admin_client.post(
-            "/store/orders/checkout-if-paid", json=payload
-        )
-
-        assert_status_code(
-            response, 202, "Unknown unpaid paymentHash should return 202 pending"
-        )
+        assert_status_code(response, 200, "payment-status lookup should succeed")
         assert response.json()["status"] == "pending"
-        logger.info("✓ Unknown unpaid paymentHash correctly returns 202 pending")
+        logger.info("✓ Unknown paymentHash reports status=pending")
 
     @pytest.mark.asyncio
-    async def test_checkout_if_paid_returns_existing_checkout_without_duplicating(
+    async def test_checkout_with_unpaid_payment_hash_returns_pending_without_creating_order(
         self, admin_client, user_id, method_id, currency_id, product_id
     ):
-        """A paymentHash already recorded on a sale should be returned as-is (idempotent)."""
-        payment_hash = f"recovered-{uuid.uuid4()}"
+        """An unverifiable paymentHash should return 202 pending and leave stock untouched."""
+        unknown_hash = f"unknown-{uuid.uuid4()}"
         items = [{"productId": product_id, "quantity": 1, "priceAtOrder": 1000}]
 
-        checkout_response = await admin_client.post(
+        before_response = await admin_client.get(f"/products/{product_id}")
+        assert_status_code(
+            before_response, 200, "Failed to fetch product before checkout"
+        )
+        quantity_before = before_response.json()["quantity"]
+
+        response = await admin_client.post(
             "/store/orders/checkout",
             json=_checkout_payload(
-                user_id, method_id, currency_id, payment_hash, items=items
-            ),
-        )
-        assert_status_code(checkout_response, 201, "Failed to create initial checkout")
-        original = checkout_response.json()
-
-        recovery_response = await admin_client.post(
-            "/store/orders/checkout-if-paid",
-            json=_checkout_payload(
-                user_id, method_id, currency_id, payment_hash, items=items
+                user_id, method_id, currency_id, unknown_hash, items=items
             ),
         )
 
         assert_status_code(
-            recovery_response, 200, "Existing paymentHash should return 200"
+            response, 202, "Unpaid paymentHash should return 202 pending"
         )
-        recovered = recovery_response.json()
-        assert recovered["status"] == "completed"
-        assert recovered["orderId"] == original["orderId"]
-        assert recovered["ticketId"] == original["ticketId"]
-        assert recovered["paymentId"] == original["paymentId"]
-        logger.info(
-            "✓ Recovery for an existing paymentHash returns the original checkout, no duplicate"
+        assert response.json()["status"] == "pending"
+
+        after_response = await admin_client.get(f"/products/{product_id}")
+        assert_status_code(
+            after_response, 200, "Failed to fetch product after checkout"
         )
+        assert after_response.json()["quantity"] == quantity_before
+        logger.info("✓ Unpaid paymentHash returns 202 pending and does not touch stock")
+
+    @pytest.mark.asyncio
+    async def test_checkout_without_payment_hash_creates_separate_orders_each_time(
+        self, admin_client, user_id, method_id, currency_id, product_id
+    ):
+        """Cash/card checkouts (no paymentHash) are not deduplicated."""
+        items = [{"productId": product_id, "quantity": 1, "priceAtOrder": 1000}]
+        payload = _checkout_payload(
+            user_id, method_id, currency_id, payment_hash=None, items=items
+        )
+
+        first_response = await admin_client.post("/store/orders/checkout", json=payload)
+        assert_status_code(first_response, 201, "Failed to create first cash checkout")
+
+        second_response = await admin_client.post(
+            "/store/orders/checkout", json=payload
+        )
+        assert_status_code(
+            second_response, 201, "Failed to create second cash checkout"
+        )
+
+        assert first_response.json()["orderId"] != second_response.json()["orderId"]
+        logger.info("✓ Checkouts without paymentHash are not deduplicated")
