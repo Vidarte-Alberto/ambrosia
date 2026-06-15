@@ -33,7 +33,7 @@ fun Application.configureInitialSetup() {
 
 private fun Route.initialSetupRoutes(connection: Connection) {
     get("") {
-        val configService = ConfigService(connection)
+        val configService = ConfigService()
         val config = configService.getConfig()
         val needsBusinessType = config != null && !config.businessTypeConfirmed
         call.respond(
@@ -45,7 +45,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
     post("") {
         val req = call.receive<InitialSetupRequest>()
 
-        val configService = ConfigService(connection)
+        val configService = ConfigService()
         val existingConfig = configService.getConfig()
         if (existingConfig != null) {
             if (!existingConfig.businessTypeConfirmed) {
@@ -101,7 +101,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
         val rolesService = RolesService(env, connection)
         val usersService = UsersService(env, connection)
         val permissionsService = PermissionsService()
-        val currencyService = CurrencyService(connection)
+        val currencyService = CurrencyService()
 
         val currency = currencyService.getByAcronym(businessCurrency)
         if (currency == null) {

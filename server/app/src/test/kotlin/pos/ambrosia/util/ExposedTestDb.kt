@@ -4,8 +4,12 @@ import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.BaseCurrencyTable
 import pos.ambrosia.db.tables.CategoriesTable
 import pos.ambrosia.db.tables.CategoryEntity
+import pos.ambrosia.db.tables.ConfigTable
+import pos.ambrosia.db.tables.CurrencyEntity
+import pos.ambrosia.db.tables.CurrencyTable
 import pos.ambrosia.db.tables.DishEntity
 import pos.ambrosia.db.tables.DishesTable
 import pos.ambrosia.db.tables.OrderEntity
@@ -18,6 +22,7 @@ import pos.ambrosia.db.tables.RolePermissionsTable
 import pos.ambrosia.db.tables.RolesTable
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.db.tables.UsersTable
+import pos.ambrosia.db.tables.WalletInvoiceRatesTable
 import java.io.File
 import java.util.UUID
 
@@ -37,6 +42,10 @@ object ExposedTestDb {
                 DishesTable,
                 OrdersTable,
                 OrdersDishesTable,
+                CurrencyTable,
+                BaseCurrencyTable,
+                ConfigTable,
+                WalletInvoiceRatesTable,
             )
         }
         return file
@@ -45,6 +54,10 @@ object ExposedTestDb {
     fun cleanup(file: File) {
         transaction {
             SchemaUtils.drop(
+                WalletInvoiceRatesTable,
+                ConfigTable,
+                BaseCurrencyTable,
+                CurrencyTable,
                 OrdersDishesTable,
                 OrdersTable,
                 DishesTable,
@@ -124,6 +137,25 @@ object ExposedTestDb {
                     this.name = name
                     this.description = description
                     this.enabled = enabled
+                }.id.value
+                .toString()
+        }
+
+    fun seedCurrency(
+        acronym: String,
+        name: String? = null,
+        symbol: String? = null,
+        countryName: String? = null,
+        countryCode: String? = null,
+    ): String =
+        transaction {
+            CurrencyEntity
+                .new(UUID.randomUUID()) {
+                    this.acronym = acronym
+                    this.name = name
+                    this.symbol = symbol
+                    this.countryName = countryName
+                    this.countryCode = countryCode
                 }.id.value
                 .toString()
         }

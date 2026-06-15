@@ -43,7 +43,7 @@ fun Application.configureWallet() {
     val phoenixService = PhoenixService(environment)
     val authService = AuthService(environment)
     val tokenService = TokenService(environment)
-    val walletRateService = WalletRateService(connection)
+    val walletRateService = WalletRateService()
     val paymentService = PaymentService(connection)
 
     routing { route("/wallet") { wallet(phoenixService, tokenService, authService, paymentService, walletRateService) } }

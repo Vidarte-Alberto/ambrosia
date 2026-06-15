@@ -30,7 +30,7 @@ fun Application.configurePrinters() {
     val ticketTemplateService = TicketTemplateService(connection)
     val printerConfigService = PrinterConfigService(connection)
     val printService = PrintService(ticketTemplateService, printerConfigService)
-    val configService = ConfigService(connection)
+    val configService = ConfigService()
     routing { route("/printers") { printers(printService, configService, printerConfigService) } }
 }
 
