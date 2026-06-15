@@ -98,7 +98,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
         val logoUrl = req.businessLogoUrl ?: req.businessLogo
 
         val env = call.application.environment
-        val rolesService = RolesService(env, connection)
+        val rolesService = RolesService(env)
         val usersService = UsersService(env, connection)
         val permissionsService = PermissionsService()
         val currencyService = CurrencyService()

@@ -14,6 +14,7 @@ import pos.ambrosia.db.tables.CurrencyTable
 import pos.ambrosia.db.tables.DiningTableEntity
 import pos.ambrosia.db.tables.DiningTablesTable
 import pos.ambrosia.db.tables.DishEntity
+import pos.ambrosia.db.tables.DishesIngredientsTable
 import pos.ambrosia.db.tables.DishesTable
 import pos.ambrosia.db.tables.IngredientEntity
 import pos.ambrosia.db.tables.IngredientSuppliersTable
@@ -28,9 +29,14 @@ import pos.ambrosia.db.tables.PaymentMethodsTable
 import pos.ambrosia.db.tables.PaymentsTable
 import pos.ambrosia.db.tables.PermissionEntity
 import pos.ambrosia.db.tables.PermissionsTable
+import pos.ambrosia.db.tables.ProductCategoriesTable
+import pos.ambrosia.db.tables.ProductEntity
+import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.db.tables.RoleEntity
 import pos.ambrosia.db.tables.RolePermissionsTable
 import pos.ambrosia.db.tables.RolesTable
+import pos.ambrosia.db.tables.ShiftEntity
+import pos.ambrosia.db.tables.ShiftsTable
 import pos.ambrosia.db.tables.SpaceEntity
 import pos.ambrosia.db.tables.SpacesTable
 import pos.ambrosia.db.tables.SupplierEntity
@@ -73,6 +79,10 @@ object ExposedTestDb {
                 PaymentsTable,
                 TicketsTable,
                 TicketPaymentsTable,
+                ProductsTable,
+                ProductCategoriesTable,
+                DishesIngredientsTable,
+                ShiftsTable,
             )
         }
         return file
@@ -81,6 +91,10 @@ object ExposedTestDb {
     fun cleanup(file: File) {
         transaction {
             SchemaUtils.drop(
+                ShiftsTable,
+                DishesIngredientsTable,
+                ProductCategoriesTable,
+                ProductsTable,
                 TicketPaymentsTable,
                 TicketsTable,
                 PaymentsTable,
@@ -352,6 +366,70 @@ object ExposedTestDb {
             TicketPaymentsTable.insert {
                 it[TicketPaymentsTable.paymentId] = EntityID(UUID.fromString(paymentId), PaymentsTable)
                 it[TicketPaymentsTable.ticketId] = EntityID(UUID.fromString(ticketId), TicketsTable)
+            }
+        }
+    }
+
+    fun seedProduct(
+        name: String = "Product",
+        costCents: Int = 100,
+        quantity: Int = 1,
+        priceCents: Int = 200,
+    ): String =
+        transaction {
+            ProductEntity
+                .new(UUID.randomUUID()) {
+                    this.name = name
+                    this.costCents = costCents
+                    this.quantity = quantity
+                    this.priceCents = priceCents
+                }.id.value
+                .toString()
+        }
+
+    fun seedProductCategory(
+        productId: String,
+        categoryId: String,
+    ) {
+        transaction {
+            ProductCategoriesTable.insert {
+                it[ProductCategoriesTable.productId] = EntityID(UUID.fromString(productId), ProductsTable)
+                it[ProductCategoriesTable.categoryId] = EntityID(UUID.fromString(categoryId), CategoriesTable)
+            }
+        }
+    }
+
+    fun seedShift(
+        userId: String,
+        shiftDate: String = "2024-01-01",
+        startTime: String = "08:00:00",
+        endTime: String? = null,
+        notes: String = "",
+        initialAmount: Double = 0.0,
+    ): String =
+        transaction {
+            ShiftEntity
+                .new(UUID.randomUUID()) {
+                    this.userId = EntityID(UUID.fromString(userId), UsersTable)
+                    this.shiftDate = shiftDate
+                    this.startTime = startTime
+                    this.endTime = endTime
+                    this.notes = notes
+                    this.initialAmount = initialAmount
+                }.id.value
+                .toString()
+        }
+
+    fun seedDishIngredient(
+        dishId: String,
+        ingredientId: String,
+        quantity: Double = 1.0,
+    ) {
+        transaction {
+            DishesIngredientsTable.insert {
+                it[DishesIngredientsTable.dishId] = EntityID(UUID.fromString(dishId), DishesTable)
+                it[DishesIngredientsTable.ingredientId] = EntityID(UUID.fromString(ingredientId), IngredientsTable)
+                it[DishesIngredientsTable.quantity] = quantity
             }
         }
     }
