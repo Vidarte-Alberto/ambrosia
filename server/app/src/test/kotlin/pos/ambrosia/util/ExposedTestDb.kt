@@ -29,6 +29,8 @@ import pos.ambrosia.db.tables.PaymentMethodsTable
 import pos.ambrosia.db.tables.PaymentsTable
 import pos.ambrosia.db.tables.PermissionEntity
 import pos.ambrosia.db.tables.PermissionsTable
+import pos.ambrosia.db.tables.PrinterConfigEntity
+import pos.ambrosia.db.tables.PrinterConfigsTable
 import pos.ambrosia.db.tables.ProductCategoriesTable
 import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.db.tables.ProductsTable
@@ -43,6 +45,10 @@ import pos.ambrosia.db.tables.SupplierEntity
 import pos.ambrosia.db.tables.SuppliersTable
 import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.db.tables.TicketPaymentsTable
+import pos.ambrosia.db.tables.TicketTemplateElementEntity
+import pos.ambrosia.db.tables.TicketTemplateElementsTable
+import pos.ambrosia.db.tables.TicketTemplateEntity
+import pos.ambrosia.db.tables.TicketTemplatesTable
 import pos.ambrosia.db.tables.TicketsTable
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.db.tables.UsersTable
@@ -83,6 +89,9 @@ object ExposedTestDb {
                 ProductCategoriesTable,
                 DishesIngredientsTable,
                 ShiftsTable,
+                PrinterConfigsTable,
+                TicketTemplatesTable,
+                TicketTemplateElementsTable,
             )
         }
         return file
@@ -91,6 +100,9 @@ object ExposedTestDb {
     fun cleanup(file: File) {
         transaction {
             SchemaUtils.drop(
+                TicketTemplateElementsTable,
+                TicketTemplatesTable,
+                PrinterConfigsTable,
                 ShiftsTable,
                 DishesIngredientsTable,
                 ProductCategoriesTable,
@@ -372,17 +384,29 @@ object ExposedTestDb {
 
     fun seedProduct(
         name: String = "Product",
+        sku: String? = null,
+        description: String? = null,
+        imageUrl: String? = null,
         costCents: Int = 100,
         quantity: Int = 1,
+        minStockThreshold: Int = 0,
+        maxStockThreshold: Int = 0,
         priceCents: Int = 200,
+        isDeleted: Boolean = false,
     ): String =
         transaction {
             ProductEntity
                 .new(UUID.randomUUID()) {
                     this.name = name
+                    this.sku = sku
+                    this.description = description
+                    this.imageUrl = imageUrl
                     this.costCents = costCents
                     this.quantity = quantity
+                    this.minStockThreshold = minStockThreshold
+                    this.maxStockThreshold = maxStockThreshold
                     this.priceCents = priceCents
+                    this.isDeleted = isDeleted
                 }.id.value
                 .toString()
         }
@@ -430,6 +454,52 @@ object ExposedTestDb {
                 it[DishesIngredientsTable.dishId] = EntityID(UUID.fromString(dishId), DishesTable)
                 it[DishesIngredientsTable.ingredientId] = EntityID(UUID.fromString(ingredientId), IngredientsTable)
                 it[DishesIngredientsTable.quantity] = quantity
+            }
+        }
+    }
+
+    fun seedPrinterConfig(
+        printerType: String = "KITCHEN",
+        printerName: String = "Printer 1",
+        templateName: String? = null,
+        isDefault: Boolean = false,
+        enabled: Boolean = true,
+        createdAt: String = "2024-01-01T00:00:00",
+    ): String =
+        transaction {
+            PrinterConfigEntity
+                .new(UUID.randomUUID()) {
+                    this.printerType = printerType
+                    this.printerName = printerName
+                    this.templateName = templateName
+                    this.isDefault = isDefault
+                    this.enabled = enabled
+                    this.createdAt = createdAt
+                }.id.value
+                .toString()
+        }
+
+    fun seedTicketTemplate(name: String = "Template"): String =
+        transaction {
+            TicketTemplateEntity
+                .new(UUID.randomUUID()) {
+                    this.name = name
+                }.id.value
+                .toString()
+        }
+
+    fun seedTicketTemplateElement(
+        templateId: String,
+        order: Int = 0,
+        type: String = "TEXT",
+        value: String = "Hello",
+    ) {
+        transaction {
+            TicketTemplateElementEntity.new(UUID.randomUUID()) {
+                this.templateId = EntityID(UUID.fromString(templateId), TicketTemplatesTable)
+                this.elementOrder = order
+                this.type = type
+                this.value = value
             }
         }
     }
