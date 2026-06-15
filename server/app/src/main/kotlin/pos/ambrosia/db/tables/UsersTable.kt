@@ -7,7 +7,7 @@ import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
 object UsersTable : SQLiteUUIDTable("users") {
-    val name = varchar("name", 255)
+    val name = varchar("name", 255).uniqueIndex()
     val pin = varchar("pin", 255)
     val refreshToken = varchar("refresh_token", 1000).nullable()
     val walletToken = varchar("wallet_token", 1000).nullable()

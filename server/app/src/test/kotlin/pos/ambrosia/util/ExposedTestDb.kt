@@ -1,6 +1,8 @@
 package pos.ambrosia.util
 
+import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -50,6 +52,7 @@ import pos.ambrosia.db.tables.TicketTemplateElementEntity
 import pos.ambrosia.db.tables.TicketTemplateElementsTable
 import pos.ambrosia.db.tables.TicketTemplateEntity
 import pos.ambrosia.db.tables.TicketTemplatesTable
+import pos.ambrosia.db.tables.TicketsDishTable
 import pos.ambrosia.db.tables.TicketsTable
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.db.tables.UsersTable
@@ -85,6 +88,7 @@ object ExposedTestDb {
                 PaymentMethodsTable,
                 PaymentsTable,
                 TicketsTable,
+                TicketsDishTable,
                 TicketPaymentsTable,
                 ProductsTable,
                 ProductCategoriesTable,
@@ -111,6 +115,7 @@ object ExposedTestDb {
                 ProductCategoriesTable,
                 ProductsTable,
                 TicketPaymentsTable,
+                TicketsDishTable,
                 TicketsTable,
                 PaymentsTable,
                 PaymentMethodsTable,
@@ -142,11 +147,17 @@ object ExposedTestDb {
     ): String =
         transaction {
             RoleEntity
-                .new(UUID.randomUUID()) {
-                    this.role = role
-                    this.isAdmin = isAdmin
-                }.id.value
-                .toString()
+                .find { RolesTable.role eq role }
+                .firstOrNull()
+                ?.id
+                ?.value
+                ?.toString()
+                ?: RoleEntity
+                    .new(UUID.randomUUID()) {
+                        this.role = role
+                        this.isAdmin = isAdmin
+                    }.id.value
+                    .toString()
         }
 
     fun seedUser(
@@ -155,12 +166,18 @@ object ExposedTestDb {
     ): String =
         transaction {
             UserEntity
-                .new(UUID.randomUUID()) {
-                    this.name = name
-                    this.pin = "****"
-                    this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
-                }.id.value
-                .toString()
+                .find { UsersTable.name eq name }
+                .firstOrNull()
+                ?.id
+                ?.value
+                ?.toString()
+                ?: UserEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = name
+                        this.pin = "****"
+                        this.roleId = roleId?.let { EntityID(UUID.fromString(it), RolesTable) }
+                    }.id.value
+                    .toString()
         }
 
     fun seedCategory(
@@ -169,11 +186,17 @@ object ExposedTestDb {
     ): String =
         transaction {
             CategoryEntity
-                .new(UUID.randomUUID()) {
-                    this.name = name
-                    this.type = type
-                }.id.value
-                .toString()
+                .find { (CategoriesTable.type eq type) and (CategoriesTable.name eq name) }
+                .firstOrNull()
+                ?.id
+                ?.value
+                ?.toString()
+                ?: CategoryEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = name
+                        this.type = type
+                    }.id.value
+                    .toString()
         }
 
     fun seedDish(
@@ -215,14 +238,20 @@ object ExposedTestDb {
     ): String =
         transaction {
             CurrencyEntity
-                .new(UUID.randomUUID()) {
-                    this.acronym = acronym
-                    this.name = name
-                    this.symbol = symbol
-                    this.countryName = countryName
-                    this.countryCode = countryCode
-                }.id.value
-                .toString()
+                .find { CurrencyTable.acronym eq acronym }
+                .firstOrNull()
+                ?.id
+                ?.value
+                ?.toString()
+                ?: CurrencyEntity
+                    .new(UUID.randomUUID()) {
+                        this.acronym = acronym
+                        this.name = name
+                        this.symbol = symbol
+                        this.countryName = countryName
+                        this.countryCode = countryCode
+                    }.id.value
+                    .toString()
         }
 
     fun seedSpace(name: String = "Patio"): String =
@@ -352,10 +381,16 @@ object ExposedTestDb {
     fun seedPaymentMethod(name: String = "Cash"): String =
         transaction {
             PaymentMethodEntity
-                .new(UUID.randomUUID()) {
-                    this.name = name
-                }.id.value
-                .toString()
+                .find { PaymentMethodsTable.name eq name }
+                .firstOrNull()
+                ?.id
+                ?.value
+                ?.toString()
+                ?: PaymentMethodEntity
+                    .new(UUID.randomUUID()) {
+                        this.name = name
+                    }.id.value
+                    .toString()
         }
 
     fun seedPayment(

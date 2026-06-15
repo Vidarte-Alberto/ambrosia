@@ -13,6 +13,10 @@ object PrinterConfigsTable : SQLiteUUIDTable("printer_configs") {
     val isDefault = bool("is_default").default(false)
     val enabled = bool("enabled").default(true)
     val createdAt = varchar("created_at", 50)
+
+    init {
+        uniqueIndex(printerType, printerName)
+    }
 }
 
 class PrinterConfigEntity(id: EntityID<UUID>) : UUIDEntity(id) {

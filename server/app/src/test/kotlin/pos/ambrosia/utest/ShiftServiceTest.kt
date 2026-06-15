@@ -119,7 +119,7 @@ class ShiftServiceTest {
     fun `getShiftsByUser returns shifts when found`() {
         runBlocking {
             val userId = seedUser()
-            val otherUserId = seedUser()
+            val otherUserId = ExposedTestDb.seedUser("Bob", ExposedTestDb.seedRole("admin", isAdmin = true))
             val shiftId = ExposedTestDb.seedShift(userId, shiftDate = "2024-01-01", endTime = "2pm")
             ExposedTestDb.seedShift(otherUserId, shiftDate = "2024-01-01", endTime = "2pm")
 

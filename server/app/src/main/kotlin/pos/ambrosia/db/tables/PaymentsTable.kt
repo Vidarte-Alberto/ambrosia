@@ -8,7 +8,7 @@ import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
 object CurrencyTable : SQLiteUUIDTable("currency") {
-    val acronym = varchar("acronym", 3)
+    val acronym = varchar("acronym", 3).uniqueIndex()
     val name = varchar("name", 255).nullable()
     val symbol = varchar("symbol", 10).nullable()
     val countryName = varchar("country_name", 255).nullable()
@@ -26,7 +26,7 @@ class CurrencyEntity(id: EntityID<UUID>) : UUIDEntity(id) {
 }
 
 object PaymentMethodsTable : SQLiteUUIDTable("payment_methods") {
-    val name = varchar("name", 255)
+    val name = varchar("name", 255).uniqueIndex()
 }
 
 class PaymentMethodEntity(id: EntityID<UUID>) : UUIDEntity(id) {
@@ -43,7 +43,7 @@ object PaymentsTable : SQLiteUUIDTable("payments") {
     val date = varchar("date", 50)
     val satoshiAmount = long("satoshi_amount").nullable()
     val exchangeRateAtPayment = double("exchange_rate_at_payment").nullable()
-    val paymentHash = text("payment_hash").nullable()
+    val paymentHash = text("payment_hash").nullable().uniqueIndex()
     val exchangeRateCurrency = varchar("exchange_rate_currency", 10).nullable()
     val fiatAmountAtPayment = double("fiat_amount_at_payment").nullable()
 }

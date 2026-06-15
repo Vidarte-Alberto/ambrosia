@@ -8,7 +8,7 @@ import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
 object RolesTable : SQLiteUUIDTable("roles") {
-    val role = varchar("role", 255)
+    val role = varchar("role", 255).uniqueIndex()
     val password = varchar("password", 255).nullable()
     val isAdmin = bool("isAdmin").default(false)
     val isDeleted = bool("is_deleted").default(false)
@@ -24,7 +24,7 @@ class RoleEntity(id: EntityID<UUID>) : UUIDEntity(id) {
 }
 
 object PermissionsTable : SQLiteUUIDTable("permissions") {
-    val name = varchar("name", 255)
+    val name = varchar("name", 255).uniqueIndex()
     val description = text("description").nullable()
     val enabled = bool("enabled").default(true)
 }

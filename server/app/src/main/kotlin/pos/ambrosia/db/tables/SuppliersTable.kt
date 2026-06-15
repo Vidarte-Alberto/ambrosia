@@ -8,7 +8,7 @@ import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
 object SuppliersTable : SQLiteUUIDTable("suppliers") {
-    val name = varchar("name", 255)
+    val name = varchar("name", 255).uniqueIndex()
     val contact = varchar("contact", 255).nullable()
     val phone = varchar("phone", 50).nullable()
     val email = varchar("email", 255).nullable()

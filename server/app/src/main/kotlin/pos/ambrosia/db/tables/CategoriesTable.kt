@@ -10,6 +10,10 @@ object CategoriesTable : SQLiteUUIDTable("categories") {
     val name = varchar("name", 255)
     val type = varchar("type", 20)
     val isDeleted = bool("is_deleted").default(false)
+
+    init {
+        uniqueIndex(type, name)
+    }
 }
 
 class CategoryEntity(id: EntityID<UUID>) : UUIDEntity(id) {

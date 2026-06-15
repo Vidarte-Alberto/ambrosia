@@ -8,7 +8,7 @@ import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
 object ProductsTable : SQLiteUUIDTable("products") {
-    val sku = varchar("SKU", 255).nullable()
+    val sku = varchar("SKU", 255).nullable().uniqueIndex()
     val name = varchar("name", 255)
     val description = text("description").nullable()
     val imageUrl = text("image_url").nullable()

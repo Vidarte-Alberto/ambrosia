@@ -7,7 +7,7 @@ import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
 import java.util.UUID
 
 object TicketTemplatesTable : SQLiteUUIDTable("ticket_templates") {
-    val name = varchar("name", 255)
+    val name = varchar("name", 255).uniqueIndex()
 }
 
 class TicketTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id) {
