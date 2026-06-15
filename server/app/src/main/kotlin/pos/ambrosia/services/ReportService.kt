@@ -1,5 +1,8 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.jdbc.statements.jdbc.JdbcConnectionImpl
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.logger
 import pos.ambrosia.models.OrderWithPayment
 import pos.ambrosia.models.OrderWithPaymentFilters
@@ -12,9 +15,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneOffset
 
-class ReportService(
-    private val connection: Connection,
-) {
+class ReportService {
     companion object {
         private const val GET_PRODUCT_SALES_BASE =
             """
@@ -77,6 +78,8 @@ class ReportService(
             "total" to "o.total",
         )
     private val validSortOrders = setOf("asc", "desc")
+
+    private fun currentConnection(): Connection = (TransactionManager.current().connection as JdbcConnectionImpl).connection
 
     private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
 
@@ -188,7 +191,7 @@ class ReportService(
         productName: String?,
         userId: String?,
         paymentMethod: String?,
-    ): ProductSalesReport {
+    ): ProductSalesReport = transaction {
         val dateRange = resolveDateRange(period, startDate, endDate)
 
         val whereClauses = mutableListOf<String>()
@@ -224,7 +227,7 @@ class ReportService(
             }
 
         val sales = mutableListOf<ProductSaleItem>()
-        connection.prepareStatement(query).use { statement ->
+        currentConnection().prepareStatement(query).use { statement ->
             bindQueryParameters(statement, parameters)
             statement.executeQuery().use { resultSet ->
                 while (resultSet.next()) {
@@ -241,7 +244,7 @@ class ReportService(
                 .distinctBy { it.paymentId }
                 .sumOf { it.satoshiAmount!! }
 
-        return ProductSalesReport(
+        ProductSalesReport(
             totalRevenueCents = sales.sumOf { it.priceAtOrder.toLong() * it.quantity },
             totalItemsSold = sales.sumOf { it.quantity },
             sales = sales,
@@ -251,7 +254,7 @@ class ReportService(
 
     suspend fun getOrdersWithPayments(): List<OrderWithPayment> = getOrdersWithPaymentsFiltered()
 
-    suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> {
+    suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> = transaction {
         validateOrdersWithPaymentFilters(filters)
 
         val whereClauses = mutableListOf<String>()
@@ -321,30 +324,31 @@ class ReportService(
                 append(orderDirection)
             }
 
-        val statement = connection.prepareStatement(query)
-        bindQueryParameters(statement, parameters)
-
-        val resultSet = statement.executeQuery()
         val orders = mutableListOf<OrderWithPayment>()
-        while (resultSet.next()) {
-            orders.add(mapResultSetToOrderWithPayment(resultSet))
+        currentConnection().prepareStatement(query).use { statement ->
+            bindQueryParameters(statement, parameters)
+            statement.executeQuery().use { resultSet ->
+                while (resultSet.next()) {
+                    orders.add(mapResultSetToOrderWithPayment(resultSet))
+                }
+            }
         }
         logger.info("Retrieved ${orders.size} orders with payments using filters: $filters")
-        return orders
+        orders
     }
 
-    suspend fun getTotalSalesByDate(date: String): Double {
-        val statement = connection.prepareStatement(GET_TOTAL_SALES_BY_DATE)
-        statement.setString(1, date)
-        val resultSet = statement.executeQuery()
-        val total =
-            if (resultSet.next()) {
-                resultSet.getDouble("total_sales")
-            } else {
-                0.0
+    suspend fun getTotalSalesByDate(date: String): Double = transaction {
+        var total = 0.0
+        currentConnection().prepareStatement(GET_TOTAL_SALES_BY_DATE).use { statement ->
+            statement.setString(1, date)
+            statement.executeQuery().use { resultSet ->
+                if (resultSet.next()) {
+                    total = resultSet.getDouble("total_sales")
+                }
             }
+        }
 
         logger.info("Total sales for $date: $total")
-        return total
+        total
     }
 }

@@ -21,6 +21,7 @@ import pos.ambrosia.db.tables.IngredientSuppliersTable
 import pos.ambrosia.db.tables.IngredientsTable
 import pos.ambrosia.db.tables.OrderDishEntity
 import pos.ambrosia.db.tables.OrderEntity
+import pos.ambrosia.db.tables.OrderProductsTable
 import pos.ambrosia.db.tables.OrdersDishesTable
 import pos.ambrosia.db.tables.OrdersTable
 import pos.ambrosia.db.tables.PaymentEntity
@@ -92,6 +93,7 @@ object ExposedTestDb {
                 PrinterConfigsTable,
                 TicketTemplatesTable,
                 TicketTemplateElementsTable,
+                OrderProductsTable,
             )
         }
         return file
@@ -100,6 +102,7 @@ object ExposedTestDb {
     fun cleanup(file: File) {
         transaction {
             SchemaUtils.drop(
+                OrderProductsTable,
                 TicketTemplateElementsTable,
                 TicketTemplatesTable,
                 PrinterConfigsTable,
@@ -311,15 +314,40 @@ object ExposedTestDb {
         }
     }
 
-    fun seedOrder(userId: String): String =
+    fun seedOrder(
+        userId: String,
+        createdAt: String = "2024-01-01T00:00:00",
+        status: String = "open",
+        total: Double = 0.0,
+        tableId: String? = null,
+    ): String =
         transaction {
             OrderEntity
                 .new(UUID.randomUUID()) {
                     this.userId = EntityID(UUID.fromString(userId), UsersTable)
-                    this.createdAt = "2024-01-01T00:00:00"
+                    this.createdAt = createdAt
+                    this.status = status
+                    this.total = total
+                    this.tableId = tableId
                 }.id.value
                 .toString()
         }
+
+    fun seedOrderProduct(
+        orderId: String,
+        productId: String,
+        quantity: Int = 1,
+        priceAtOrder: Int,
+    ) {
+        transaction {
+            OrderProductsTable.insert {
+                it[OrderProductsTable.orderId] = EntityID(UUID.fromString(orderId), OrdersTable)
+                it[OrderProductsTable.productId] = EntityID(UUID.fromString(productId), ProductsTable)
+                it[OrderProductsTable.quantity] = quantity
+                it[OrderProductsTable.priceAtOrder] = priceAtOrder
+            }
+        }
+    }
 
     fun seedPaymentMethod(name: String = "Cash"): String =
         transaction {
@@ -336,6 +364,7 @@ object ExposedTestDb {
         transactionId: String = "txn-1",
         amount: Double = 10.0,
         paymentHash: String? = null,
+        satoshiAmount: Long? = null,
         exchangeRateAtPayment: Double? = null,
         exchangeRateCurrency: String? = null,
         fiatAmountAtPayment: Double? = null,
@@ -349,6 +378,7 @@ object ExposedTestDb {
                     this.amount = amount
                     this.date = "2024-01-01T00:00:00"
                     this.paymentHash = paymentHash
+                    this.satoshiAmount = satoshiAmount
                     this.exchangeRateAtPayment = exchangeRateAtPayment
                     this.exchangeRateCurrency = exchangeRateCurrency
                     this.fiatAmountAtPayment = fiatAmountAtPayment

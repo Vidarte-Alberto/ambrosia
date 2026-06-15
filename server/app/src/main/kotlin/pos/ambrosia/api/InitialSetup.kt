@@ -99,7 +99,7 @@ private fun Route.initialSetupRoutes(connection: Connection) {
 
         val env = call.application.environment
         val rolesService = RolesService(env)
-        val usersService = UsersService(env, connection)
+        val usersService = UsersService(env)
         val permissionsService = PermissionsService()
         val currencyService = CurrencyService()
 
