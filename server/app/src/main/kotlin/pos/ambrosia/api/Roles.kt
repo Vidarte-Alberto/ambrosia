@@ -24,7 +24,7 @@ import java.sql.Connection
 fun Application.configureRoles() {
     val connection: Connection = DatabaseConnection.getConnection()
     val roleService = RolesService(environment, connection)
-    val permissionsService = PermissionsService(environment, connection)
+    val permissionsService = PermissionsService()
     routing { route("/roles") { roles(roleService, permissionsService) } }
 }
 

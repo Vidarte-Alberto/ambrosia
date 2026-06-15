@@ -11,7 +11,10 @@ import pos.ambrosia.db.tables.DishesTable
 import pos.ambrosia.db.tables.OrderEntity
 import pos.ambrosia.db.tables.OrdersDishesTable
 import pos.ambrosia.db.tables.OrdersTable
+import pos.ambrosia.db.tables.PermissionEntity
+import pos.ambrosia.db.tables.PermissionsTable
 import pos.ambrosia.db.tables.RoleEntity
+import pos.ambrosia.db.tables.RolePermissionsTable
 import pos.ambrosia.db.tables.RolesTable
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.db.tables.UsersTable
@@ -25,14 +28,32 @@ object ExposedTestDb {
         file.deleteOnExit()
         Database.connect("jdbc:sqlite:${file.absolutePath}", driver = "org.sqlite.JDBC")
         transaction {
-            SchemaUtils.create(UsersTable, RolesTable, CategoriesTable, DishesTable, OrdersTable, OrdersDishesTable)
+            SchemaUtils.create(
+                UsersTable,
+                RolesTable,
+                PermissionsTable,
+                RolePermissionsTable,
+                CategoriesTable,
+                DishesTable,
+                OrdersTable,
+                OrdersDishesTable,
+            )
         }
         return file
     }
 
     fun cleanup(file: File) {
         transaction {
-            SchemaUtils.drop(OrdersDishesTable, OrdersTable, DishesTable, CategoriesTable, UsersTable, RolesTable)
+            SchemaUtils.drop(
+                OrdersDishesTable,
+                OrdersTable,
+                DishesTable,
+                CategoriesTable,
+                RolePermissionsTable,
+                PermissionsTable,
+                UsersTable,
+                RolesTable,
+            )
         }
         file.delete()
     }
@@ -88,6 +109,21 @@ object ExposedTestDb {
                     this.name = name
                     this.price = price
                     this.categoryId = EntityID(UUID.fromString(categoryId), CategoriesTable)
+                }.id.value
+                .toString()
+        }
+
+    fun seedPermission(
+        name: String,
+        description: String? = null,
+        enabled: Boolean = true,
+    ): String =
+        transaction {
+            PermissionEntity
+                .new(UUID.randomUUID()) {
+                    this.name = name
+                    this.description = description
+                    this.enabled = enabled
                 }.id.value
                 .toString()
         }

@@ -28,7 +28,7 @@ fun Application.configureUsers() {
     val connection: Connection = DatabaseConnection.getConnection()
     val userService = UsersService(environment, connection)
     val tokenService = TokenService(environment)
-    val permissionsService = PermissionsService(environment, connection)
+    val permissionsService = PermissionsService()
     routing { route("/users") { users(userService, tokenService, permissionsService) } }
 }
 
