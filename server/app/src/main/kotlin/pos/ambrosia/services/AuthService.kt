@@ -1,7 +1,8 @@
 package pos.ambrosia.services
 
 import io.ktor.server.application.ApplicationEnvironment
-import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.db.tables.RoleEntity
 import pos.ambrosia.db.tables.UserEntity
