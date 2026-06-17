@@ -52,7 +52,7 @@ class PaymentService {
 
     private fun currencyExists(currencyId: String): Boolean = CurrencyEntity.findById(UUID.fromString(currencyId)) != null
 
-    suspend fun getPaymentMethods(): List<PaymentMethod> =
+    fun getPaymentMethods(): List<PaymentMethod> =
         transaction {
             val paymentMethods =
                 PaymentMethodEntity.all().map { PaymentMethod(id = it.id.value.toString(), name = it.name) }
@@ -60,7 +60,7 @@ class PaymentService {
             paymentMethods
         }
 
-    suspend fun getPaymentMethodById(id: String): PaymentMethod? =
+    fun getPaymentMethodById(id: String): PaymentMethod? =
         transaction {
             val entity = PaymentMethodEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -71,14 +71,14 @@ class PaymentService {
             }
         }
 
-    suspend fun getCurrencies(): List<Currency> =
+    fun getCurrencies(): List<Currency> =
         transaction {
             val currencies = CurrencyEntity.all().map { toModel(it) }
             logger.info("Retrieved ${currencies.size} currencies")
             currencies
         }
 
-    suspend fun getCurrencyById(id: String): Currency? =
+    fun getCurrencyById(id: String): Currency? =
         transaction {
             val entity = CurrencyEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -89,7 +89,7 @@ class PaymentService {
             }
         }
 
-    suspend fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> =
+    fun getExchangeRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> =
         transaction {
             if (hashes.isEmpty()) return@transaction emptyMap()
 
@@ -106,7 +106,7 @@ class PaymentService {
                 }
         }
 
-    suspend fun addPayment(payment: Payment): String? =
+    fun addPayment(payment: Payment): String? =
         transaction {
             if (payment.methodId.isBlank() || payment.currencyId.isBlank()) {
                 logger.error("Method ID, currency ID and transaction ID are required fields")
@@ -137,14 +137,14 @@ class PaymentService {
             id
         }
 
-    suspend fun getPayments(): List<Payment> =
+    fun getPayments(): List<Payment> =
         transaction {
             val payments = PaymentEntity.all().map { toModel(it) }
             logger.info("Retrieved ${payments.size} payments")
             payments
         }
 
-    suspend fun getPaymentById(id: String): Payment? =
+    fun getPaymentById(id: String): Payment? =
         transaction {
             val entity = PaymentEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -155,7 +155,7 @@ class PaymentService {
             }
         }
 
-    suspend fun updatePayment(payment: Payment): Boolean =
+    fun updatePayment(payment: Payment): Boolean =
         transaction {
             if (payment.id == null) {
                 logger.error("Cannot update payment: ID is null")
@@ -191,7 +191,7 @@ class PaymentService {
             }
         }
 
-    suspend fun deletePayment(id: String): Boolean =
+    fun deletePayment(id: String): Boolean =
         transaction {
             if (paymentInUse(id)) {
                 logger.error("Cannot delete payment $id: it's being used in transactions")

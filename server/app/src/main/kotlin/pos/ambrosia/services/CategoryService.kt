@@ -35,7 +35,7 @@ class CategoryService {
                 }
             }.empty()
 
-    suspend fun addCategory(
+    fun addCategory(
         type: String,
         category: CategoryItem,
     ): String? =
@@ -55,7 +55,7 @@ class CategoryService {
             id
         }
 
-    suspend fun getCategories(type: String): List<CategoryItem>? =
+    fun getCategories(type: String): List<CategoryItem>? =
         transaction {
             if (!validateType(type)) return@transaction null
             CategoryEntity
@@ -63,7 +63,7 @@ class CategoryService {
                 .map { CategoryItem(id = it.id.value.toString(), name = it.name) }
         }
 
-    suspend fun getCategoryById(
+    fun getCategoryById(
         id: String,
         type: String,
     ): CategoryItem? =
@@ -77,7 +77,7 @@ class CategoryService {
             }
         }
 
-    suspend fun updateCategory(
+    fun updateCategory(
         type: String,
         category: CategoryItem,
     ): Boolean =
@@ -97,7 +97,7 @@ class CategoryService {
             }
         }
 
-    suspend fun deleteCategory(
+    fun deleteCategory(
         id: String,
         type: String,
     ): Boolean =

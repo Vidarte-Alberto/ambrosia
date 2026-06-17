@@ -55,7 +55,7 @@ class CheckoutService {
         )
     }
 
-    suspend fun getStoreOrders(status: String? = null): List<StoreOrder> =
+    fun getStoreOrders(status: String? = null): List<StoreOrder> =
         transaction {
             val baseCondition = (OrdersTable.isDeleted eq false) and OrdersTable.tableId.isNull()
             val condition = if (status != null) baseCondition and (OrdersTable.status eq status) else baseCondition
@@ -65,7 +65,7 @@ class CheckoutService {
                 .map { toStoreOrder(it) }
         }
 
-    suspend fun getStoreOrderById(id: String): StoreOrder? =
+    fun getStoreOrderById(id: String): StoreOrder? =
         transaction {
             OrderEntity
                 .findById(UUID.fromString(id))
@@ -73,7 +73,7 @@ class CheckoutService {
                 ?.let { toStoreOrder(it) }
         }
 
-    suspend fun cancelStoreOrder(id: String): Boolean =
+    fun cancelStoreOrder(id: String): Boolean =
         transaction {
             val entity = OrderEntity.findById(UUID.fromString(id))
             if (entity == null || entity.status != "open" || entity.tableId != null) {
@@ -85,7 +85,7 @@ class CheckoutService {
             }
         }
 
-    suspend fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? =
+    fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? =
         transaction {
             val payment = PaymentEntity.find { PaymentsTable.paymentHash eq paymentHash }.firstOrNull() ?: return@transaction null
             val ticketPayment =
@@ -102,7 +102,7 @@ class CheckoutService {
             )
         }
 
-    suspend fun checkout(request: StoreCheckoutRequest): StoreCheckoutResponse? {
+    fun checkout(request: StoreCheckoutRequest): StoreCheckoutResponse? {
         if (request.items.isEmpty()) return null
         if (request.items.any { it.quantity <= 0 }) return null
 

@@ -1,16 +1,18 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object TicketTemplatesTable : SQLiteUUIDTable("ticket_templates") {
     val name = varchar("name", 255).uniqueIndex()
 }
 
-class TicketTemplateEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class TicketTemplateEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<TicketTemplateEntity>(TicketTemplatesTable)
 
     var name by TicketTemplatesTable.name
@@ -26,7 +28,9 @@ object TicketTemplateElementsTable : SQLiteUUIDTable("ticket_template_elements")
     val styleFontSize = varchar("style_font_size", 15).default("NORMAL")
 }
 
-class TicketTemplateElementEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class TicketTemplateElementEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<TicketTemplateElementEntity>(TicketTemplateElementsTable)
 
     var templateId by TicketTemplateElementsTable.templateId

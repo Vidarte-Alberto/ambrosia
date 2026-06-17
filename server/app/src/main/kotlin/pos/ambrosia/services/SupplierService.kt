@@ -44,7 +44,7 @@ class SupplierService {
             .where { IngredientSuppliersTable.supplierId eq EntityID(UUID.fromString(supplierId), SuppliersTable) }
             .empty()
 
-    suspend fun addSupplier(supplier: Supplier): String? =
+    fun addSupplier(supplier: Supplier): String? =
         transaction {
             if (supplierNameExists(supplier.name)) {
                 logger.error("Supplier name already exists: ${supplier.name}")
@@ -65,14 +65,14 @@ class SupplierService {
             id
         }
 
-    suspend fun getSuppliers(): List<Supplier> =
+    fun getSuppliers(): List<Supplier> =
         transaction {
             val suppliers = SupplierEntity.find { SuppliersTable.isDeleted eq false }.map { toModel(it) }
             logger.info("Retrieved ${suppliers.size} suppliers")
             suppliers
         }
 
-    suspend fun getSupplierById(id: String): Supplier? =
+    fun getSupplierById(id: String): Supplier? =
         transaction {
             val entity = SupplierEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
             if (entity == null) {
@@ -83,7 +83,7 @@ class SupplierService {
             }
         }
 
-    suspend fun updateSupplier(supplier: Supplier): Boolean =
+    fun updateSupplier(supplier: Supplier): Boolean =
         transaction {
             if (supplier.id == null) {
                 logger.error("Cannot update supplier: ID is null")
@@ -110,7 +110,7 @@ class SupplierService {
             }
         }
 
-    suspend fun deleteSupplier(id: String): Boolean =
+    fun deleteSupplier(id: String): Boolean =
         transaction {
             if (supplierInUse(id)) {
                 logger.error("Cannot delete supplier $id: it has ingredient associations")

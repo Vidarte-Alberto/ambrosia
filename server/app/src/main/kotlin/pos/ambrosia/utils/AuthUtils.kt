@@ -99,8 +99,7 @@ suspend fun ApplicationCall.requirePermission(name: String) {
                     (RolePermissionsTable.roleId eq roleId) and
                         (PermissionsTable.name eq name) and
                         (PermissionsTable.enabled eq true)
-                }
-                .count() > 0
+                }.count() > 0
         if (!hasPermission) throw PermissionDeniedException()
     }
 }

@@ -2,9 +2,9 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object TicketsTable : SQLiteUUIDTable("tickets") {
@@ -16,7 +16,9 @@ object TicketsTable : SQLiteUUIDTable("tickets") {
     val notes = text("notes").nullable()
 }
 
-class TicketEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class TicketEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<TicketEntity>(TicketsTable)
 
     var orderId by TicketsTable.orderId

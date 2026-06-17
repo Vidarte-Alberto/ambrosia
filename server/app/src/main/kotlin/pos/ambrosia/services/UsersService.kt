@@ -37,13 +37,12 @@ class UsersService(
             .where { (UsersTable.name eq name) and (UsersTable.isDeleted eq false) }
             .empty()
 
-    private fun activeUserCount(): Long =
-        UsersTable.selectAll().where { UsersTable.isDeleted eq false }.count()
+    private fun activeUserCount(): Long = UsersTable.selectAll().where { UsersTable.isDeleted eq false }.count()
 
     private fun isDuplicateUserNameViolation(error: ExposedSQLException): Boolean =
         error.message?.contains("UNIQUE constraint failed: users.name", ignoreCase = true) == true
 
-    suspend fun addUser(user: User): String? =
+    fun addUser(user: User): String? =
         transaction {
             val role = user.role?.let { findActiveRole(it) }
             if (role == null) {
@@ -86,7 +85,7 @@ class UsersService(
             generatedId.toString()
         }
 
-    suspend fun getUsers(): List<User> =
+    fun getUsers(): List<User> =
         transaction {
             (UsersTable leftJoin RolesTable)
                 .selectAll()
@@ -105,12 +104,12 @@ class UsersService(
                 }
         }
 
-    suspend fun getUserCount(): Long =
+    fun getUserCount(): Long =
         transaction {
             activeUserCount()
         }
 
-    suspend fun getUserById(id: String): User? =
+    fun getUserById(id: String): User? =
         transaction {
             val uuid =
                 try {
@@ -134,7 +133,7 @@ class UsersService(
             )
         }
 
-    suspend fun updateUser(
+    fun updateUser(
         id: String?,
         updatedUser: UpdateUserRequest,
     ): Boolean =
@@ -204,7 +203,7 @@ class UsersService(
             true
         }
 
-    suspend fun deleteUser(id: String): Boolean =
+    fun deleteUser(id: String): Boolean =
         transaction {
             if (activeUserCount() <= 1) {
                 throw LastUserDeletionException()

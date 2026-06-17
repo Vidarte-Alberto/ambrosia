@@ -66,7 +66,7 @@ open class PrinterConfigService {
         }
     }
 
-    suspend fun createPrinterConfig(request: PrinterConfigCreateRequest): String? =
+    fun createPrinterConfig(request: PrinterConfigCreateRequest): String? =
         transaction {
             if (configExists(request.printerType, request.printerName)) {
                 logger.error("Printer config already exists: ${request.printerType} ${request.printerName}")
@@ -93,7 +93,7 @@ open class PrinterConfigService {
             configId
         }
 
-    suspend fun upsertDefaultByTypeName(
+    fun upsertDefaultByTypeName(
         printerType: PrinterType,
         printerName: String,
     ): String? =
@@ -124,12 +124,12 @@ open class PrinterConfigService {
             }
         }
 
-    suspend fun getPrinterConfigs(): List<PrinterConfig> =
+    fun getPrinterConfigs(): List<PrinterConfig> =
         transaction {
             PrinterConfigEntity.all().map { toModel(it) }
         }
 
-    suspend fun getPrinterConfigById(id: String): PrinterConfig? =
+    fun getPrinterConfigById(id: String): PrinterConfig? =
         transaction {
             val uuid =
                 try {
@@ -142,7 +142,7 @@ open class PrinterConfigService {
             PrinterConfigEntity.findById(uuid)?.let { toModel(it) }
         }
 
-    open suspend fun getDefaultByType(printerType: PrinterType): PrinterConfig? =
+    open fun getDefaultByType(printerType: PrinterType): PrinterConfig? =
         transaction {
             PrinterConfigEntity
                 .find {
@@ -153,7 +153,7 @@ open class PrinterConfigService {
                 ?.let { toModel(it) }
         }
 
-    open suspend fun getEnabledByType(printerType: PrinterType): List<PrinterConfig> =
+    open fun getEnabledByType(printerType: PrinterType): List<PrinterConfig> =
         transaction {
             PrinterConfigEntity
                 .find {
@@ -161,7 +161,7 @@ open class PrinterConfigService {
                 }.map { toModel(it) }
         }
 
-    suspend fun updatePrinterConfig(
+    fun updatePrinterConfig(
         id: String,
         request: PrinterConfigUpdateRequest,
     ): PrinterConfigUpdateStatus =
@@ -200,7 +200,7 @@ open class PrinterConfigService {
             PrinterConfigUpdateStatus.UPDATED
         }
 
-    suspend fun deletePrinterConfig(id: String): Boolean =
+    fun deletePrinterConfig(id: String): Boolean =
         transaction {
             val configId =
                 try {
@@ -213,7 +213,7 @@ open class PrinterConfigService {
             PrinterConfigsTable.deleteWhere { PrinterConfigsTable.id eq EntityID(configId, PrinterConfigsTable) } > 0
         }
 
-    suspend fun setDefault(id: String): Boolean =
+    fun setDefault(id: String): Boolean =
         transaction {
             val configId =
                 try {

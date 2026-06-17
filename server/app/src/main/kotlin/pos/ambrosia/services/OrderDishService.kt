@@ -23,7 +23,7 @@ class OrderDishService {
             shouldPrepare = entity.shouldPrepare,
         )
 
-    suspend fun addOrderDish(orderDish: OrderDish): String? =
+    fun addOrderDish(orderDish: OrderDish): String? =
         transaction {
             val orderId = UUID.fromString(orderDish.orderId)
             val dishId = UUID.fromString(orderDish.dishId)
@@ -54,7 +54,7 @@ class OrderDishService {
             created.id.value.toString()
         }
 
-    suspend fun getOrderDishesByOrderId(orderId: String): List<OrderDish> =
+    fun getOrderDishesByOrderId(orderId: String): List<OrderDish> =
         transaction {
             val orderEntityId = EntityID(UUID.fromString(orderId), OrdersDishesTable)
             val orderDishes =
@@ -65,7 +65,7 @@ class OrderDishService {
             orderDishes
         }
 
-    suspend fun getOrderDishById(id: String): OrderDish? =
+    fun getOrderDishById(id: String): OrderDish? =
         transaction {
             val orderDish = OrderDishEntity.findById(UUID.fromString(id))
             if (orderDish != null) {
@@ -76,7 +76,7 @@ class OrderDishService {
             }
         }
 
-    suspend fun updateOrderDish(orderDish: OrderDish): Boolean {
+    fun updateOrderDish(orderDish: OrderDish): Boolean {
         val id = orderDish.id
         if (id == null) {
             logger.error("Cannot update order dish: ID is null")
@@ -100,7 +100,7 @@ class OrderDishService {
         }
     }
 
-    suspend fun deleteOrderDish(id: String): Boolean =
+    fun deleteOrderDish(id: String): Boolean =
         transaction {
             val entity = OrderDishEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -113,7 +113,7 @@ class OrderDishService {
             }
         }
 
-    suspend fun deleteOrderDishesByOrderId(orderId: String): Boolean =
+    fun deleteOrderDishesByOrderId(orderId: String): Boolean =
         transaction {
             val orderEntityId = EntityID(UUID.fromString(orderId), OrdersDishesTable)
             val dishes = OrderDishEntity.find { OrdersDishesTable.orderId eq orderEntityId }
@@ -127,5 +127,4 @@ class OrderDishService {
             }
             true
         }
-
 }

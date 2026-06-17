@@ -18,12 +18,12 @@ class ConfigService {
             businessTypeConfirmed = entity.businessTypeConfirmed,
         )
 
-    suspend fun getConfig(): Config? =
+    fun getConfig(): Config? =
         transaction {
             ConfigEntity.findById(1)?.let { toModel(it) }
         }
 
-    suspend fun updateConfig(config: Config): Boolean =
+    fun updateConfig(config: Config): Boolean =
         transaction {
             val entity = ConfigEntity.findById(1) ?: ConfigEntity.new(1) {}
             entity.businessType = config.businessType

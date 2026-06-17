@@ -2,9 +2,9 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object DishesTable : SQLiteUUIDTable("dishes") {
@@ -14,7 +14,9 @@ object DishesTable : SQLiteUUIDTable("dishes") {
     val isDeleted = bool("is_deleted").default(false)
 }
 
-class DishEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class DishEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<DishEntity>(DishesTable)
 
     var name by DishesTable.name

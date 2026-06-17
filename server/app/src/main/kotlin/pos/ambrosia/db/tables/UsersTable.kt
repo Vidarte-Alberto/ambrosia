@@ -1,9 +1,9 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object UsersTable : SQLiteUUIDTable("users") {
@@ -17,7 +17,9 @@ object UsersTable : SQLiteUUIDTable("users") {
     val phone = varchar("phone", 50).nullable()
 }
 
-class UserEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class UserEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<UserEntity>(UsersTable)
 
     var name by UsersTable.name

@@ -51,7 +51,7 @@ class TicketService {
         return null
     }
 
-    suspend fun addTicket(ticket: Ticket): String? =
+    fun addTicket(ticket: Ticket): String? =
         transaction {
             val validationError = validateTicket(ticket)
             if (validationError != null) {
@@ -75,14 +75,14 @@ class TicketService {
             id
         }
 
-    suspend fun getTickets(): List<Ticket> =
+    fun getTickets(): List<Ticket> =
         transaction {
             val tickets = TicketEntity.all().map { toModel(it) }
             logger.info("Retrieved ${tickets.size} tickets")
             tickets
         }
 
-    suspend fun getTicketById(id: String): Ticket? =
+    fun getTicketById(id: String): Ticket? =
         transaction {
             val entity = TicketEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -93,7 +93,7 @@ class TicketService {
             }
         }
 
-    suspend fun getTicketsByOrder(orderId: String): List<Ticket> =
+    fun getTicketsByOrder(orderId: String): List<Ticket> =
         transaction {
             val tickets =
                 TicketEntity
@@ -103,7 +103,7 @@ class TicketService {
             tickets
         }
 
-    suspend fun getTicketsByUser(userId: String): List<Ticket> =
+    fun getTicketsByUser(userId: String): List<Ticket> =
         transaction {
             val tickets =
                 TicketEntity
@@ -113,7 +113,7 @@ class TicketService {
             tickets
         }
 
-    suspend fun updateTicket(ticket: Ticket): Boolean =
+    fun updateTicket(ticket: Ticket): Boolean =
         transaction {
             if (ticket.id == null) {
                 logger.error("Cannot update ticket: ID is null")
@@ -142,7 +142,7 @@ class TicketService {
             }
         }
 
-    suspend fun deleteTicket(id: String): Boolean =
+    fun deleteTicket(id: String): Boolean =
         transaction {
             val entity = TicketEntity.findById(UUID.fromString(id))
             if (entity == null) {

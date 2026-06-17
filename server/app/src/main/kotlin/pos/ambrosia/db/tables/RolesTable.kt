@@ -2,9 +2,9 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object RolesTable : SQLiteUUIDTable("roles") {
@@ -14,7 +14,9 @@ object RolesTable : SQLiteUUIDTable("roles") {
     val isDeleted = bool("is_deleted").default(false)
 }
 
-class RoleEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class RoleEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<RoleEntity>(RolesTable)
 
     var role by RolesTable.role
@@ -29,7 +31,9 @@ object PermissionsTable : SQLiteUUIDTable("permissions") {
     val enabled = bool("enabled").default(true)
 }
 
-class PermissionEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class PermissionEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<PermissionEntity>(PermissionsTable)
 
     var name by PermissionsTable.name

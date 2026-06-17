@@ -70,7 +70,7 @@ class ProductService {
     private fun isDuplicateSkuViolation(error: ExposedSQLException): Boolean =
         error.message?.contains("UNIQUE constraint failed: products.SKU", ignoreCase = true) == true
 
-    suspend fun addProduct(product: Product): String? =
+    fun addProduct(product: Product): String? =
         transaction {
             if (!valid(product)) return@transaction null
             val normalizedSku = normalizeSku(product.SKU)
@@ -103,12 +103,12 @@ class ProductService {
             }
         }
 
-    suspend fun getProducts(): List<Product> =
+    fun getProducts(): List<Product> =
         transaction {
             ProductEntity.find { ProductsTable.isDeleted eq false }.map { toModel(it) }
         }
 
-    suspend fun getProductById(id: String): Product? =
+    fun getProductById(id: String): Product? =
         transaction {
             val entity = ProductEntity.findById(UUID.fromString(id))
             if (entity == null || entity.isDeleted) null else toModel(entity)
@@ -120,13 +120,13 @@ class ProductService {
             .firstOrNull()
             ?.let { toModel(it) }
 
-    suspend fun getProductBySKU(sku: String?): Product? =
+    fun getProductBySKU(sku: String?): Product? =
         transaction {
             val normalizedSku = normalizeSku(sku) ?: return@transaction null
             getProductBySKUInternal(normalizedSku)
         }
 
-    suspend fun getProductsByCategory(category: String): List<Product> =
+    fun getProductsByCategory(category: String): List<Product> =
         transaction {
             val productIds =
                 ProductCategoriesTable
@@ -141,7 +141,7 @@ class ProductService {
                 .map { toModel(it) }
         }
 
-    suspend fun updateProduct(product: Product): Boolean =
+    fun updateProduct(product: Product): Boolean =
         transaction {
             if (product.id == null) return@transaction false
             if (!valid(product)) return@transaction false
@@ -173,7 +173,7 @@ class ProductService {
             true
         }
 
-    suspend fun deleteProduct(id: String): Boolean =
+    fun deleteProduct(id: String): Boolean =
         transaction {
             val entity = ProductEntity.findById(UUID.fromString(id)) ?: return@transaction false
             entity.isDeleted = true
@@ -184,7 +184,7 @@ class ProductService {
 
     private fun deletedSku(id: String): String = "DELETED-$id"
 
-    suspend fun adjustStock(adjustments: List<ProductStockAdjustment>): Boolean =
+    fun adjustStock(adjustments: List<ProductStockAdjustment>): Boolean =
         transaction {
             if (adjustments.isEmpty()) return@transaction true
             if (adjustments.any { it.productId.isBlank() || it.quantity < 0 }) return@transaction false

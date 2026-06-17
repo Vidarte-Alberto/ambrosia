@@ -17,7 +17,9 @@ object ConfigTable : IntIdTable("config") {
     val businessTypeConfirmed = bool("business_type_confirmed").default(false)
 }
 
-class ConfigEntity(id: EntityID<Int>) : IntEntity(id) {
+class ConfigEntity(
+    id: EntityID<Int>,
+) : IntEntity(id) {
     companion object : IntEntityClass<ConfigEntity>(ConfigTable)
 
     var businessType by ConfigTable.businessType

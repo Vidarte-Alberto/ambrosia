@@ -191,162 +191,165 @@ class ReportService {
         productName: String?,
         userId: String?,
         paymentMethod: String?,
-    ): ProductSalesReport = transaction {
-        val dateRange = resolveDateRange(period, startDate, endDate)
+    ): ProductSalesReport =
+        transaction {
+            val dateRange = resolveDateRange(period, startDate, endDate)
 
-        val whereClauses = mutableListOf<String>()
-        val parameters = mutableListOf<Any>()
+            val whereClauses = mutableListOf<String>()
+            val parameters = mutableListOf<Any>()
 
-        dateRange?.let { (start, end) ->
-            whereClauses.add("date(o.created_at) >= date(?)")
-            parameters.add(start)
-            whereClauses.add("date(o.created_at) <= date(?)")
-            parameters.add(end)
-        }
-        productName?.let {
-            whereClauses.add("p.name LIKE ?")
-            parameters.add("%$it%")
-        }
-        userId?.let {
-            whereClauses.add("o.user_id = ?")
-            parameters.add(it)
-        }
-        paymentMethod?.let {
-            whereClauses.add("lower(pm.name) = lower(?)")
-            parameters.add(it)
-        }
-
-        val query =
-            buildString {
-                append(GET_PRODUCT_SALES_BASE)
-                if (whereClauses.isNotEmpty()) {
-                    append("\n  AND ")
-                    append(whereClauses.joinToString("\n  AND "))
-                }
-                append("\nORDER BY o.created_at DESC")
+            dateRange?.let { (start, end) ->
+                whereClauses.add("date(o.created_at) >= date(?)")
+                parameters.add(start)
+                whereClauses.add("date(o.created_at) <= date(?)")
+                parameters.add(end)
+            }
+            productName?.let {
+                whereClauses.add("p.name LIKE ?")
+                parameters.add("%$it%")
+            }
+            userId?.let {
+                whereClauses.add("o.user_id = ?")
+                parameters.add(it)
+            }
+            paymentMethod?.let {
+                whereClauses.add("lower(pm.name) = lower(?)")
+                parameters.add(it)
             }
 
-        val sales = mutableListOf<ProductSaleItem>()
-        currentConnection().prepareStatement(query).use { statement ->
-            bindQueryParameters(statement, parameters)
-            statement.executeQuery().use { resultSet ->
-                while (resultSet.next()) {
-                    sales.add(mapRowToProductSaleItem(resultSet))
+            val query =
+                buildString {
+                    append(GET_PRODUCT_SALES_BASE)
+                    if (whereClauses.isNotEmpty()) {
+                        append("\n  AND ")
+                        append(whereClauses.joinToString("\n  AND "))
+                    }
+                    append("\nORDER BY o.created_at DESC")
+                }
+
+            val sales = mutableListOf<ProductSaleItem>()
+            currentConnection().prepareStatement(query).use { statement ->
+                bindQueryParameters(statement, parameters)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        sales.add(mapRowToProductSaleItem(resultSet))
+                    }
                 }
             }
-        }
 
-        logger.info("Product sales report: ${sales.size} line items")
+            logger.info("Product sales report: ${sales.size} line items")
 
-        val totalBtcSatoshis =
-            sales
-                .filter { it.satoshiAmount != null && it.paymentId != null }
-                .distinctBy { it.paymentId }
-                .sumOf { it.satoshiAmount!! }
+            val totalBtcSatoshis =
+                sales
+                    .filter { it.satoshiAmount != null && it.paymentId != null }
+                    .distinctBy { it.paymentId }
+                    .sumOf { it.satoshiAmount!! }
 
-        ProductSalesReport(
-            totalRevenueCents = sales.sumOf { it.priceAtOrder.toLong() * it.quantity },
-            totalItemsSold = sales.sumOf { it.quantity },
-            sales = sales,
-            totalBtcSatoshis = totalBtcSatoshis,
-        )
-    }
-
-    suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> = transaction {
-        validateOrdersWithPaymentFilters(filters)
-
-        val whereClauses = mutableListOf<String>()
-        val parameters = mutableListOf<Any>()
-
-        filters.startDate?.let {
-            whereClauses.add("date(o.created_at) >= date(?)")
-            parameters.add(it)
-        }
-
-        filters.endDate?.let {
-            whereClauses.add("date(o.created_at) <= date(?)")
-            parameters.add(it)
-        }
-
-        filters.status?.let {
-            whereClauses.add("o.status = ?")
-            parameters.add(it)
-        }
-
-        filters.userId?.let {
-            whereClauses.add("o.user_id = ?")
-            parameters.add(it)
-        }
-
-        filters.paymentMethod?.let {
-            whereClauses.add(
-                """
-                EXISTS (
-                    SELECT 1
-                    FROM tickets t2
-                    JOIN ticket_payments tp2 ON tp2.ticket_id = t2.id
-                    JOIN payments p2 ON p2.id = tp2.payment_id
-                    JOIN payment_methods pm2 ON pm2.id = p2.method_id
-                    WHERE t2.order_id = o.id
-                      AND lower(pm2.name) = lower(?)
-                )
-                """.trimIndent(),
+            ProductSalesReport(
+                totalRevenueCents = sales.sumOf { it.priceAtOrder.toLong() * it.quantity },
+                totalItemsSold = sales.sumOf { it.quantity },
+                sales = sales,
+                totalBtcSatoshis = totalBtcSatoshis,
             )
-            parameters.add(it)
         }
 
-        filters.minTotal?.let {
-            whereClauses.add("o.total >= ?")
-            parameters.add(it)
-        }
+    suspend fun getOrdersWithPaymentsFiltered(filters: OrderWithPaymentFilters = OrderWithPaymentFilters()): List<OrderWithPayment> =
+        transaction {
+            validateOrdersWithPaymentFilters(filters)
 
-        filters.maxTotal?.let {
-            whereClauses.add("o.total <= ?")
-            parameters.add(it)
-        }
+            val whereClauses = mutableListOf<String>()
+            val parameters = mutableListOf<Any>()
 
-        val orderByColumn = validSortByColumns[filters.sortBy ?: "date"] ?: validSortByColumns.getValue("date")
-        val orderDirection = (filters.sortOrder ?: "desc").lowercase()
-
-        val query =
-            buildString {
-                append(GET_ORDERS_WITH_PAYMENTS_BASE)
-                if (whereClauses.isNotEmpty()) {
-                    append("\nAND ")
-                    append(whereClauses.joinToString("\nAND "))
-                }
-                append("\nGROUP BY o.id")
-                append("\nORDER BY ")
-                append(orderByColumn)
-                append(" ")
-                append(orderDirection)
+            filters.startDate?.let {
+                whereClauses.add("date(o.created_at) >= date(?)")
+                parameters.add(it)
             }
 
-        val orders = mutableListOf<OrderWithPayment>()
-        currentConnection().prepareStatement(query).use { statement ->
-            bindQueryParameters(statement, parameters)
-            statement.executeQuery().use { resultSet ->
-                while (resultSet.next()) {
-                    orders.add(mapResultSetToOrderWithPayment(resultSet))
+            filters.endDate?.let {
+                whereClauses.add("date(o.created_at) <= date(?)")
+                parameters.add(it)
+            }
+
+            filters.status?.let {
+                whereClauses.add("o.status = ?")
+                parameters.add(it)
+            }
+
+            filters.userId?.let {
+                whereClauses.add("o.user_id = ?")
+                parameters.add(it)
+            }
+
+            filters.paymentMethod?.let {
+                whereClauses.add(
+                    """
+                    EXISTS (
+                        SELECT 1
+                        FROM tickets t2
+                        JOIN ticket_payments tp2 ON tp2.ticket_id = t2.id
+                        JOIN payments p2 ON p2.id = tp2.payment_id
+                        JOIN payment_methods pm2 ON pm2.id = p2.method_id
+                        WHERE t2.order_id = o.id
+                          AND lower(pm2.name) = lower(?)
+                    )
+                    """.trimIndent(),
+                )
+                parameters.add(it)
+            }
+
+            filters.minTotal?.let {
+                whereClauses.add("o.total >= ?")
+                parameters.add(it)
+            }
+
+            filters.maxTotal?.let {
+                whereClauses.add("o.total <= ?")
+                parameters.add(it)
+            }
+
+            val orderByColumn = validSortByColumns[filters.sortBy ?: "date"] ?: validSortByColumns.getValue("date")
+            val orderDirection = (filters.sortOrder ?: "desc").lowercase()
+
+            val query =
+                buildString {
+                    append(GET_ORDERS_WITH_PAYMENTS_BASE)
+                    if (whereClauses.isNotEmpty()) {
+                        append("\nAND ")
+                        append(whereClauses.joinToString("\nAND "))
+                    }
+                    append("\nGROUP BY o.id")
+                    append("\nORDER BY ")
+                    append(orderByColumn)
+                    append(" ")
+                    append(orderDirection)
+                }
+
+            val orders = mutableListOf<OrderWithPayment>()
+            currentConnection().prepareStatement(query).use { statement ->
+                bindQueryParameters(statement, parameters)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        orders.add(mapResultSetToOrderWithPayment(resultSet))
+                    }
                 }
             }
+            logger.info("Retrieved ${orders.size} orders with payments using filters: $filters")
+            orders
         }
-        logger.info("Retrieved ${orders.size} orders with payments using filters: $filters")
-        orders
-    }
 
-    suspend fun getTotalSalesByDate(date: String): Double = transaction {
-        var total = 0.0
-        currentConnection().prepareStatement(GET_TOTAL_SALES_BY_DATE).use { statement ->
-            statement.setString(1, date)
-            statement.executeQuery().use { resultSet ->
-                if (resultSet.next()) {
-                    total = resultSet.getDouble("total_sales")
+    suspend fun getTotalSalesByDate(date: String): Double =
+        transaction {
+            var total = 0.0
+            currentConnection().prepareStatement(GET_TOTAL_SALES_BY_DATE).use { statement ->
+                statement.setString(1, date)
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        total = resultSet.getDouble("total_sales")
+                    }
                 }
             }
-        }
 
-        logger.info("Total sales for $date: $total")
-        total
-    }
+            logger.info("Total sales for $date: $total")
+            total
+        }
 }

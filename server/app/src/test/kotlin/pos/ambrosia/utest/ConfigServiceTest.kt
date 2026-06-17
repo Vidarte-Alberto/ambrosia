@@ -35,7 +35,17 @@ class ConfigServiceTest {
     @Test
     fun `updateConfig creates config when none exists`() =
         runBlocking {
-            val config = Config(businessType = "restaurant", businessName = "Test Cafe", businessAddress = "123 Lane", businessPhone = "555", businessEmail = "a@b.com", businessTaxId = "T123", businessLogoUrl = null, businessTypeConfirmed = true)
+            val config =
+                Config(
+                    businessType = "restaurant",
+                    businessName = "Test Cafe",
+                    businessAddress = "123 Lane",
+                    businessPhone = "555",
+                    businessEmail = "a@b.com",
+                    businessTaxId = "T123",
+                    businessLogoUrl = null,
+                    businessTypeConfirmed = true,
+                )
 
             val updated = service.updateConfig(config)
 
@@ -46,9 +56,29 @@ class ConfigServiceTest {
     @Test
     fun `updateConfig replaces existing config`() =
         runBlocking {
-            service.updateConfig(Config(businessType = "restaurant", businessName = "Old Name", businessAddress = null, businessPhone = null, businessEmail = null, businessTaxId = null, businessLogoUrl = null))
+            service.updateConfig(
+                Config(
+                    businessType = "restaurant",
+                    businessName = "Old Name",
+                    businessAddress = null,
+                    businessPhone = null,
+                    businessEmail = null,
+                    businessTaxId = null,
+                    businessLogoUrl = null,
+                ),
+            )
 
-            val newConfig = Config(businessType = "store", businessName = "New Name", businessAddress = "456 Ave", businessPhone = "123", businessEmail = "c@d.com", businessTaxId = "T456", businessLogoUrl = "logo.png", businessTypeConfirmed = true)
+            val newConfig =
+                Config(
+                    businessType = "store",
+                    businessName = "New Name",
+                    businessAddress = "456 Ave",
+                    businessPhone = "123",
+                    businessEmail = "c@d.com",
+                    businessTaxId = "T456",
+                    businessLogoUrl = "logo.png",
+                    businessTypeConfirmed = true,
+                )
             val updated = service.updateConfig(newConfig)
 
             assertTrue(updated)

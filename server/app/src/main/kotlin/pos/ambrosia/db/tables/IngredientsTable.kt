@@ -1,9 +1,9 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object IngredientsTable : SQLiteUUIDTable("ingredients") {
@@ -16,7 +16,9 @@ object IngredientsTable : SQLiteUUIDTable("ingredients") {
     val isDeleted = bool("is_deleted").default(false)
 }
 
-class IngredientEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class IngredientEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<IngredientEntity>(IngredientsTable)
 
     var name by IngredientsTable.name

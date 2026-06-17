@@ -21,7 +21,7 @@ class TicketPaymentService {
 
     private fun paymentExists(paymentId: String): Boolean = PaymentEntity.findById(UUID.fromString(paymentId)) != null
 
-    suspend fun addTicketPayment(ticketPayment: TicketPayment): Boolean =
+    fun addTicketPayment(ticketPayment: TicketPayment): Boolean =
         transaction {
             if (ticketPayment.paymentId.isBlank() || ticketPayment.ticketId.isBlank()) {
                 logger.error("Payment ID and ticket ID are required fields")
@@ -48,7 +48,7 @@ class TicketPaymentService {
             true
         }
 
-    suspend fun getTicketPaymentsByTicket(ticketId: String): List<TicketPayment>? =
+    fun getTicketPaymentsByTicket(ticketId: String): List<TicketPayment>? =
         transaction {
             if (!ticketExists(ticketId)) return@transaction null
 
@@ -66,7 +66,7 @@ class TicketPaymentService {
             ticketPayments
         }
 
-    suspend fun getTicketPaymentsByPayment(paymentId: String): List<TicketPayment>? =
+    fun getTicketPaymentsByPayment(paymentId: String): List<TicketPayment>? =
         transaction {
             if (!paymentExists(paymentId)) return@transaction null
 
@@ -84,7 +84,7 @@ class TicketPaymentService {
             ticketPayments
         }
 
-    suspend fun deleteTicketPayment(
+    fun deleteTicketPayment(
         paymentId: String,
         ticketId: String,
     ): Boolean =
@@ -103,7 +103,7 @@ class TicketPaymentService {
             rowsDeleted > 0
         }
 
-    suspend fun deleteTicketPaymentsByTicket(ticketId: String): Boolean =
+    fun deleteTicketPaymentsByTicket(ticketId: String): Boolean =
         transaction {
             val rowsDeleted =
                 TicketPaymentsTable.deleteWhere {

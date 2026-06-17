@@ -12,7 +12,7 @@ import pos.ambrosia.models.PaymentBitcoinData
 import pos.ambrosia.models.WalletInvoiceRate
 
 class WalletRateService {
-    suspend fun saveInvoiceRate(rate: WalletInvoiceRate) {
+    fun saveInvoiceRate(rate: WalletInvoiceRate) {
         transaction {
             WalletInvoiceRatesTable.deleteWhere { paymentHash eq rate.paymentHash }
             WalletInvoiceRatesTable.insert {
@@ -26,7 +26,7 @@ class WalletRateService {
         logger.info("Saved wallet invoice rate for paymentHash=${rate.paymentHash}")
     }
 
-    suspend fun getRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> {
+    fun getRatesByPaymentHashes(hashes: List<String>): Map<String, PaymentBitcoinData> {
         if (hashes.isEmpty()) return emptyMap()
         return transaction {
             WalletInvoiceRatesTable

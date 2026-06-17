@@ -68,10 +68,22 @@ class WalletRateServiceTest {
     fun `saveInvoiceRate replaces existing rate for same payment hash`() =
         runBlocking {
             service.saveInvoiceRate(
-                WalletInvoiceRate(paymentHash = "hash-abc", satoshiAmount = 100L, exchangeRate = 1.0, exchangeRateCurrency = "usd", fiatAmount = 1.0),
+                WalletInvoiceRate(
+                    paymentHash = "hash-abc",
+                    satoshiAmount = 100L,
+                    exchangeRate = 1.0,
+                    exchangeRateCurrency = "usd",
+                    fiatAmount = 1.0,
+                ),
             )
             service.saveInvoiceRate(
-                WalletInvoiceRate(paymentHash = "hash-abc", satoshiAmount = 200L, exchangeRate = 2.0, exchangeRateCurrency = "mxn", fiatAmount = 2.0),
+                WalletInvoiceRate(
+                    paymentHash = "hash-abc",
+                    satoshiAmount = 200L,
+                    exchangeRate = 2.0,
+                    exchangeRateCurrency = "mxn",
+                    fiatAmount = 2.0,
+                ),
             )
 
             val result = service.getRatesByPaymentHashes(listOf("hash-abc"))

@@ -20,15 +20,16 @@ object DatabaseConnection {
 
     private fun buildDataSource(): HikariDataSource {
         val dbPath = Path(datadir, "ambrosia.db").toString()
-        val config = HikariConfig().apply {
-            jdbcUrl = "jdbc:sqlite:$dbPath"
-            driverClassName = "org.sqlite.JDBC"
-            maximumPoolSize = 5
-            transactionIsolation = "TRANSACTION_SERIALIZABLE"
-            addDataSourceProperty("journal_mode", "WAL")
-            addDataSourceProperty("foreign_keys", "ON")
-            addDataSourceProperty("busy_timeout", "5000")
-        }
+        val config =
+            HikariConfig().apply {
+                jdbcUrl = "jdbc:sqlite:$dbPath"
+                driverClassName = "org.sqlite.JDBC"
+                maximumPoolSize = 5
+                transactionIsolation = "TRANSACTION_SERIALIZABLE"
+                addDataSourceProperty("journal_mode", "WAL")
+                addDataSourceProperty("foreign_keys", "ON")
+                addDataSourceProperty("busy_timeout", "5000")
+            }
         return HikariDataSource(config)
     }
 

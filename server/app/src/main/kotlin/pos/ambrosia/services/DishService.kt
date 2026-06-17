@@ -37,7 +37,7 @@ class DishService {
             .where { OrdersDishesTable.dishId eq EntityID(UUID.fromString(dishId), DishesTable) }
             .empty()
 
-    suspend fun addDish(dish: Dish): String? =
+    fun addDish(dish: Dish): String? =
         transaction {
             if (!categoryExists(dish.categoryId)) {
                 logger.error("Category does not exist: ${dish.categoryId}")
@@ -66,14 +66,14 @@ class DishService {
             id
         }
 
-    suspend fun getDishes(): List<Dish> =
+    fun getDishes(): List<Dish> =
         transaction {
             val dishes = DishEntity.find { DishesTable.isDeleted eq false }.map { toModel(it) }
             logger.info("Retrieved ${dishes.size} dishes")
             dishes
         }
 
-    suspend fun getDishById(id: String): Dish? =
+    fun getDishById(id: String): Dish? =
         transaction {
             val entity = DishEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
             if (entity == null) {
@@ -84,7 +84,7 @@ class DishService {
             }
         }
 
-    suspend fun getDishesByCategory(categoryId: String): List<Dish> =
+    fun getDishesByCategory(categoryId: String): List<Dish> =
         transaction {
             val dishes =
                 DishEntity
@@ -96,7 +96,7 @@ class DishService {
             dishes
         }
 
-    suspend fun updateDish(dish: Dish): Boolean =
+    fun updateDish(dish: Dish): Boolean =
         transaction {
             if (dish.id == null) {
                 logger.error("Cannot update dish: ID is null")
@@ -131,7 +131,7 @@ class DishService {
             }
         }
 
-    suspend fun deleteDish(id: String): Boolean =
+    fun deleteDish(id: String): Boolean =
         transaction {
             if (dishInUse(id)) {
                 logger.error("Cannot delete dish $id: it's being used in orders")

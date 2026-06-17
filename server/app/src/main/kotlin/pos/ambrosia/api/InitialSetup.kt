@@ -9,7 +9,6 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import pos.ambrosia.models.Config
 import pos.ambrosia.models.InitialSetupRequest
@@ -110,39 +109,37 @@ private fun Route.initialSetupRoutes() {
 
         val (userId, roleId) =
             transaction {
-                runBlocking {
-                    val roleId =
-                        rolesService.addRole(Role(role = "Admin", password = userPassword, isAdmin = true))
-                            ?: throw InitialSetupException("Failed to create admin role")
+                val roleId =
+                    rolesService.addRole(Role(role = "Admin", password = userPassword, isAdmin = true))
+                        ?: throw InitialSetupException("Failed to create admin role")
 
-                    permissionsService.assignAllEnabledToRole(roleId)
+                permissionsService.assignAllEnabledToRole(roleId)
 
-                    val userId =
-                        usersService.addUser(User(name = userName, pin = userPin, role = roleId))
-                            ?: throw InitialSetupException("Failed to create user")
+                val userId =
+                    usersService.addUser(User(name = userName, pin = userPin, role = roleId))
+                        ?: throw InitialSetupException("Failed to create user")
 
-                    val saved =
-                        configService.updateConfig(
-                            Config(
-                                businessType = businessType,
-                                businessName = businessName,
-                                businessAddress = req.businessAddress,
-                                businessPhone = req.businessPhone,
-                                businessEmail = req.businessEmail,
-                                businessTaxId = taxId,
-                                businessLogoUrl = logoUrl,
-                                businessTypeConfirmed = true,
-                            ),
-                        )
-                    if (!saved) throw InitialSetupException("Failed to save config")
+                val saved =
+                    configService.updateConfig(
+                        Config(
+                            businessType = businessType,
+                            businessName = businessName,
+                            businessAddress = req.businessAddress,
+                            businessPhone = req.businessPhone,
+                            businessEmail = req.businessEmail,
+                            businessTaxId = taxId,
+                            businessLogoUrl = logoUrl,
+                            businessTypeConfirmed = true,
+                        ),
+                    )
+                if (!saved) throw InitialSetupException("Failed to save config")
 
-                    val currencyId = currency.id ?: throw InitialSetupException("Currency ID missing")
-                    if (!currencyService.setBaseCurrencyById(currencyId)) {
-                        throw InitialSetupException("Failed to set base currency")
-                    }
-
-                    userId to roleId
+                val currencyId = currency.id ?: throw InitialSetupException("Currency ID missing")
+                if (!currencyService.setBaseCurrencyById(currencyId)) {
+                    throw InitialSetupException("Failed to set base currency")
                 }
+
+                userId to roleId
             }
 
         call.respond(

@@ -1,9 +1,9 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object PrinterConfigsTable : SQLiteUUIDTable("printer_configs") {
@@ -19,7 +19,9 @@ object PrinterConfigsTable : SQLiteUUIDTable("printer_configs") {
     }
 }
 
-class PrinterConfigEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class PrinterConfigEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<PrinterConfigEntity>(PrinterConfigsTable)
 
     var printerType by PrinterConfigsTable.printerType

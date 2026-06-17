@@ -35,7 +35,7 @@ class SpaceService {
                 (DiningTablesTable.spaceId eq EntityID(UUID.fromString(spaceId), SpacesTable)) and (DiningTablesTable.isDeleted eq false)
             }.empty()
 
-    suspend fun addSpace(space: Space): String? =
+    fun addSpace(space: Space): String? =
         transaction {
             if (spaceNameExists(space.name)) {
                 logger.error("Space name already exists: ${space.name}")
@@ -52,14 +52,14 @@ class SpaceService {
             id
         }
 
-    suspend fun getSpaces(): List<Space> =
+    fun getSpaces(): List<Space> =
         transaction {
             val spaces = SpaceEntity.find { SpacesTable.isDeleted eq false }.map { toModel(it) }
             logger.info("Retrieved ${spaces.size} spaces")
             spaces
         }
 
-    suspend fun getSpaceById(id: String): Space? =
+    fun getSpaceById(id: String): Space? =
         transaction {
             val entity = SpaceEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
             if (entity == null) {
@@ -70,7 +70,7 @@ class SpaceService {
             }
         }
 
-    suspend fun updateSpace(space: Space): Boolean =
+    fun updateSpace(space: Space): Boolean =
         transaction {
             if (space.id == null) {
                 logger.error("Cannot update space: ID is null")
@@ -93,7 +93,7 @@ class SpaceService {
             }
         }
 
-    suspend fun deleteSpace(id: String): Boolean =
+    fun deleteSpace(id: String): Boolean =
         transaction {
             if (spaceInUse(id)) {
                 logger.error("Cannot delete space $id: it has tables associated")

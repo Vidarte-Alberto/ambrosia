@@ -2,9 +2,9 @@ package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object CurrencyTable : SQLiteUUIDTable("currency") {
@@ -15,7 +15,9 @@ object CurrencyTable : SQLiteUUIDTable("currency") {
     val countryCode = varchar("country_code", 10).nullable()
 }
 
-class CurrencyEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class CurrencyEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<CurrencyEntity>(CurrencyTable)
 
     var acronym by CurrencyTable.acronym
@@ -29,7 +31,9 @@ object PaymentMethodsTable : SQLiteUUIDTable("payment_methods") {
     val name = varchar("name", 255).uniqueIndex()
 }
 
-class PaymentMethodEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class PaymentMethodEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<PaymentMethodEntity>(PaymentMethodsTable)
 
     var name by PaymentMethodsTable.name
@@ -48,7 +52,9 @@ object PaymentsTable : SQLiteUUIDTable("payments") {
     val fiatAmountAtPayment = double("fiat_amount_at_payment").nullable()
 }
 
-class PaymentEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class PaymentEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<PaymentEntity>(PaymentsTable)
 
     var methodId by PaymentsTable.methodId

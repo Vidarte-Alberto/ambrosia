@@ -11,62 +11,76 @@ import pos.ambrosia.utils.MissingRoleException
 import pos.ambrosia.utils.SecurePinProcessor
 import java.util.UUID
 
-class AuthService(private val env: ApplicationEnvironment) {
+class AuthService(
+    private val env: ApplicationEnvironment,
+) {
     fun authenticateUser(
         name: String,
         pin: CharArray,
-    ): AuthResponse? = transaction {
-        val user = UserEntity
-            .find { (UsersTable.name eq name) and (UsersTable.isDeleted eq false) }
-            .firstOrNull() ?: return@transaction null
-
-        val userId = user.id.value.toString()
-        val isValidPin = SecurePinProcessor.verifyPin(
-            pin,
-            userId,
-            SecurePinProcessor.base64ToByteArray(user.pin),
-            env,
-        )
-        pin.fill('\u0000')
-
-        if (!isValidPin) return@transaction null
-
-        val role = user.roleId
-            ?.let { RoleEntity.findById(it.value) }
-            ?.takeIf { !it.isDeleted }
-            ?: throw MissingRoleException()
-
-        AuthResponse(
-            id = userId,
-            name = user.name,
-            role = role.role,
-            roleId = role.id.value.toString(),
-            isAdmin = role.isAdmin,
-            email = user.email,
-            phone = user.phone,
-        )
-    }
-
-    fun authenticateByRole(userId: String, rolePassword: CharArray): Boolean =
+    ): AuthResponse? =
         transaction {
-            val user = UserEntity.findById(UUID.fromString(userId))
-                ?.takeIf { !it.isDeleted }
-                ?: return@transaction false
+            val user =
+                UserEntity
+                    .find { (UsersTable.name eq name) and (UsersTable.isDeleted eq false) }
+                    .firstOrNull() ?: return@transaction null
 
-            val role = user.roleId
-                ?.let { RoleEntity.findById(it.value) }
-                ?: return@transaction false
+            val userId = user.id.value.toString()
+            val isValidPin =
+                SecurePinProcessor.verifyPin(
+                    pin,
+                    userId,
+                    SecurePinProcessor.base64ToByteArray(user.pin),
+                    env,
+                )
+            pin.fill('\u0000')
 
-            val storedHash = SecurePinProcessor.base64ToByteArray(
-                role.password ?: return@transaction false
+            if (!isValidPin) return@transaction null
+
+            val role =
+                user.roleId
+                    ?.let { RoleEntity.findById(it.value) }
+                    ?.takeIf { !it.isDeleted }
+                    ?: throw MissingRoleException()
+
+            AuthResponse(
+                id = userId,
+                name = user.name,
+                role = role.role,
+                roleId = role.id.value.toString(),
+                isAdmin = role.isAdmin,
+                email = user.email,
+                phone = user.phone,
             )
+        }
 
-            val isValid = SecurePinProcessor.verifyPin(
-                rolePassword,
-                role.id.value.toString(),
-                storedHash,
-                env,
-            )
+    fun authenticateByRole(
+        userId: String,
+        rolePassword: CharArray,
+    ): Boolean =
+        transaction {
+            val user =
+                UserEntity
+                    .findById(UUID.fromString(userId))
+                    ?.takeIf { !it.isDeleted }
+                    ?: return@transaction false
+
+            val role =
+                user.roleId
+                    ?.let { RoleEntity.findById(it.value) }
+                    ?: return@transaction false
+
+            val storedHash =
+                SecurePinProcessor.base64ToByteArray(
+                    role.password ?: return@transaction false,
+                )
+
+            val isValid =
+                SecurePinProcessor.verifyPin(
+                    rolePassword,
+                    role.id.value.toString(),
+                    storedHash,
+                    env,
+                )
             rolePassword.fill('\u0000')
             isValid
         }

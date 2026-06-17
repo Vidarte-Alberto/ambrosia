@@ -34,7 +34,7 @@ class ShiftService {
         return entity != null && !entity.isDeleted
     }
 
-    suspend fun addShift(shift: Shift): String? =
+    fun addShift(shift: Shift): String? =
         transaction {
             val existingOpen = findOpenShift(null)
             if (existingOpen != null) {
@@ -61,7 +61,7 @@ class ShiftService {
             id
         }
 
-    suspend fun getShifts(): List<Shift> =
+    fun getShifts(): List<Shift> =
         transaction {
             val shifts =
                 ShiftEntity
@@ -71,7 +71,7 @@ class ShiftService {
             shifts
         }
 
-    suspend fun getShiftById(id: String): Shift? =
+    fun getShiftById(id: String): Shift? =
         transaction {
             val entity = ShiftEntity.findById(UUID.fromString(id))
             if (entity == null || entity.isDeleted) {
@@ -82,7 +82,7 @@ class ShiftService {
             }
         }
 
-    suspend fun getShiftsByUser(userId: String): List<Shift> =
+    fun getShiftsByUser(userId: String): List<Shift> =
         transaction {
             val shifts =
                 ShiftEntity
@@ -93,7 +93,7 @@ class ShiftService {
             shifts
         }
 
-    suspend fun getShiftsByDate(date: String): List<Shift> =
+    fun getShiftsByDate(date: String): List<Shift> =
         transaction {
             val shifts =
                 ShiftEntity
@@ -123,9 +123,9 @@ class ShiftService {
             ?.let { toModel(it) }
     }
 
-    suspend fun getOpenShift(userId: String? = null): Shift? = transaction { findOpenShift(userId) }
+    fun getOpenShift(userId: String? = null): Shift? = transaction { findOpenShift(userId) }
 
-    suspend fun updateShift(shift: Shift): Boolean =
+    fun updateShift(shift: Shift): Boolean =
         transaction {
             if (shift.id == null) {
                 logger.error("Cannot update shift: ID is null")
@@ -152,7 +152,7 @@ class ShiftService {
             }
         }
 
-    suspend fun deleteShift(id: String): Boolean =
+    fun deleteShift(id: String): Boolean =
         transaction {
             val entity = ShiftEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -165,7 +165,7 @@ class ShiftService {
             }
         }
 
-    suspend fun closeShift(
+    fun closeShift(
         id: String,
         finalAmount: Double? = null,
         difference: Double? = null,

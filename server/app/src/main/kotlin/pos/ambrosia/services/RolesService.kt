@@ -22,7 +22,7 @@ class RolesService(
 ) {
     private val adminGuard = AdminGuardService()
 
-    suspend fun addRole(role: Role): String? =
+    fun addRole(role: Role): String? =
         transaction {
             if (role.role.isBlank()) return@transaction null
             if (roleNameExists(role.role)) {
@@ -68,7 +68,7 @@ class RolesService(
                     (RolesTable.id neq EntityID(UUID.fromString(excludeId), RolesTable))
             }.empty()
 
-    suspend fun getRoles(): List<Role> =
+    fun getRoles(): List<Role> =
         transaction {
             val roles =
                 RoleEntity
@@ -85,7 +85,7 @@ class RolesService(
             roles
         }
 
-    suspend fun getRoleById(id: String): Role? =
+    fun getRoleById(id: String): Role? =
         transaction {
             val entity = RoleEntity.findById(UUID.fromString(id))
             if (entity == null || entity.isDeleted) {
@@ -100,7 +100,7 @@ class RolesService(
             }
         }
 
-    suspend fun updateRole(
+    fun updateRole(
         id: String?,
         role: Role,
     ): Boolean =
@@ -129,7 +129,7 @@ class RolesService(
             }
         }
 
-    suspend fun deleteRole(id: String): Boolean =
+    fun deleteRole(id: String): Boolean =
         transaction {
             ensureRoleDeletionKeepsAdmin(id)
 

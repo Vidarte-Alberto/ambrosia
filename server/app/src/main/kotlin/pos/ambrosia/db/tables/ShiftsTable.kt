@@ -1,9 +1,9 @@
 package pos.ambrosia.db.tables
 
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
-import pos.ambrosia.db.SQLiteUUIDTable
 import org.jetbrains.exposed.v1.dao.java.UUIDEntity
 import org.jetbrains.exposed.v1.dao.java.UUIDEntityClass
+import pos.ambrosia.db.SQLiteUUIDTable
 import java.util.UUID
 
 object ShiftsTable : SQLiteUUIDTable("shifts") {
@@ -18,7 +18,9 @@ object ShiftsTable : SQLiteUUIDTable("shifts") {
     val difference = double("difference").nullable()
 }
 
-class ShiftEntity(id: EntityID<UUID>) : UUIDEntity(id) {
+class ShiftEntity(
+    id: EntityID<UUID>,
+) : UUIDEntity(id) {
     companion object : UUIDEntityClass<ShiftEntity>(ShiftsTable)
 
     var userId by ShiftsTable.userId

@@ -20,8 +20,7 @@ class OrderService {
     private val validStatuses = setOf("open", "closed", "paid")
     private val orderDishService = OrderDishService()
 
-    private fun userExists(userId: String): Boolean =
-        UserEntity.findById(UUID.fromString(userId))?.takeIf { !it.isDeleted } != null
+    private fun userExists(userId: String): Boolean = UserEntity.findById(UUID.fromString(userId))?.takeIf { !it.isDeleted } != null
 
     private fun tableExists(tableId: String?): Boolean {
         if (tableId == null) return true
@@ -40,7 +39,7 @@ class OrderService {
             createdAt = entity.createdAt.replace(" ", "T"),
         )
 
-    suspend fun addOrder(order: Order): String? =
+    fun addOrder(order: Order): String? =
         transaction {
             if (!userExists(order.userId)) {
                 logger.error("User does not exist: ${order.userId}")
@@ -71,14 +70,14 @@ class OrderService {
             created.id.value.toString()
         }
 
-    suspend fun getOrders(): List<Order> =
+    fun getOrders(): List<Order> =
         transaction {
             val orders = OrderEntity.find { OrdersTable.isDeleted eq false }.map { toModel(it) }
             logger.info("Retrieved ${orders.size} orders")
             orders
         }
 
-    suspend fun getOrderById(id: String): Order? =
+    fun getOrderById(id: String): Order? =
         transaction {
             val entity = OrderEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
             if (entity != null) {
@@ -89,7 +88,7 @@ class OrderService {
             }
         }
 
-    suspend fun getOrdersByTableId(tableId: String): List<Order>? =
+    fun getOrdersByTableId(tableId: String): List<Order>? =
         transaction {
             if (!tableExists(tableId)) return@transaction null
             val orders =
@@ -100,7 +99,7 @@ class OrderService {
             orders
         }
 
-    suspend fun getOrdersByUserId(userId: String): List<Order>? =
+    fun getOrdersByUserId(userId: String): List<Order>? =
         transaction {
             if (!userExists(userId)) return@transaction null
             val userEntityId = EntityID(UUID.fromString(userId), UsersTable)
@@ -112,7 +111,7 @@ class OrderService {
             orders
         }
 
-    suspend fun getOrdersByStatus(status: String): List<Order>? =
+    fun getOrdersByStatus(status: String): List<Order>? =
         transaction {
             if (!isValidStatus(status)) {
                 logger.error("Invalid status: $status")
@@ -127,7 +126,7 @@ class OrderService {
             orders
         }
 
-    suspend fun getOrdersByDateRange(
+    fun getOrdersByDateRange(
         startDate: String,
         endDate: String,
     ): List<Order> =
@@ -140,7 +139,7 @@ class OrderService {
             orders
         }
 
-    suspend fun updateOrder(order: Order): Boolean =
+    fun updateOrder(order: Order): Boolean =
         transaction {
             val id = order.id
             if (id == null) {
@@ -178,7 +177,7 @@ class OrderService {
             true
         }
 
-    suspend fun deleteOrder(id: String): Boolean =
+    fun deleteOrder(id: String): Boolean =
         transaction {
             val entity = OrderEntity.findById(UUID.fromString(id))
             if (entity == null) {
@@ -191,7 +190,7 @@ class OrderService {
             }
         }
 
-    suspend fun addDishesToOrder(
+    fun addDishesToOrder(
         orderId: String,
         dishes: List<OrderDish>,
     ): Boolean {
@@ -207,20 +206,20 @@ class OrderService {
         return allAdded
     }
 
-    suspend fun getOrderDishes(orderId: String): List<OrderDish> = orderDishService.getOrderDishesByOrderId(orderId)
+    fun getOrderDishes(orderId: String): List<OrderDish> = orderDishService.getOrderDishesByOrderId(orderId)
 
-    suspend fun updateOrderDish(orderDish: OrderDish): Boolean = orderDishService.updateOrderDish(orderDish)
+    fun updateOrderDish(orderDish: OrderDish): Boolean = orderDishService.updateOrderDish(orderDish)
 
-    suspend fun removeOrderDish(orderDishId: String): Boolean = orderDishService.deleteOrderDish(orderDishId)
+    fun removeOrderDish(orderDishId: String): Boolean = orderDishService.deleteOrderDish(orderDishId)
 
-    suspend fun removeAllOrderDishes(orderId: String): Boolean = orderDishService.deleteOrderDishesByOrderId(orderId)
+    fun removeAllOrderDishes(orderId: String): Boolean = orderDishService.deleteOrderDishesByOrderId(orderId)
 
-    suspend fun calculateOrderTotal(orderId: String): Double {
+    fun calculateOrderTotal(orderId: String): Double {
         val dishes = orderDishService.getOrderDishesByOrderId(orderId)
         return dishes.sumOf { it.priceAtOrder }
     }
 
-    suspend fun updateOrderTotal(orderId: String): Boolean {
+    fun updateOrderTotal(orderId: String): Boolean {
         val newTotal = calculateOrderTotal(orderId)
         val order = getOrderById(orderId) ?: return false
         val updatedOrder = order.copy(total = newTotal)

@@ -53,7 +53,7 @@ class TableService {
 
     private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
 
-    suspend fun addTable(table: Table): String? =
+    fun addTable(table: Table): String? =
         transaction {
             if (!spaceExists(table.spaceId)) {
                 logger.error("Space does not exist: ${table.spaceId}")
@@ -84,14 +84,14 @@ class TableService {
             id
         }
 
-    suspend fun getTables(): List<Table> =
+    fun getTables(): List<Table> =
         transaction {
             val tables = DiningTableEntity.find { DiningTablesTable.isDeleted eq false }.map { toModel(it) }
             logger.info("Retrieved ${tables.size} tables")
             tables
         }
 
-    suspend fun getTableById(id: String): Table? =
+    fun getTableById(id: String): Table? =
         transaction {
             val entity = DiningTableEntity.findById(UUID.fromString(id))?.takeIf { !it.isDeleted }
             if (entity == null) {
@@ -102,7 +102,7 @@ class TableService {
             }
         }
 
-    suspend fun getTablesBySpace(spaceId: String): List<Table>? =
+    fun getTablesBySpace(spaceId: String): List<Table>? =
         transaction {
             if (!spaceExists(spaceId)) return@transaction null
 
@@ -116,7 +116,7 @@ class TableService {
             tables
         }
 
-    suspend fun updateTable(table: Table): Boolean =
+    fun updateTable(table: Table): Boolean =
         transaction {
             if (table.id == null) {
                 logger.error("Cannot update table: ID is null")
@@ -153,7 +153,7 @@ class TableService {
             }
         }
 
-    suspend fun deleteTable(id: String): Boolean =
+    fun deleteTable(id: String): Boolean =
         transaction {
             val entity = DiningTableEntity.findById(UUID.fromString(id))
             if (entity == null) {

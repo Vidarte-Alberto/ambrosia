@@ -38,7 +38,7 @@ class IngredientService {
             .where { DishesIngredientsTable.ingredientId eq EntityID(UUID.fromString(ingredientId), IngredientsTable) }
             .empty()
 
-    suspend fun addIngredient(ingredient: Ingredient): String? =
+    fun addIngredient(ingredient: Ingredient): String? =
         transaction {
             if (!categoryExists(ingredient.categoryId)) {
                 logger.error("Category does not exist: ${ingredient.categoryId}")
@@ -73,7 +73,7 @@ class IngredientService {
             id
         }
 
-    suspend fun getIngredients(): List<Ingredient> =
+    fun getIngredients(): List<Ingredient> =
         transaction {
             val ingredients =
                 IngredientEntity
@@ -83,7 +83,7 @@ class IngredientService {
             ingredients
         }
 
-    suspend fun getIngredientById(id: String): Ingredient? =
+    fun getIngredientById(id: String): Ingredient? =
         transaction {
             val entity = IngredientEntity.findById(UUID.fromString(id))
             if (entity == null || entity.isDeleted) {
@@ -94,7 +94,7 @@ class IngredientService {
             }
         }
 
-    suspend fun getIngredientsByCategory(categoryId: String): List<Ingredient> =
+    fun getIngredientsByCategory(categoryId: String): List<Ingredient> =
         transaction {
             val ingredients =
                 IngredientEntity
@@ -106,7 +106,7 @@ class IngredientService {
             ingredients
         }
 
-    suspend fun updateIngredient(ingredient: Ingredient): Boolean =
+    fun updateIngredient(ingredient: Ingredient): Boolean =
         transaction {
             if (ingredient.id == null) {
                 logger.error("Cannot update ingredient: ID is null")
@@ -147,7 +147,7 @@ class IngredientService {
             }
         }
 
-    suspend fun deleteIngredient(id: String): Boolean =
+    fun deleteIngredient(id: String): Boolean =
         transaction {
             if (ingredientInUse(id)) {
                 logger.error("Cannot delete ingredient $id: it's being used in dishes")
@@ -165,7 +165,7 @@ class IngredientService {
             }
         }
 
-    suspend fun getLowStockIngredients(): List<Ingredient> =
+    fun getLowStockIngredients(): List<Ingredient> =
         transaction {
             val lowStockIngredients =
                 IngredientEntity
@@ -175,7 +175,7 @@ class IngredientService {
             lowStockIngredients
         }
 
-    suspend fun updateIngredientQuantity(
+    fun updateIngredientQuantity(
         id: String,
         newQuantity: Double,
     ): Boolean =

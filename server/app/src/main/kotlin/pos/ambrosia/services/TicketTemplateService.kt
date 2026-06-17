@@ -52,7 +52,7 @@ open class TicketTemplateService {
         }
     }
 
-    suspend fun addTemplate(request: TicketTemplateRequest): String? =
+    fun addTemplate(request: TicketTemplateRequest): String? =
         transaction {
             if (templateNameExists(request.name)) {
                 logger.error("Template name already exists: ${request.name}")
@@ -71,14 +71,14 @@ open class TicketTemplateService {
             templateId.toString()
         }
 
-    suspend fun getTemplates(): List<TicketTemplate> =
+    fun getTemplates(): List<TicketTemplate> =
         transaction {
             val templates = TicketTemplateEntity.all().map { toModel(it) }
             logger.info("Retrieved ${templates.size} templates")
             templates
         }
 
-    suspend fun getTemplateById(id: String): TicketTemplate? =
+    fun getTemplateById(id: String): TicketTemplate? =
         transaction {
             val uuid =
                 try {
@@ -97,7 +97,7 @@ open class TicketTemplateService {
             }
         }
 
-    open suspend fun getTemplateByName(name: String): TicketTemplate? =
+    open fun getTemplateByName(name: String): TicketTemplate? =
         transaction {
             val entity = TicketTemplateEntity.find { TicketTemplatesTable.name eq name }.firstOrNull()
             if (entity == null) {
@@ -108,7 +108,7 @@ open class TicketTemplateService {
             }
         }
 
-    suspend fun updateTemplate(
+    fun updateTemplate(
         id: String,
         request: TicketTemplateRequest,
     ): Boolean =
@@ -136,7 +136,7 @@ open class TicketTemplateService {
             true
         }
 
-    suspend fun deleteTemplate(id: String): Boolean =
+    fun deleteTemplate(id: String): Boolean =
         transaction {
             val templateId =
                 try {
