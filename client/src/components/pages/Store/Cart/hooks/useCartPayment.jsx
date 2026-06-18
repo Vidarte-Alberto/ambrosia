@@ -26,7 +26,7 @@ import { useDeferredPayment } from "./useDeferredPayment";
 import { usePaymentState } from "./usePaymentState";
 
 export function useCartPayment({ onPay, onResetCart } = {}) {
-  const t = useTranslations("cart.payment");
+  const paymentTranslations = useTranslations("cart.payment");
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
   const { refreshShiftTickets } = useTurn();
@@ -34,7 +34,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const { paymentMethods } = usePaymentMethods();
   const { getPaymentCurrencyById } = usePayments();
 
-  const { isPaying, paymentError, dispatch, notifyError, clearPaymentError } = usePaymentState();
+  const { isPaying, paymentError, dispatch, notifyError, notifySuccess, clearPaymentError } = usePaymentState(paymentTranslations);
 
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}),
@@ -47,12 +47,12 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       onPay,
       onResetCart,
       notifyError,
-      t,
+      notifySuccess,
       user,
       printCustomerReceipt,
       refreshShiftTickets,
     }),
-    [dispatch, onPay, onResetCart, notifyError, t, user, printCustomerReceipt, refreshShiftTickets],
+    [dispatch, onPay, onResetCart, notifyError, notifySuccess, user, printCustomerReceipt, refreshShiftTickets],
   );
 
   const btc = useDeferredPayment(buildHandleBtcComplete, handlerContext);
@@ -61,7 +61,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
 
   const handlePay = useMemo(
     () => buildHandlePay({
-      t,
       currency,
       formatAmount,
       paymentMethodMap,
@@ -72,6 +71,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       onResetCart,
       onPay,
       notifyError,
+      notifySuccess,
       dispatch,
       user,
       ensureCartReady,
@@ -84,11 +84,11 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       formatAmount,
       getPaymentCurrencyById,
       notifyError,
+      notifySuccess,
       dispatch,
       onPay,
       onResetCart,
       paymentMethodMap,
-      t,
       user,
       printCustomerReceipt,
       refreshShiftTickets,
