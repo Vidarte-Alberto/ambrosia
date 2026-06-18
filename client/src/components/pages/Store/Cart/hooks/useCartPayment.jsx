@@ -1,7 +1,6 @@
 "use client";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
+import { useMemo } from "react";
 
-import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useCurrency } from "@/components/hooks/useCurrency";
@@ -16,13 +15,12 @@ import {
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { usePayments } from "../../hooks/usePayments";
-import { usePrinters } from "../../hooks/usePrinter";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
-
 import {
   ensureCartReady,
   normalizeAmounts,
-} from "./paymentBuilders";
+} from "../utils/paymentBuilders";
+
 import {
   buildHandlePay,
   buildHandleBtcInvoiceReady,
@@ -30,114 +28,44 @@ import {
   buildHandleCashComplete,
   buildHandleCardComplete,
 } from "./paymentHandlers";
-import {
-  initialPaymentState,
-  paymentStateReducer,
-  createErrorNotifier,
-} from "./paymentState";
+import { useCustomerReceipt } from "./useCustomerReceipt";
+import { useDeferredPayment } from "./useDeferredPayment";
+import { usePaymentState } from "./usePaymentState";
 
 export function useCartPayment({ onPay, onResetCart } = {}) {
   const t = useTranslations("cart.payment");
   const { user } = useAuth();
   const { currency, formatAmount } = useCurrency();
   const { refreshShiftTickets } = useTurn();
-  const { printTicket, printerConfigs, loadingConfigs } = usePrinters();
+  const { printCustomerReceipt } = useCustomerReceipt();
   const { paymentMethods } = usePaymentMethods();
   const { getPaymentCurrencyById } = usePayments();
 
-  const [{ isPaying, error: paymentError }, dispatch] = useReducer(
-    paymentStateReducer,
-    initialPaymentState,
-  );
-  const [btcPaymentConfig, setBtcPaymentConfig] = useState(null);
-  const [cashPaymentConfig, setCashPaymentConfig] = useState(null);
-  const [cardPaymentConfig, setCardPaymentConfig] = useState(null);
-
-  const clearPaymentError = useCallback(() => dispatch({ type: "clearError" }), []);
-
-  const notifyError = useMemo(() => createErrorNotifier(dispatch), [dispatch]);
-
-  useEffect(() => {
-    async function recoverBtcCheckouts() {
-      try {
-        const completedEntries = await getCompletedCheckouts();
-        for (const entry of completedEntries) {
-          addToast({ color: "success", description: t("success.btcRecovered") });
-          await deleteCheckout(entry.paymentHash).catch(() => {});
-        }
-
-        const pendingEntries = await getPendingCheckouts();
-        for (const entry of pendingEntries) {
-          try {
-            const response = await httpClient("store/orders/checkout-if-paid", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(entry.checkoutPayload),
-            });
-            const result = await parseJsonResponse(response);
-            if (response.ok && result?.status === "completed") {
-              await markCheckoutCompleted(entry.paymentHash, result).catch(() => {});
-              addToast({ color: "success", description: t("success.btcRecovered") });
-              await deleteCheckout(entry.paymentHash).catch(() => {});
-            }
-          } catch {
-            // Network error — will retry on next mount
-          }
-        }
-      } catch {
-        // IndexedDB unavailable (e.g. private browsing) — skip silently
-      }
-    }
-
-    recoverBtcCheckouts();
-  }, [t]);
+  const { isPaying, paymentError, dispatch, notifyError, clearPaymentError } = usePaymentState();
 
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}),
     [paymentMethods],
   );
 
-  const hasCustomerPrinter = useMemo(() => {
-    if (!Array.isArray(printerConfigs)) return false;
-    return printerConfigs.some(
-      (config) => config?.printerType === "CUSTOMER" && config?.enabled !== false,
-    );
-  }, [printerConfigs]);
-
-  const printCustomerReceipt = useCallback(
-    async ({ items, totalCents, ticketId, invoice }) => {
-      if (loadingConfigs || !hasCustomerPrinter) return;
-      const ticketData = {
-        ticketId: ticketId?.toString() || "",
-        tableName: t("receipt.tableName"),
-        roomName: "",
-        date: new Date().toISOString(),
-        items: (items || []).map((item) => ({
-          quantity: Number(item.quantity) || 1,
-          name: item.name || "",
-          price: Number(item.price) / 100,
-          comments: [],
-        })),
-        total: Number(totalCents) / 100,
-        invoice: invoice || null,
-      };
-      try {
-        await printTicket({
-          templateName: null,
-          ticketData,
-          printerType: "CUSTOMER",
-          broadcast: false,
-        });
-      } catch (err) {
-        console.error("Error printing customer ticket:", err);
-        addToast({
-          color: "warning",
-          description: t("errors.printCustomer"),
-        });
-      }
-    },
-    [hasCustomerPrinter, loadingConfigs, printTicket, t],
+  // Shared dependencies threaded into every deferred-payment "complete" handler.
+  const handlerContext = useMemo(
+    () => ({
+      dispatch,
+      onPay,
+      onResetCart,
+      notifyError,
+      t,
+      user,
+      printCustomerReceipt,
+      refreshShiftTickets,
+    }),
+    [dispatch, onPay, onResetCart, notifyError, t, user, printCustomerReceipt, refreshShiftTickets],
   );
+
+  const btc = useDeferredPayment(buildHandleBtcComplete, handlerContext);
+  const cash = useDeferredPayment(buildHandleCashComplete, handlerContext);
+  const card = useDeferredPayment(buildHandleCardComplete, handlerContext);
 
   const handlePay = useMemo(
     () => buildHandlePay({
@@ -146,9 +74,9 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       formatAmount,
       paymentMethodMap,
       getPaymentCurrencyById,
-      setBtcPaymentConfig,
-      setCashPaymentConfig,
-      setCardPaymentConfig,
+      setBtcPaymentConfig: btc.setConfig,
+      setCashPaymentConfig: cash.setConfig,
+      setCardPaymentConfig: card.setConfig,
       onResetCart,
       onPay,
       notifyError,
@@ -164,6 +92,7 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       formatAmount,
       getPaymentCurrencyById,
       notifyError,
+      dispatch,
       onPay,
       onResetCart,
       paymentMethodMap,
@@ -171,118 +100,52 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
       user,
       printCustomerReceipt,
       refreshShiftTickets,
+      btc.setConfig,
+      cash.setConfig,
+      card.setConfig,
     ],
   );
 
   const handleBtcInvoiceReady = useMemo(
-    () => buildHandleBtcInvoiceReady({ setBtcPaymentConfig }),
-    [],
+    () => buildHandleBtcInvoiceReady({ setBtcPaymentConfig: btc.setConfig }),
+    [btc.setConfig],
   );
 
-  const handleBtcComplete = useMemo(
-    () => buildHandleBtcComplete({
-      btcPaymentConfig,
-      dispatch,
-      onPay,
-      onResetCart,
-      notifyError,
-      t,
-      user,
-      setBtcPaymentConfig,
-      printCustomerReceipt,
-      refreshShiftTickets,
+  const btcPayment = useMemo(
+    () => ({
+      config: btc.config,
+      onInvoiceReady: handleBtcInvoiceReady,
+      onComplete: btc.handleComplete,
+      onClose: btc.clearConfig,
     }),
-    [
-      btcPaymentConfig,
-      dispatch,
-      onPay,
-      onResetCart,
-      notifyError,
-      t,
-      user,
-      printCustomerReceipt,
-      refreshShiftTickets,
-    ],
+    [btc.config, btc.handleComplete, btc.clearConfig, handleBtcInvoiceReady],
   );
 
-  const clearBtcPaymentConfig = useCallback(() => {
-    setBtcPaymentConfig(null);
-  }, []);
-
-  const handleCashComplete = useMemo(
-    () => buildHandleCashComplete({
-      cashPaymentConfig,
-      dispatch,
-      onPay,
-      onResetCart,
-      notifyError,
-      t,
-      setCashPaymentConfig,
-      printCustomerReceipt,
-      user,
-      refreshShiftTickets,
+  const cashPayment = useMemo(
+    () => ({
+      config: cash.config,
+      onComplete: cash.handleComplete,
+      onClose: cash.clearConfig,
     }),
-    [
-      cashPaymentConfig,
-      dispatch,
-      notifyError,
-      onPay,
-      onResetCart,
-      printCustomerReceipt,
-      t,
-      user,
-      refreshShiftTickets,
-    ],
+    [cash.config, cash.handleComplete, cash.clearConfig],
   );
 
-  const clearCashPaymentConfig = useCallback(() => {
-    setCashPaymentConfig(null);
-  }, []);
-
-  const handleCardComplete = useMemo(
-    () => buildHandleCardComplete({
-      cardPaymentConfig,
-      dispatch,
-      onPay,
-      onResetCart,
-      notifyError,
-      t,
-      setCardPaymentConfig,
-      printCustomerReceipt,
-      user,
-      refreshShiftTickets,
+  const cardPayment = useMemo(
+    () => ({
+      config: card.config,
+      onComplete: card.handleComplete,
+      onClose: card.clearConfig,
     }),
-    [
-      cardPaymentConfig,
-      dispatch,
-      notifyError,
-      onPay,
-      onResetCart,
-      printCustomerReceipt,
-      t,
-      user,
-      refreshShiftTickets,
-    ],
+    [card.config, card.handleComplete, card.clearConfig],
   );
-
-  const clearCardPaymentConfig = useCallback(() => {
-    setCardPaymentConfig(null);
-  }, []);
 
   return {
     handlePay,
     isPaying,
     paymentError,
     clearPaymentError,
-    btcPaymentConfig,
-    handleBtcInvoiceReady,
-    handleBtcComplete,
-    clearBtcPaymentConfig,
-    cashPaymentConfig,
-    handleCashComplete,
-    clearCashPaymentConfig,
-    cardPaymentConfig,
-    handleCardComplete,
-    clearCardPaymentConfig,
+    btcPayment,
+    cashPayment,
+    cardPayment,
   };
 }
