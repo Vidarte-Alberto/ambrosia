@@ -2,8 +2,8 @@ import { addToast } from "@heroui/react";
 
 import {
   classifyPaymentMethod,
-  PAYMENT_KIND,
-} from "../utils/paymentKinds";
+  PAYMENT_METHODS,
+} from "../utils/paymentMethods";
 
 import { processCheckout } from "./paymentFlows";
 
@@ -68,9 +68,9 @@ export function buildHandlePay({
       const currencyId = currency.id;
       const paymentAmounts = normalizeAmounts({ subtotal, discount, discountAmount, total, formatAmount });
       const paymentMethodData = paymentMethodMap[selectedPaymentMethod] || null;
-      const paymentKind = classifyPaymentMethod(paymentMethodData?.name || "");
+      const paymentMethod = classifyPaymentMethod(paymentMethodData?.name || "");
 
-      if (paymentKind === PAYMENT_KIND.BTC) {
+      if (paymentMethod === PAYMENT_METHODS.BTC) {
         const currencyData = await getPaymentCurrencyById(currencyId);
         const currencyAcronym = (
           currencyData?.acronym ||
@@ -96,7 +96,7 @@ export function buildHandlePay({
         return;
       }
 
-      if (paymentKind === PAYMENT_KIND.CASH) {
+      if (paymentMethod === PAYMENT_METHODS.CASH) {
         setCashPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
@@ -108,7 +108,7 @@ export function buildHandlePay({
         return;
       }
 
-      if (paymentKind === PAYMENT_KIND.CARD) {
+      if (paymentMethod === PAYMENT_METHODS.CARD) {
         setCardPaymentConfig({
           amountDue: paymentAmounts.amountFiat,
           displayTotal: paymentAmounts.displayTotal,
