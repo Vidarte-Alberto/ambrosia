@@ -229,7 +229,7 @@ EOF
 
 # --- Ambrosia Server Installation Logic ---
 
-AMBROSIA_TAG="0.6.0-beta"
+AMBROSIA_TAG="0.7.0-beta"
 AMBROSIA_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${AMBROSIA_TAG}"
 AMBROSIA_INSTALL_DIR="$HOME/.local/ambrosia"
 AMBROSIA_BIN_DIR="$HOME/.local/bin"
@@ -327,7 +327,7 @@ EOF
 
 # --- Client Installation ---
 
-CLIENT_TAG="0.6.0-beta"
+CLIENT_TAG="0.7.0-beta"
 CLIENT_DIST_FILE="ambrosia-client-${CLIENT_TAG}.tar.gz"
 CLIENT_DIST_URL="https://github.com/olympus-btc/ambrosia/releases/download/v${CLIENT_TAG}/${CLIENT_DIST_FILE}"
 CLIENT_INSTALL_DIR="$HOME/.local/ambrosia/client"

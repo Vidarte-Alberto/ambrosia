@@ -8,6 +8,9 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 
+import { BitcoinPaymentModal } from "./BitcoinPaymentModal";
+import { CardPaymentModal } from "./CardPaymentModal";
+import { CashPaymentModal } from "./CashPaymentModal";
 import { calculateCartTotals } from "./hooks/cartTotals";
 import { useCartOperations } from "./hooks/useCartOperations";
 import { useCartPayment } from "./hooks/useCartPayment";
@@ -105,25 +108,6 @@ export function Cart() {
     [visibleCart, discount],
   );
 
-  const btcPayment = {
-    config: btcPaymentConfig,
-    onInvoiceReady: handleBtcInvoiceReady,
-    onComplete: handleBtcComplete,
-    onClose: clearBtcPaymentConfig,
-  };
-
-  const cashPayment = {
-    config: cashPaymentConfig,
-    onComplete: handleCashComplete,
-    onClose: clearCashPaymentConfig,
-  };
-
-  const cardPayment = {
-    config: cardPaymentConfig,
-    onComplete: handleCardComplete,
-    onClose: clearCardPaymentConfig,
-  };
-
   return (
     <div className={`transition-[padding] duration-200 md:pt-0 ${visibleCart.length ? "pt-14" : "pt-0"}`}>
       <PageHeader title={cartTranslations("title")} subtitle={cartTranslations("subtitle")} />
@@ -145,9 +129,6 @@ export function Cart() {
             isPaying={isPaying}
             paymentError={paymentError}
             onClearPaymentError={clearPaymentError}
-            btcPayment={btcPayment}
-            cashPayment={cashPayment}
-            cardPayment={cardPayment}
           />
         </div>
       </div>
@@ -172,9 +153,35 @@ export function Cart() {
         isPaying={isPaying}
         paymentError={paymentError}
         onClearPaymentError={clearPaymentError}
-        btcPayment={btcPayment}
-        cashPayment={cashPayment}
-        cardPayment={cardPayment}
+      />
+
+      <BitcoinPaymentModal
+        isOpen={!!btcPaymentConfig}
+        amountFiat={btcPaymentConfig?.amountFiat}
+        currencyAcronym={btcPaymentConfig?.currencyAcronym}
+        paymentId={btcPaymentConfig?.paymentId}
+        invoiceDescription={btcPaymentConfig?.invoiceDescription}
+        displayTotal={btcPaymentConfig?.displayTotal}
+        onClose={clearBtcPaymentConfig}
+        onInvoiceReady={handleBtcInvoiceReady}
+        onComplete={handleBtcComplete}
+      />
+
+      <CashPaymentModal
+        isOpen={!!cashPaymentConfig}
+        amountDue={cashPaymentConfig?.amountDue}
+        displayTotal={cashPaymentConfig?.displayTotal}
+        onClose={clearCashPaymentConfig}
+        onComplete={handleCashComplete}
+      />
+
+      <CardPaymentModal
+        isOpen={!!cardPaymentConfig}
+        amountDue={cardPaymentConfig?.amountDue}
+        displayTotal={cardPaymentConfig?.displayTotal}
+        methodLabel={cardPaymentConfig?.methodLabel}
+        onClose={clearCardPaymentConfig}
+        onComplete={handleCardComplete}
       />
     </div>
   );
