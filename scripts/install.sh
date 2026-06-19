@@ -248,9 +248,9 @@ ambrosia_resolve_tag() {
   fi
   local response
   response=$(curl -fsSL "${auth_args[@]}" "$api_url")
-  AMBROSIA_TAG=$(echo "$response" \
-    | grep -m1 '"tag_name"' \
-    | sed -E 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/')
+  AMBROSIA_TAG=$(printf '%s\n' "$response" \
+    | sed -E -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"v?([^"]+)".*/\1/p' \
+    | sed -n '1p')
   if [[ -z "$AMBROSIA_TAG" ]]; then
     log_error "Could not determine the latest Ambrosia release tag (GitHub API rate limit?)."
     log_error "You can pin a version manually: AMBROSIA_TAG=vX.Y.Z $0"
