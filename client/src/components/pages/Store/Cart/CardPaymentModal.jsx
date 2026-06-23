@@ -1,4 +1,6 @@
 "use client";
+import { useState } from "react";
+
 import {
   Button,
   Modal,
@@ -6,6 +8,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
+  Spinner,
 } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
@@ -21,8 +24,28 @@ export function CardPaymentModal({
 }) {
   const cardTranslations = useTranslations("cart.paymentModal.card");
   const { formatAmount } = useCurrency();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setIsSubmitting(false);
+    }
+  }
+
   const formattedTotal = displayTotal || formatAmount((amountDue || 0) * 100);
   const resolvedMethodLabel = methodLabel || cardTranslations("defaultMethod");
+
+  const handleConfirm = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await onComplete?.();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Modal
@@ -62,6 +85,7 @@ export function CardPaymentModal({
             variant="bordered"
             type="button"
             className="px-6 py-2 border border-border text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            isDisabled={isSubmitting}
             onPress={onClose}
           >
             {cardTranslations("cancel")}
@@ -69,9 +93,10 @@ export function CardPaymentModal({
           <Button
             color="primary"
             className="bg-green-800"
-            onPress={() => onComplete?.()}
+            isDisabled={isSubmitting}
+            onPress={handleConfirm}
           >
-            {cardTranslations("confirm")}
+            {isSubmitting ? <Spinner color="white" size="sm" /> : cardTranslations("confirm")}
           </Button>
         </ModalFooter>
       </ModalContent>
