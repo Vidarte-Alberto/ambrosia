@@ -15,18 +15,31 @@ Direct vendor download URLs tend to move. The assembler therefore supports:
 - `AMBROSIA_BASE_IMAGE_URL=<direct-archive-url>`
 - `AMBROSIA_BASE_IMAGE_PATH=/path/to/orangepi-image.7z`
 
-## Host prerequisites
+## Building on macOS
+
+Use `build-docker.sh` — no host tools required beyond Docker Desktop:
+
+```bash
+./hardware/image/build/build-docker.sh \
+  --board opi-zero-2w \
+  --base-image ~/Downloads/orangepizero2w_1.0.0_debian_bookworm_server_linux6.1.31.7z
+```
+
+See `hardware/image/README.md` for full details.
+
+## Host prerequisites (Linux only)
 
 - root privileges
 - `git`, `npm`, `node` (for building artifacts)
-- `7z`, `blkid`, `curl`, `e2fsck`, `gzip`, `losetup`, `lsblk`, `mount`, `openssl`, `partx`, `parted`, `resize2fs`, `rsync`, `sha256sum`, `tar`, `truncate`, `umount`, `unzip`, `xz`
+- `7z`, `blkid`, `curl`, `e2fsck`, `gzip`, `losetup`, `mount`, `openssl`, `parted`, `resize2fs`, `rsync`, `sha256sum`, `tar`, `truncate`, `umount`, `unzip`, `xz`
 - `systemctl`
 - `qemu-aarch64-static` if the build host is not `aarch64`
 
 ## Entry points
 
-- `hardware/image/build/build-artifacts.sh`
-- `hardware/image/build/assemble-image.sh --board opi-zero-2w`
+- `hardware/image/build/build-docker.sh --board opi-zero-2w` (macOS / any host with Docker)
+- `hardware/image/build/build-artifacts.sh` (Linux, artifacts only)
+- `hardware/image/build/assemble-image.sh --board opi-zero-2w` (Linux, full build)
 
 ## Outputs
 

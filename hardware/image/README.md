@@ -34,17 +34,61 @@ The image is built from the board's official Debian Bookworm base. On top of it 
 - **systemd services**: `ambrosia.service`, `ambrosia-client.service`, `phoenixd.service`, `caddy.service`, `ambrosia-firstboot.service`, `ambrosia-wifi-portal.service`
 - All services run as the `ambrosia` system user (UID 1001)
 
-## Host prerequisites
+## Base image
 
-The assembler runs as root because it manages loop devices and chroot mounts. All tools below must be present before running a build.
+Each board defines its own base image in `hardware/image/boards/<board-id>/board.env`. Refer to the board's `README.md` for the expected filename and download page.
+
+You can provide the image in any of these ways:
+
+- **Local file** via `--base-image <path>` — accepts `.7z`, `.gz`, `.xz`, or `.img`
+- **Direct download** via `--base-image-url <url>` — cached in `hardware/image/out/cache/` for subsequent runs
+- **Environment variable** `AMBROSIA_BASE_IMAGE_PATH` or `AMBROSIA_BASE_IMAGE_URL`
+
+> The cache directory (`hardware/image/out/cache/`) is never cleaned between builds. Subsequent runs reuse the downloaded archive automatically.
+
+## Build
+
+### On macOS — Docker wrapper
+
+On macOS the assembler requires Linux kernel interfaces (`losetup`, `chroot`, `mount`, `parted`) that are not available natively. Use `build-docker.sh`, which runs the entire build inside a privileged Debian Bookworm container automatically.
+
+**Prerequisite**: Docker Desktop (or Podman) installed and running.
+
+```bash
+./hardware/image/build/build-docker.sh \
+  --board opi-zero-2w \
+  --base-image ~/Downloads/orangepizero2w_1.0.0_debian_bookworm_server_linux6.1.31.7z
+```
+
+For Raspberry Pi:
+
+```bash
+./hardware/image/build/build-docker.sh \
+  --board rpi-zero-2w \
+  --base-image ~/Downloads/2024-11-19-raspios-bookworm-arm64-lite.img.xz
+```
+
+The wrapper installs all required build tools (Java 21 Temurin, Node 24, parted, e2fsprogs, etc.) inside the container on every run. The repo is mounted at `/repo` so output lands in `hardware/image/out/` on your host, and file ownership is restored to your user automatically.
+
+All `assemble-image.sh` flags are forwarded unchanged:
+
+```bash
+./hardware/image/build/build-docker.sh \
+  --board opi-zero-2w \
+  --base-image ~/Downloads/... \
+  --skip-artifacts-build
+```
+
+### On Linux — direct
+
+The assembler runs directly as root. All tools below must be present before running a build.
 
 **Required commands**:
 
 ```
 7z          blkid       curl        e2fsck      gzip        losetup
-lsblk       mount       node        npm         partx       parted
-resize2fs   rsync       sha256sum   systemctl   tar         truncate
-umount      unzip       xz
+mount       node        npm         parted      resize2fs   rsync
+sha256sum   systemctl   tar         truncate    umount      unzip  xz
 ```
 
 **Additional requirement on non-ARM64 hosts**:
@@ -61,24 +105,6 @@ sudo apt install \
   parted e2fsprogs util-linux xz-utils
 ```
 
-**Java 21 and Node.js** are required on the host only if you build the client in `host` mode (the default on ARM64). On x86_64 the client is compiled inside a `linux/arm64` container, so only `docker` or `podman` is required instead.
-
-## Base image
-
-Each board defines its own base image in `hardware/image/boards/<board-id>/board.env`. Refer to the board's `README.md` for the expected filename and download page.
-
-You can provide the image in any of these ways:
-
-- **Local file** via `--base-image <path>` — accepts `.7z`, `.gz`, `.xz`, or `.img`
-- **Direct download** via `--base-image-url <url>` — cached in `hardware/image/out/cache/` for subsequent runs
-- **Environment variable** `AMBROSIA_BASE_IMAGE_PATH` or `AMBROSIA_BASE_IMAGE_URL`
-
-> The cache directory (`hardware/image/out/cache/`) is never cleaned between builds. Subsequent runs reuse the downloaded archive automatically.
-
-## Build
-
-### Quick start (full image build)
-
 Run from the repo root:
 
 ```bash
@@ -90,18 +116,6 @@ sudo CLIENT_BUILD_MODE=container \
   --board opi-zero-2w \
   --base-image ~/Downloads/orangepizero2w_1.0.0_debian_bookworm_server_linux6.1.31.7z
 ```
-
-For Raspberry Pi:
-
-```bash
-sudo CLIENT_BUILD_MODE=container \
-  JAVA_HOME=/path/to/java21 \
-  ./assemble-image.sh \
-  --board rpi-zero-2w \
-  --base-image ~/Downloads/2024-11-19-raspios-bookworm-arm64-lite.img.xz
-```
-
-This single command does everything: builds the server JAR and client, stages artifacts, assembles the image inside a chroot, verifies integrity, and emits the final compressed output.
 
 On an ARM64 host, `CLIENT_BUILD_MODE` defaults to `host` and `JAVA_HOME` must point to a Java 21 installation. On x86_64, `CLIENT_BUILD_MODE=container` uses Docker or Podman to compile the client for `linux/arm64` without needing a local JDK.
 
@@ -163,45 +177,25 @@ Environment variables:
 
 > **Note**: The assembler deletes all previous image outputs in `out/` before each full rebuild. `out/cache/` is always preserved. File ownership inside `out/` is restored to the invoking user when the script exits, even after errors.
 
-## Validate the image before flashing
-
-Before writing the image to an SD card, you can mount it as a loop device and inspect its contents.
-
-Decompress the image:
-
-```bash
-mkdir -p hardware/image/out/img-check
-gzip -dc hardware/image/out/ambrosia-<board-id>-<version>.img.gz \
-  > hardware/image/out/img-check/image.img
-```
-
-Attach it as a loop device and mount the root partition:
-
-```bash
-LOOPDEV=$(sudo losetup -f -P --show hardware/image/out/img-check/image.img)
-sudo mount "${LOOPDEV}p2" /mnt/ambrosia-sd
-```
-
-> Use `lsblk $LOOPDEV` to identify the correct root partition number if it differs.
-
-Verify that key artifacts are present and are valid text files (not corrupt ELF binaries — a common cross-compilation failure):
-
-```bash
-file /mnt/ambrosia-sd/opt/ambrosia/client/package.json
-file /mnt/ambrosia-sd/opt/ambrosia/client/server.js
-file /mnt/ambrosia-sd/opt/ambrosia/server/ambrosia.jar
-```
-
-Expected results: `package.json` is `JSON text data`, `server.js` is `JavaScript source`, `ambrosia.jar` is a `Java archive`.
-
-Unmount and detach:
-
-```bash
-sudo umount /mnt/ambrosia-sd
-sudo losetup -d "$LOOPDEV"
-```
-
 ## Flash to microSD
+
+### On macOS
+
+Identify your SD card with `diskutil list` — it appears as an external disk. The SD card will show as `/dev/diskN` (e.g. `/dev/disk4`).
+
+```bash
+# Unmount partitions (keep the card plugged in)
+diskutil unmountDisk /dev/diskN
+
+# Flash — use /dev/rdiskN (raw device, 3-4x faster than /dev/diskN)
+gunzip -c hardware/image/out/ambrosia-<board-id>-<version>.img.gz \
+  | sudo dd of=/dev/rdiskN bs=4m status=progress
+
+# Eject
+diskutil eject /dev/diskN
+```
+
+### On Linux
 
 Identify your SD card device:
 
@@ -217,7 +211,7 @@ gzip -dc hardware/image/out/ambrosia-<board-id>-<version>.img.gz \
 sync
 ```
 
-Verify the hash before booting:
+### Verify the hash before booting
 
 ```bash
 sha256sum hardware/image/out/ambrosia-<board-id>-<version>.img.gz
@@ -228,40 +222,80 @@ Both lines must show the same hash.
 
 ## Preseed (optional)
 
-You can pre-configure the device before its first boot by writing a `ambrosia-device.env` file to the boot partition of the SD card. This is useful for operator provisioning — you can ship a pre-configured device without needing to connect to it interactively.
-
-Mount the boot partition after flashing:
-
-```bash
-sudo mount /dev/sdX1 /mnt/ambrosia-sd
-```
-
-> **Raspberry Pi note**: on RPi OS Bookworm the FAT boot partition is also partition 1 (`/dev/sdX1`). The `ambrosia-firstboot` script detects both `/boot/firmware/` and `/boot/` automatically — no extra configuration is needed.
-
-Create the preseed file (an example is already on the image at `ambrosia-device.env.example` on the boot partition):
-
-```bash
-sudo tee /mnt/ambrosia-sd/ambrosia-device.env > /dev/null <<'EOF'
-AMBROSIA_HOSTNAME=ambrosia-demo
-AMBROSIA_ADMIN_PASSWORD=change-me
-AMBROSIA_WIFI_COUNTRY=US
-AMBROSIA_LANG=en_US.UTF-8
-EOF
-
-sync
-sudo umount /mnt/ambrosia-sd
-```
+You can pre-configure the device before its first boot by writing an `ambrosia-device.env` file to the boot partition of the SD card. This is useful for operator provisioning — you can ship a pre-configured device without needing to connect to it interactively.
 
 Supported keys:
 
 | Key | Description | Default |
 |---|---|---|
 | `AMBROSIA_HOSTNAME` | Device hostname | `ambrosia-<board-short-name>-<machine-id-prefix>` (auto-generated) |
-| `AMBROSIA_ADMIN_PASSWORD` | SSH and admin password for the `ambrosia` user | `Ambrosia2026!` |
+| `AMBROSIA_ADMIN_PASSWORD` | SSH password for the `ambrosia` user | `Ambrosia2026!` |
 | `AMBROSIA_WIFI_COUNTRY` | ISO 3166-1 alpha-2 country code for Wi-Fi regulations | `US` |
 | `AMBROSIA_LANG` | System locale | `en_US.UTF-8` |
 
-The preseed file is consumed and deleted on first boot. A copy is archived to `/var/lib/ambrosia/consumed-device.env` for auditing.
+The preseed file is consumed and deleted on first boot. A copy is archived to `/var/lib/ambrosia/consumed-device.env` for auditing. An example file (`ambrosia-device.env.example`) is already present on the boot partition of every image.
+
+### On macOS — using debugfs
+
+macOS cannot mount ext4 partitions natively. Use `debugfs` from Homebrew's `e2fsprogs` to write the file directly to the partition.
+
+Install once:
+
+```bash
+brew install e2fsprogs
+```
+
+Create the preseed file locally:
+
+```bash
+cat > /tmp/ambrosia-device.env <<'EOF'
+AMBROSIA_HOSTNAME=my-device
+AMBROSIA_ADMIN_PASSWORD=my-password
+AMBROSIA_WIFI_COUNTRY=MX
+AMBROSIA_LANG=es_MX.UTF-8
+EOF
+```
+
+Unmount the SD card (keep it plugged in) and open `debugfs` interactively:
+
+```bash
+diskutil unmountDisk /dev/diskN
+sudo /opt/homebrew/opt/e2fsprogs/sbin/debugfs -w /dev/rdiskNs1
+```
+
+Inside the `debugfs` prompt, write and verify the file:
+
+```
+write /tmp/ambrosia-device.env /boot/ambrosia-device.env
+cat /boot/ambrosia-device.env
+quit
+```
+
+> Replace `diskN` with your SD card disk number (e.g. `disk4`). The partition is always `s1` on these images.
+
+### On Linux
+
+Mount the root partition after flashing:
+
+```bash
+sudo mount /dev/sdX1 /mnt/ambrosia-sd
+```
+
+Create the preseed file:
+
+```bash
+sudo tee /mnt/ambrosia-sd/boot/ambrosia-device.env > /dev/null <<'EOF'
+AMBROSIA_HOSTNAME=my-device
+AMBROSIA_ADMIN_PASSWORD=my-password
+AMBROSIA_WIFI_COUNTRY=MX
+AMBROSIA_LANG=es_MX.UTF-8
+EOF
+
+sync
+sudo umount /mnt/ambrosia-sd
+```
+
+> **Raspberry Pi note**: on RPi OS Bookworm the FAT boot partition is also partition 1 (`/dev/sdX1`). The `ambrosia-firstboot` script detects both `/boot/firmware/` and `/boot/` automatically.
 
 ## First boot
 
@@ -277,11 +311,40 @@ What happens on first boot:
 
 **After first boot:**
 
-- If the device cannot reach a known Wi-Fi network, a setup access point named `<hostname>-setup` will appear. Connect to it to configure Wi-Fi via the captive portal.
+- If the device cannot reach a known Wi-Fi network, a setup access point named `<hostname>-setup` will appear. Connect to it and open `http://10.42.1.1` in a browser to configure Wi-Fi via the captive portal.
 - Once connected, the POS interface is reachable at `http://<hostname>.local` (mDNS via Avahi) or directly at the device IP on port 80.
 - SSH is available:
   - **User**: `ambrosia`
   - **Password**: the value set in `AMBROSIA_ADMIN_PASSWORD` (default: `Ambrosia2026!`)
+
+## Validate the image before flashing
+
+The assembler runs a thorough verification pass before compressing the image — it checks that all binaries, service files, and client assets are present and valid, and that no forbidden state (SSH host keys, DB, Phoenix seed) remains. Inspect the manifest to confirm:
+
+```bash
+cat hardware/image/out/ambrosia-<board-id>-<version>.manifest.json
+```
+
+To do a deeper inspection on Linux, mount the image as a loop device:
+
+```bash
+gzip -dc hardware/image/out/ambrosia-<board-id>-<version>.img.gz \
+  > /tmp/ambrosia-check.img
+
+LOOPDEV=$(sudo losetup -f --show /tmp/ambrosia-check.img)
+# Get the ext4 partition start offset
+OFFSET=$(sudo parted -s -m "$LOOPDEV" unit B print | tr -d ';' \
+  | awk -F: 'NR>2 && $5=="ext4" {gsub(/B/,"",$2); print $2; exit}')
+PARTDEV=$(sudo losetup -f --show --offset "$OFFSET" /tmp/ambrosia-check.img)
+
+sudo mount -o ro "$PARTDEV" /mnt/ambrosia-sd
+file /mnt/ambrosia-sd/opt/ambrosia/client/server.js
+file /mnt/ambrosia-sd/opt/ambrosia/server/ambrosia.jar
+
+sudo umount /mnt/ambrosia-sd
+sudo losetup -d "$PARTDEV" "$LOOPDEV"
+rm /tmp/ambrosia-check.img
+```
 
 ## Troubleshooting
 
@@ -294,11 +357,11 @@ Rerun with `--keep-workdir` to preserve the mounted work directory and inspect w
 **The image validates correctly via loop mount but behaves incorrectly after flashing.**
 Suspect the SD card or reader. Try a different card or use `conv=fsync` and an explicit `sync` after `dd`. Verify the hash against the `.sha256` file.
 
-**The loop mount root partition is not `p2`.**
-Run `lsblk /dev/loopX` after attaching the loop device to identify the correct partition number before mounting.
-
 **Client JavaScript files appear as ELF binaries in the build.**
 This indicates a cross-compilation failure where the container built native ARM64 binaries instead of JavaScript. Clean `out/staging/` and rebuild. If the issue persists with `container` mode, try `--client-build-mode host` on an ARM64 machine.
 
 **`qemu-aarch64-static` not found on an x86_64 host.**
 Install it with `sudo apt install qemu-user-static` (Debian/Ubuntu) or the equivalent for your distribution.
+
+**`build-docker.sh` fails with permission errors on the output directory.**
+The wrapper passes your UID/GID into the container. If you see ownership issues, check that `SUDO_UID`/`SUDO_GID` are exported in your shell environment, or run the wrapper with `sudo -E` to preserve them.

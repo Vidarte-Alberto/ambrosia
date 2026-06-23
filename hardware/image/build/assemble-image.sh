@@ -98,6 +98,7 @@ BOOT_MNT=""
 LOOPDEV=""
 WORKDIR=""
 CHROOT_MOUNTS=()
+PART_LOOPDEVS=()
 
 on_error() {
   local exit_code="$1"
@@ -117,6 +118,9 @@ cleanup() {
   fi
   [[ -n "$BOOT_MNT" ]] && mountpoint -q "$BOOT_MNT" && umount "$BOOT_MNT" >/dev/null 2>&1 || true
   [[ -n "$ROOTFS_MNT" ]] && mountpoint -q "$ROOTFS_MNT" && umount "$ROOTFS_MNT" >/dev/null 2>&1 || true
+  for _pdev in "${PART_LOOPDEVS[@]+"${PART_LOOPDEVS[@]}"}"; do
+    losetup "$_pdev" >/dev/null 2>&1 && losetup -d "$_pdev" >/dev/null 2>&1 || true
+  done
   [[ -n "$LOOPDEV" ]] && losetup "$LOOPDEV" >/dev/null 2>&1 && losetup -d "$LOOPDEV" >/dev/null 2>&1 || true
   if [[ -n "$WORKDIR" && "$KEEP_WORKDIR" -eq 0 ]]; then
     rm -rf "$WORKDIR"
@@ -147,6 +151,11 @@ detach_image_mounts() {
   fi
 
   sync
+
+  for _pdev in "${PART_LOOPDEVS[@]+"${PART_LOOPDEVS[@]}"}"; do
+    losetup -d "$_pdev" 2>/dev/null || true
+  done
+  PART_LOOPDEVS=()
 
   if [[ -n "$LOOPDEV" ]]; then
     losetup -d "$LOOPDEV"
@@ -305,99 +314,97 @@ prepare_base_image() {
 }
 
 expand_base_image() {
-  local loopdev=""
-  local last_part=""
-  local root_part_num=""
-  local root_part_type=""
+  local loopdev="" last_num="" part_start_b="" part_fstype="" part_loopdev=""
 
   log "Expanding base image by $IMAGE_EXPAND_SIZE before package installation"
   truncate -s "+$IMAGE_EXPAND_SIZE" "$BASE_IMAGE_WORK_PATH"
 
-  loopdev=$(losetup -f -P --show "$BASE_IMAGE_WORK_PATH")
-  partx -u "$loopdev" >/dev/null 2>&1 || true
+  # Attach without -P: we don't need /dev/loopNpM nodes — we'll use --offset instead.
+  loopdev=$(losetup -f --show "$BASE_IMAGE_WORK_PATH")
 
-  shopt -s nullglob
-  for last_part in "${loopdev}"p*; do :; done
-  shopt -u nullglob
+  # parted -m gives machine-readable colon-separated output; strip semicolons and
+  # keep only partition lines (lines that start with a digit).
+  while IFS=: read -r num start _end _size fstype _rest; do
+    [[ "$num" =~ ^[0-9]+$ ]] || continue
+    last_num="$num"
+    part_start_b="${start%B}"
+    part_fstype="$fstype"
+  done < <(parted -s -m "$loopdev" unit B print 2>/dev/null | tr -d ';' | grep -E '^[0-9]')
 
-  [[ -n "$last_part" ]] || fail "Could not identify the last partition while expanding $BASE_IMAGE_WORK_PATH"
+  if [[ -z "$last_num" ]]; then
+    losetup -d "$loopdev" 2>/dev/null || true
+    fail "Could not identify the last partition while expanding $BASE_IMAGE_WORK_PATH"
+  fi
 
-  root_part_num="${last_part##*p}"
-  root_part_type=$(blkid -o value -s TYPE "$last_part" 2>/dev/null || true)
+  parted -s "$loopdev" -- resizepart "$last_num" 100%
+  losetup -d "$loopdev"
 
-  parted -s "$loopdev" -- resizepart "$root_part_num" 100%
-  partx -u "$loopdev" >/dev/null 2>&1 || true
+  # Attach only the last partition via byte offset — no partition device nodes needed.
+  part_loopdev=$(losetup -f --show --offset "$part_start_b" "$BASE_IMAGE_WORK_PATH")
 
-  case "$root_part_type" in
+  case "${part_fstype:-}" in
     ext4|ext3|ext2|"")
-      e2fsck -fy "$last_part" >/dev/null 2>&1 || true
-      resize2fs "$last_part" >/dev/null
+      e2fsck -fy "$part_loopdev" >/dev/null 2>&1 || true
+      resize2fs "$part_loopdev" >/dev/null
       ;;
     *)
-      warn "Skipping filesystem resize for unsupported type '$root_part_type' on $last_part"
+      warn "Skipping filesystem resize for unsupported type '${part_fstype:-unknown}' on partition $last_num"
       ;;
   esac
 
-  losetup -d "$loopdev"
+  losetup -d "$part_loopdev"
 }
 
 attach_and_mount_image() {
-  LOOPDEV=$(losetup -f -P --show "$BASE_IMAGE_WORK_PATH")
-  partx -u "$LOOPDEV" >/dev/null 2>&1 || true
+  # Attach without -P: /dev/loopNpM nodes may not appear in containers when
+  # the loop kernel module was loaded with max_part=0 (Docker Desktop default).
+  # Instead, create a dedicated loop device per partition using --offset/--sizelimit.
+  LOOPDEV=$(losetup -f --show "$BASE_IMAGE_WORK_PATH")
 
-  local boot_part=""
-  local root_part=""
+  local boot_part="" root_part=""
   local partition_count=0
-  local partition_devs=()
-  local part
 
-  shopt -s nullglob
-  for part in "${LOOPDEV}"p*; do
-    [[ -b "$part" ]] || continue
-    partition_devs+=("$part")
-  done
-  shopt -u nullglob
+  while IFS=: read -r num start _end size fstype _rest; do
+    [[ "$num" =~ ^[0-9]+$ ]] || continue
+    local start_b="${start%B}"
+    local size_b="${size%B}"
+    ((partition_count++)) || true
 
-  if [[ "${#partition_devs[@]}" -eq 0 ]]; then
-    fail "No partition devices were exposed for $LOOPDEV"
-  fi
+    local part_dev
+    part_dev=$(losetup -f --show --offset "$start_b" --sizelimit "$size_b" "$BASE_IMAGE_WORK_PATH")
+    PART_LOOPDEVS+=("$part_dev")
 
-  partition_count="${#partition_devs[@]}"
-
-  while read -r name fstype _; do
-    local dev="/dev/$name"
-    [[ "$name" == "$(basename "$LOOPDEV")" ]] && continue
-    [[ " ${partition_devs[*]} " == *" $dev "* ]] || continue
-    if [[ -z "$fstype" ]]; then
-      fstype=$(blkid -o value -s TYPE "$dev" 2>/dev/null || true)
+    # parted may not detect the filesystem type if the partition is freshly written;
+    # fall back to blkid in that case.
+    local detected_fstype="$fstype"
+    if [[ -z "$detected_fstype" ]]; then
+      detected_fstype=$(blkid -o value -s TYPE "$part_dev" 2>/dev/null || true)
     fi
-    case "$fstype" in
-      vfat|fat|fat32)
-        [[ -z "$boot_part" ]] && boot_part="$dev"
-        ;;
-      ext4|btrfs|xfs)
-        [[ -z "$root_part" ]] && root_part="$dev"
-        ;;
-    esac
-  done < <(lsblk -ln -o NAME,FSTYPE,SIZE "$LOOPDEV")
 
-  if [[ -z "$root_part" && "$partition_count" -eq 1 ]]; then
-    local only_part="${partition_devs[0]}"
-    local only_type
-    only_type=$(blkid -o value -s TYPE "$only_part" 2>/dev/null || true)
-    case "$only_type" in
-      ext4|btrfs|xfs|"")
-        root_part="$only_part"
+    case "$detected_fstype" in
+      fat32|fat16|vfat)
+        [[ -z "$boot_part" ]] && boot_part="$part_dev"
+        ;;
+      ext4|ext3|ext2|btrfs|xfs)
+        [[ -z "$root_part" ]] && root_part="$part_dev"
         ;;
     esac
+  done < <(parted -s -m "$LOOPDEV" unit B print 2>/dev/null | tr -d ';' | grep -E '^[0-9]')
+
+  if [[ "${#PART_LOOPDEVS[@]}" -eq 0 ]]; then
+    fail "No partitions found in $BASE_IMAGE_WORK_PATH"
   fi
 
-  if [[ -z "$root_part" && "$partition_count" -ge 2 ]]; then
-    root_part="${partition_devs[-1]}"
-    [[ -n "$boot_part" ]] || boot_part="${partition_devs[0]}"
+  # Fallback: if filesystem type was not identified, treat the last partition as
+  # root and (if there are multiple) the first as boot.
+  if [[ -z "$root_part" ]]; then
+    root_part="${PART_LOOPDEVS[-1]}"
+    if [[ "${#PART_LOOPDEVS[@]}" -ge 2 && -z "$boot_part" ]]; then
+      boot_part="${PART_LOOPDEVS[0]}"
+    fi
   fi
 
-  [[ -n "$root_part" ]] || fail "Could not detect root partition on $LOOPDEV"
+  [[ -n "$root_part" ]] || fail "Could not detect root partition on $LOOPDEV (found $partition_count partition(s))"
 
   ROOTFS_MNT="$WORKDIR/rootfs"
   mkdir -p "$ROOTFS_MNT"
