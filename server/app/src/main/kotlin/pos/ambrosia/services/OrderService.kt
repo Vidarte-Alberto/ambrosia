@@ -3,6 +3,11 @@ package pos.ambrosia.services
 import pos.ambrosia.logger
 import pos.ambrosia.models.Order
 import pos.ambrosia.models.OrderDish
+import pos.ambrosia.models.StoreCheckoutItem
+import pos.ambrosia.models.StoreCheckoutRequest
+import pos.ambrosia.models.StoreCheckoutResponse
+import pos.ambrosia.models.StoreOrder
+import pos.ambrosia.models.StoreOrderItem
 import java.sql.Connection
 import java.util.UUID
 
@@ -339,7 +344,7 @@ class OrderService(
         return items
     }
 
-    private fun resolveVariantId(item: pos.ambrosia.models.StoreCheckoutItem): String? {
+    private fun resolveVariantId(item: StoreCheckoutItem): String? {
         if (item.variantId != null) return item.variantId
         val statement = connection.prepareStatement(STORE_GET_DEFAULT_VARIANT_ID)
         statement.setString(1, item.productId)
