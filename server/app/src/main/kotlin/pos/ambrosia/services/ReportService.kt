@@ -1,8 +1,29 @@
 package pos.ambrosia.services
 
+import org.jetbrains.exposed.v1.core.CustomFunction
+import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.VarCharColumnType
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.dao.id.EntityID
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.lessEq
+import org.jetbrains.exposed.v1.core.like
+import org.jetbrains.exposed.v1.jdbc.andWhere
+import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.statements.jdbc.JdbcConnectionImpl
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import pos.ambrosia.db.tables.OrderProductsTable
+import pos.ambrosia.db.tables.OrdersTable
+import pos.ambrosia.db.tables.PaymentMethodsTable
+import pos.ambrosia.db.tables.PaymentsTable
+import pos.ambrosia.db.tables.ProductsTable
+import pos.ambrosia.db.tables.TicketPaymentsTable
+import pos.ambrosia.db.tables.TicketsTable
+import pos.ambrosia.db.tables.UsersTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.OrderWithPayment
 import pos.ambrosia.models.OrderWithPaymentFilters
@@ -14,35 +35,10 @@ import java.sql.ResultSet
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.util.UUID
 
 class ReportService {
     companion object {
-        private const val GET_PRODUCT_SALES_BASE =
-            """
-            SELECT o.id AS order_id,
-                   p.name AS product_name,
-                   op.quantity,
-                   op.price_at_order,
-                   u.name AS user_name,
-                   pm.name AS payment_method,
-                   o.created_at AS sale_date,
-                   pay.satoshi_amount,
-                   pay.exchange_rate_at_payment,
-                   pay.exchange_rate_currency,
-                   pay.fiat_amount_at_payment,
-                   pay.id AS payment_id
-            FROM order_products op
-            JOIN orders o           ON o.id  = op.order_id
-            JOIN products p         ON p.id  = op.product_id
-            JOIN users u            ON u.id  = o.user_id
-            JOIN tickets t          ON t.order_id = o.id
-            JOIN ticket_payments tp ON tp.ticket_id = t.id
-            JOIN payments pay       ON pay.id = tp.payment_id
-            JOIN payment_methods pm ON pm.id = pay.method_id
-            WHERE o.status = 'paid'
-              AND o.is_deleted = 0
-            """
-
         private const val GET_ORDERS_WITH_PAYMENTS_BASE =
             """
             SELECT o.id,
@@ -66,9 +62,6 @@ class ReportService {
             LEFT JOIN payment_methods pm ON pm.id = p.method_id
             WHERE o.is_deleted = 0
             """
-
-        private const val GET_TOTAL_SALES_BY_DATE =
-            "SELECT SUM(total) AS total_sales FROM orders WHERE DATE(created_at) = ? AND status = 'paid' AND is_deleted = 0"
     }
 
     private val validStatuses = setOf("open", "closed", "paid")
@@ -81,23 +74,13 @@ class ReportService {
 
     private fun currentConnection(): Connection = (TransactionManager.current().connection as JdbcConnectionImpl).connection
 
-    private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
+    private fun dateFunc(column: org.jetbrains.exposed.v1.core.Expression<String>) =
+        CustomFunction<String>("date", VarCharColumnType(), column)
 
-    private fun mapRowToProductSaleItem(resultSet: ResultSet): ProductSaleItem =
-        ProductSaleItem(
-            orderId = resultSet.getString("order_id"),
-            productName = resultSet.getString("product_name"),
-            quantity = resultSet.getInt("quantity"),
-            priceAtOrder = resultSet.getInt("price_at_order"),
-            userName = resultSet.getString("user_name"),
-            paymentMethod = resultSet.getString("payment_method"),
-            saleDate = resultSet.getString("sale_date").replace(" ", "T"),
-            satoshiAmount = (resultSet.getObject("satoshi_amount") as? Number)?.toLong(),
-            exchangeRateAtPayment = (resultSet.getObject("exchange_rate_at_payment") as? Number)?.toDouble(),
-            exchangeRateCurrency = resultSet.getString("exchange_rate_currency"),
-            fiatAmountAtPayment = (resultSet.getObject("fiat_amount_at_payment") as? Number)?.toDouble(),
-            paymentId = resultSet.getString("payment_id"),
-        )
+    private fun lowerFunc(column: org.jetbrains.exposed.v1.core.Expression<String>) =
+        CustomFunction<String>("lower", VarCharColumnType(), column)
+
+    private fun isValidStatus(status: String): Boolean = validStatuses.contains(status)
 
     private fun mapResultSetToOrderWithPayment(resultSet: ResultSet): OrderWithPayment {
         val paymentNames = resultSet.getString("payment_method") ?: ""
@@ -145,11 +128,8 @@ class ReportService {
             val start =
                 when (period) {
                     "week" -> today.with(DayOfWeek.MONDAY)
-
                     "month" -> today.withDayOfMonth(1)
-
                     "year" -> today.withDayOfYear(1)
-
                     else -> throw IllegalArgumentException(
                         "Invalid period: $period. Must be week, month, or year",
                     )
@@ -195,47 +175,54 @@ class ReportService {
         transaction {
             val dateRange = resolveDateRange(period, startDate, endDate)
 
-            val whereClauses = mutableListOf<String>()
-            val parameters = mutableListOf<Any>()
+            val join =
+                OrderProductsTable
+                    .join(OrdersTable, JoinType.INNER, OrderProductsTable.orderId, OrdersTable.id)
+                    .join(ProductsTable, JoinType.INNER, OrderProductsTable.productId, ProductsTable.id)
+                    .join(UsersTable, JoinType.INNER, OrdersTable.userId, UsersTable.id)
+                    .join(TicketsTable, JoinType.INNER, TicketsTable.orderId, OrdersTable.id)
+                    .join(TicketPaymentsTable, JoinType.INNER, TicketPaymentsTable.ticketId, TicketsTable.id)
+                    .join(PaymentsTable, JoinType.INNER, PaymentsTable.id, TicketPaymentsTable.paymentId)
+                    .join(PaymentMethodsTable, JoinType.INNER, PaymentMethodsTable.id, PaymentsTable.methodId)
+
+            var query =
+                join
+                    .selectAll()
+                    .where { (OrdersTable.status eq "paid") and (OrdersTable.isDeleted eq false) }
 
             dateRange?.let { (start, end) ->
-                whereClauses.add("date(o.created_at) >= date(?)")
-                parameters.add(start)
-                whereClauses.add("date(o.created_at) <= date(?)")
-                parameters.add(end)
+                query = query.andWhere { dateFunc(OrdersTable.createdAt) greaterEq start }
+                query = query.andWhere { dateFunc(OrdersTable.createdAt) lessEq end }
             }
-            productName?.let {
-                whereClauses.add("p.name LIKE ?")
-                parameters.add("%$it%")
+            productName?.let { name ->
+                query = query.andWhere { ProductsTable.name like "%$name%" }
             }
-            userId?.let {
-                whereClauses.add("o.user_id = ?")
-                parameters.add(it)
+            userId?.let { uid ->
+                query = query.andWhere { OrdersTable.userId eq EntityID(UUID.fromString(uid), UsersTable) }
             }
-            paymentMethod?.let {
-                whereClauses.add("lower(pm.name) = lower(?)")
-                parameters.add(it)
+            paymentMethod?.let { method ->
+                query = query.andWhere { lowerFunc(PaymentMethodsTable.name) eq method.lowercase() }
             }
 
-            val query =
-                buildString {
-                    append(GET_PRODUCT_SALES_BASE)
-                    if (whereClauses.isNotEmpty()) {
-                        append("\n  AND ")
-                        append(whereClauses.joinToString("\n  AND "))
+            val sales =
+                query
+                    .orderBy(OrdersTable.createdAt, SortOrder.DESC)
+                    .map { row: ResultRow ->
+                        ProductSaleItem(
+                            orderId = row[OrdersTable.id].value.toString(),
+                            productName = row[ProductsTable.name],
+                            quantity = row[OrderProductsTable.quantity],
+                            priceAtOrder = row[OrderProductsTable.priceAtOrder],
+                            userName = row[UsersTable.name],
+                            paymentMethod = row[PaymentMethodsTable.name],
+                            saleDate = row[OrdersTable.createdAt].replace(" ", "T"),
+                            satoshiAmount = row[PaymentsTable.satoshiAmount],
+                            exchangeRateAtPayment = row[PaymentsTable.exchangeRateAtPayment],
+                            exchangeRateCurrency = row[PaymentsTable.exchangeRateCurrency],
+                            fiatAmountAtPayment = row[PaymentsTable.fiatAmountAtPayment],
+                            paymentId = row[PaymentsTable.id].value.toString(),
+                        )
                     }
-                    append("\nORDER BY o.created_at DESC")
-                }
-
-            val sales = mutableListOf<ProductSaleItem>()
-            currentConnection().prepareStatement(query).use { statement ->
-                bindQueryParameters(statement, parameters)
-                statement.executeQuery().use { resultSet ->
-                    while (resultSet.next()) {
-                        sales.add(mapRowToProductSaleItem(resultSet))
-                    }
-                }
-            }
 
             logger.info("Product sales report: ${sales.size} line items")
 
@@ -339,16 +326,15 @@ class ReportService {
 
     fun getTotalSalesByDate(date: String): Double =
         transaction {
-            var total = 0.0
-            currentConnection().prepareStatement(GET_TOTAL_SALES_BY_DATE).use { statement ->
-                statement.setString(1, date)
-                statement.executeQuery().use { resultSet ->
-                    if (resultSet.next()) {
-                        total = resultSet.getDouble("total_sales")
+            val total =
+                OrdersTable
+                    .selectAll()
+                    .where {
+                        (dateFunc(OrdersTable.createdAt) eq date) and
+                            (OrdersTable.status eq "paid") and
+                            (OrdersTable.isDeleted eq false)
                     }
-                }
-            }
-
+                    .sumOf { it[OrdersTable.total] }
             logger.info("Total sales for $date: $total")
             total
         }
