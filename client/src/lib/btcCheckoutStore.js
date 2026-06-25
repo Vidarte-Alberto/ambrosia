@@ -1,87 +1,87 @@
-const DB_NAME = "ambrosia-btc";
-const DB_VERSION = 1;
-const STORE_NAME = "pending-checkouts";
-const SYNC_TAG = "btc-checkout";
+const DATABASE_NAME = "ambrosia-btc";
+const DATABASE_VERSION = 1;
+const CHECKOUT_STORE_NAME = "pending-checkouts";
+const BACKGROUND_SYNC_TAG = "btc-checkout";
 
-function openDb() {
+const STATUS_PENDING = "pending";
+const STATUS_COMPLETED = "completed";
+
+function openDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const openRequest = indexedDB.open(DATABASE_NAME, DATABASE_VERSION);
 
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME, { keyPath: "paymentHash" });
+    openRequest.onupgradeneeded = (event) => {
+      const database = event.target.result;
+      if (!database.objectStoreNames.contains(CHECKOUT_STORE_NAME)) {
+        database.createObjectStore(CHECKOUT_STORE_NAME, { keyPath: "paymentHash" });
       }
     };
 
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    openRequest.onsuccess = () => resolve(openRequest.result);
+    openRequest.onerror = () => reject(openRequest.error);
   });
 }
 
-function runTransaction(storeName, mode, callback) {
-  return openDb().then((db) => new Promise((resolve, reject) => {
-    const transaction = db.transaction(storeName, mode);
-    const store = transaction.objectStore(storeName);
-    const result = callback(store);
+function runCheckoutRequest(mode, buildRequest) {
+  return openDatabase().then((database) => new Promise((resolve, reject) => {
+    const transaction = database.transaction(CHECKOUT_STORE_NAME, mode);
+    const checkoutStore = transaction.objectStore(CHECKOUT_STORE_NAME);
+    const request = buildRequest(checkoutStore);
 
-    if (result && typeof result.onsuccess !== "undefined") {
-      result.onsuccess = () => resolve(result.result);
-      result.onerror = () => reject(result.error);
-    } else {
-      transaction.oncomplete = () => resolve(result);
-      transaction.onerror = () => reject(transaction.error);
-    }
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   }));
 }
 
-export async function savePendingCheckout(payload) {
-  const entry = {
-    paymentHash: payload.paymentHash,
-    checkoutPayload: payload.checkoutPayload,
-    status: "pending",
+function getCheckoutsByStatus(status) {
+  return runCheckoutRequest("readonly", (checkoutStore) => checkoutStore.getAll())
+    .then((allCheckouts) => (allCheckouts || []).filter((checkout) => checkout.status === status));
+}
+
+export async function savePendingCheckout({ paymentHash, checkoutPayload }) {
+  const pendingCheckout = {
+    paymentHash,
+    checkoutPayload,
+    status: STATUS_PENDING,
     savedAt: Date.now(),
   };
-  return runTransaction(STORE_NAME, "readwrite", (store) => store.put(entry));
+  return runCheckoutRequest("readwrite", (checkoutStore) => checkoutStore.put(pendingCheckout));
 }
 
 export async function markCheckoutCompleted(paymentHash, completedResult) {
-  const existing = await runTransaction(STORE_NAME, "readonly", (store) => store.get(paymentHash));
-  const updated = existing
-    ? { ...existing, status: "completed", completedResult, completedAt: Date.now() }
-    : { paymentHash, status: "completed", completedResult, completedAt: Date.now() };
-  return runTransaction(STORE_NAME, "readwrite", (store) => store.put(updated));
-}
-
-function getAllByStatus(status) {
-  return openDb().then((db) => new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
-    const store = transaction.objectStore(STORE_NAME);
-    const getAllRequest = store.getAll();
-    getAllRequest.onsuccess = () => resolve((getAllRequest.result || []).filter((entry) => entry.status === status));
-    getAllRequest.onerror = () => reject(getAllRequest.error);
-  }));
+  const existingCheckout = await runCheckoutRequest(
+    "readonly",
+    (checkoutStore) => checkoutStore.get(paymentHash),
+  );
+  const completedCheckout = {
+    ...existingCheckout,
+    paymentHash,
+    status: STATUS_COMPLETED,
+    completedResult,
+    completedAt: Date.now(),
+  };
+  return runCheckoutRequest("readwrite", (checkoutStore) => checkoutStore.put(completedCheckout));
 }
 
 export function getPendingCheckouts() {
-  return getAllByStatus("pending");
+  return getCheckoutsByStatus(STATUS_PENDING);
 }
 
 export function getCompletedCheckouts() {
-  return getAllByStatus("completed");
+  return getCheckoutsByStatus(STATUS_COMPLETED);
 }
 
 export async function deleteCheckout(paymentHash) {
-  return runTransaction(STORE_NAME, "readwrite", (store) => store.delete(paymentHash));
+  return runCheckoutRequest("readwrite", (checkoutStore) => checkoutStore.delete(paymentHash));
 }
 
 export async function registerBtcCheckoutSync() {
   if (typeof navigator === "undefined") return;
   if (!("serviceWorker" in navigator) || !("SyncManager" in self)) return;
   try {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.sync.register(SYNC_TAG);
+    const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+    await serviceWorkerRegistration.sync.register(BACKGROUND_SYNC_TAG);
   } catch {
-    // Browser doesn't support Background Sync — page-based recovery handles it
+    return;
   }
 }

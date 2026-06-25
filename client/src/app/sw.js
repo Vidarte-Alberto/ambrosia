@@ -74,17 +74,30 @@ async function recoverPendingCheckouts() {
 
   for (const entry of pending) {
     try {
-      const response = await httpClient("store/orders/checkout-if-paid", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry.checkoutPayload),
-      });
-      const data = await parseJsonResponse(response);
-      if (response.ok && data?.status === "completed") {
-        await markCheckoutCompleted(entry.paymentHash, data);
+      const statusResponse = await httpClient(
+        `store/orders/payment-status/${entry.paymentHash}`,
+      );
+      const statusData = await parseJsonResponse(statusResponse);
+      if (!statusResponse.ok) continue;
+
+      if (statusData?.status === "completed") {
+        await markCheckoutCompleted(entry.paymentHash, statusData);
+        continue;
+      }
+
+      if (statusData?.status === "paid") {
+        const checkoutResponse = await httpClient("store/orders/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(entry.checkoutPayload),
+        });
+        const checkoutData = await parseJsonResponse(checkoutResponse);
+        if (checkoutResponse.ok) {
+          await markCheckoutCompleted(entry.paymentHash, checkoutData);
+        }
       }
     } catch {
-      // Network error — Background Sync will retry automatically
+      continue;
     }
   }
 }

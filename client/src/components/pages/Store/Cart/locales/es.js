@@ -54,6 +54,7 @@ const cartEs = {
         cashPaid: "Pago en efectivo registrado correctamente",
         cardPaid: "Pago con tarjeta registrado correctamente",
         btcRecovered: "Un pago de Bitcoin pendiente fue completado en segundo plano",
+        btcConfirming: "Pago recibido, confirmando en segundo plano",
       },
       receipt: {
         tableName: "Caja",

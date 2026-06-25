@@ -1,17 +1,16 @@
 import {
+  deleteCheckout,
+  markCheckoutCompleted,
+  registerBtcCheckoutSync,
+  savePendingCheckout,
+} from "@/lib/btcCheckoutStore";
+
+import {
   classifyPaymentMethod,
   PAYMENT_METHODS,
 } from "../utils/paymentMethods";
 
-import { processCheckout } from "./paymentFlows";
-
-function getPaymentMethodType(paymentMethodData) {
-  const name = (paymentMethodData?.name || "").toLowerCase();
-  if (name.includes("btc")) return "btc";
-  if (name.includes("cash") || name.includes("efectivo")) return "cash";
-  if (name.includes("credit") || name.includes("debit") || name.includes("card")) return "card";
-  return "generic";
-}
+import { PaymentPendingError, processCheckout } from "./paymentFlows";
 
 function buildInvoiceDescription(items = []) {
   if (!Array.isArray(items) || items.length === 0) return "";
@@ -194,6 +193,8 @@ async function runDeferredCheckout({
   buildOnPayPayload,
   successKey,
   errorKey,
+  pendingKey,
+  onCheckoutSuccess,
   finalize,
   dispatch,
   onPay,
@@ -208,6 +209,8 @@ async function runDeferredCheckout({
   try {
     const storeCheckoutResult = await processCheckout({ ...checkoutArgs, user });
 
+    await onCheckoutSuccess?.(storeCheckoutResult);
+
     await refreshShiftTickets?.();
     await printCustomerReceipt?.({
       items: receiptItems,
@@ -220,8 +223,13 @@ async function runDeferredCheckout({
     onResetCart?.();
     notifySuccess(successKey);
   } catch (err) {
-    console.error("Error completing payment:", err);
-    notifyError(err?.message || errorKey);
+    if (pendingKey && err instanceof PaymentPendingError) {
+      onResetCart?.();
+      notifySuccess(pendingKey);
+    } else {
+      console.error("Error completing payment:", err);
+      notifyError(err?.message || errorKey);
+    }
   } finally {
     finalize();
     dispatch({ type: "stop" });
@@ -232,6 +240,8 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
   return async function handleBtcComplete(completionData) {
     const config = getConfig();
     if (!config) return;
+
+    const paymentHash = completionData?.invoice?.paymentHash ?? null;
 
     await runDeferredCheckout({
       ...context,
@@ -249,7 +259,7 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
         transactionId: completionData?.invoice?.serialized || "",
         satoshiAmount: completionData?.satoshis ?? null,
         exchangeRateAtPayment: config.invoiceData?.exchangeRate ?? null,
-        paymentHash: completionData?.invoice?.paymentHash ?? null,
+        paymentHash,
         exchangeRateCurrency: config.currencyAcronym ?? null,
         fiatAmountAtPayment: config.amountFiat ?? null,
       },
@@ -269,6 +279,12 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
       }),
       successKey: "success.btcPaid",
       errorKey: "errors.btcComplete",
+      pendingKey: "success.btcConfirming",
+      onCheckoutSuccess: async (storeCheckoutResult) => {
+        if (!paymentHash) return;
+        await markCheckoutCompleted(paymentHash, storeCheckoutResult).catch(() => {});
+        await deleteCheckout(paymentHash).catch(() => {});
+      },
       finalize: () => setConfig((previousConfig) => (
         previousConfig ? { ...previousConfig, paymentCompleted: true } : previousConfig
       )),

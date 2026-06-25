@@ -6,13 +6,6 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useTurn } from "@/hooks/turn/useTurn";
-import {
-  deleteCheckout,
-  getCompletedCheckouts,
-  getPendingCheckouts,
-  markCheckoutCompleted,
-} from "@/lib/btcCheckoutStore";
-import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { usePayments } from "../../hooks/usePayments";
 import { usePaymentMethods } from "../hooks/usePaymentMethod";
@@ -28,6 +21,7 @@ import {
   buildHandleCashComplete,
   buildHandleCardComplete,
 } from "./paymentHandlers";
+import { useBtcCheckoutRecovery } from "./useBtcCheckoutRecovery";
 import { useCustomerReceipt } from "./useCustomerReceipt";
 import { useDeferredPayment } from "./useDeferredPayment";
 import { usePaymentState } from "./usePaymentState";
@@ -42,6 +36,8 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const { getPaymentCurrencyById } = usePayments();
 
   const { isPaying, paymentError, dispatch, notifyError, notifySuccess, clearPaymentError } = usePaymentState(paymentTranslations);
+
+  useBtcCheckoutRecovery(paymentTranslations);
 
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}),

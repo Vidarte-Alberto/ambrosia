@@ -183,10 +183,6 @@ describe("useCartPayment", () => {
 
   describe("BTC checkout recovery", () => {
     it("shows a recovery toast and deletes completed entries found on mount", async () => {
-      // NOTE: codifies issue B (known, out of scope) — buildHandleBtcComplete never
-      // calls deleteCheckout after a normal BTC sale, so a "completed" entry also
-      // lingers after a successful (non-recovery) payment and triggers this same
-      // toast on the next mount.
       getCompletedCheckouts.mockResolvedValue([{ paymentHash: "hash-1" }]);
 
       renderHook(() => useCartPayment());
@@ -200,13 +196,17 @@ describe("useCartPayment", () => {
       });
     });
 
-    it("recovers a pending checkout that was paid and marks it completed", async () => {
-      const checkoutPayload = { userId: "u1", items: [], amount: 10 };
+    it("marks a pending checkout completed when the order was already recorded", async () => {
       getPendingCheckouts.mockResolvedValue([
-        { paymentHash: "hash-2", checkoutPayload },
+        { paymentHash: "hash-2", checkoutPayload: { userId: "u1", items: [], amount: 10 } },
       ]);
       httpClient.mockResolvedValue({ ok: true });
-      parseJsonResponse.mockResolvedValue({ status: "completed", orderId: "order-2" });
+      parseJsonResponse.mockResolvedValue({
+        status: "completed",
+        orderId: "order-2",
+        ticketId: "ticket-2",
+        paymentId: "payment-2",
+      });
 
       renderHook(() => useCartPayment());
 
@@ -214,15 +214,42 @@ describe("useCartPayment", () => {
         expect(deleteCheckout).toHaveBeenCalledWith("hash-2");
       });
 
-      expect(httpClient).toHaveBeenCalledWith("store/orders/checkout-if-paid", {
+      expect(httpClient).toHaveBeenCalledWith("store/orders/payment-status/hash-2");
+      expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-2", {
+        status: "completed",
+        orderId: "order-2",
+        ticketId: "ticket-2",
+        paymentId: "payment-2",
+      });
+      expect(addToast).toHaveBeenCalledWith({
+        color: "success",
+        description: "success.btcRecovered",
+      });
+    });
+
+    it("checks out a pending payment that phoenix confirms as paid and marks it completed", async () => {
+      const checkoutPayload = { userId: "u1", items: [], amount: 10, paymentHash: "hash-3" };
+      getPendingCheckouts.mockResolvedValue([
+        { paymentHash: "hash-3", checkoutPayload },
+      ]);
+      httpClient.mockResolvedValue({ ok: true });
+      parseJsonResponse
+        .mockResolvedValueOnce({ status: "paid" })
+        .mockResolvedValueOnce({ orderId: "order-3" });
+
+      renderHook(() => useCartPayment());
+
+      await waitFor(() => {
+        expect(deleteCheckout).toHaveBeenCalledWith("hash-3");
+      });
+
+      expect(httpClient).toHaveBeenCalledWith("store/orders/payment-status/hash-3");
+      expect(httpClient).toHaveBeenCalledWith("store/orders/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(checkoutPayload),
       });
-      expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-2", {
-        status: "completed",
-        orderId: "order-2",
-      });
+      expect(markCheckoutCompleted).toHaveBeenCalledWith("hash-3", { orderId: "order-3" });
       expect(addToast).toHaveBeenCalledWith({
         color: "success",
         description: "success.btcRecovered",
@@ -231,7 +258,7 @@ describe("useCartPayment", () => {
 
     it("leaves a pending checkout untouched when it has not been paid yet", async () => {
       getPendingCheckouts.mockResolvedValue([
-        { paymentHash: "hash-3", checkoutPayload: {} },
+        { paymentHash: "hash-4", checkoutPayload: {} },
       ]);
       httpClient.mockResolvedValue({ ok: true });
       parseJsonResponse.mockResolvedValue({ status: "pending" });
