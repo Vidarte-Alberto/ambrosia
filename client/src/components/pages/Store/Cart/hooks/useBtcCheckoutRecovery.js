@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 
 import { addToast } from "@heroui/react";
+import { useTranslations } from "next-intl";
 
 import {
   deleteCheckout,
@@ -11,14 +12,17 @@ import {
 } from "@/lib/btcCheckoutStore";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
-export function useBtcCheckoutRecovery(t) {
+export function useBtcCheckoutRecovery(onResetCart) {
+  const paymentTranslations = useTranslations("cart.payment");
+
   useEffect(() => {
     async function notifyRecoveredAndDelete(paymentHash, completedResult) {
       if (completedResult) {
         await markCheckoutCompleted(paymentHash, completedResult).catch(() => {});
       }
-      addToast({ color: "success", description: t("success.btcRecovered") });
+      addToast({ color: "success", description: paymentTranslations("success.btcRecovered") });
       await deleteCheckout(paymentHash).catch(() => {});
+      onResetCart?.();
     }
 
     async function recoverPendingCheckout(pendingCheckout) {
@@ -66,5 +70,5 @@ export function useBtcCheckoutRecovery(t) {
     }
 
     recoverBtcCheckouts();
-  }, [t]);
+  }, [paymentTranslations, onResetCart]);
 }

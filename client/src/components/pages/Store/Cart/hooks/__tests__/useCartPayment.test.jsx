@@ -196,6 +196,18 @@ describe("useCartPayment", () => {
       });
     });
 
+    it("clears the cart when a background-synced checkout is recovered", async () => {
+      getCompletedCheckouts.mockResolvedValue([{ paymentHash: "hash-bg" }]);
+      const onResetCart = jest.fn();
+
+      renderHook(() => useCartPayment({ onResetCart }));
+
+      await waitFor(() => {
+        expect(deleteCheckout).toHaveBeenCalledWith("hash-bg");
+      });
+      expect(onResetCart).toHaveBeenCalledTimes(1);
+    });
+
     it("marks a pending checkout completed when the order was already recorded", async () => {
       getPendingCheckouts.mockResolvedValue([
         { paymentHash: "hash-2", checkoutPayload: { userId: "u1", items: [], amount: 10 } },

@@ -16,14 +16,12 @@ import {
 
 import {
   buildHandlePay,
-  buildHandleBtcInvoiceReady,
-  buildHandleBtcComplete,
   buildHandleCashComplete,
   buildHandleCardComplete,
 } from "./paymentHandlers";
-import { useBtcCheckoutRecovery } from "./useBtcCheckoutRecovery";
+import { useBtcPayment } from "./useBtcPayment";
 import { useCustomerReceipt } from "./useCustomerReceipt";
-import { useDeferredPayment } from "./useDeferredPayment";
+import { usePaymentChannel } from "./usePaymentChannel";
 import { usePaymentState } from "./usePaymentState";
 
 export function useCartPayment({ onPay, onResetCart } = {}) {
@@ -36,8 +34,6 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
   const { getPaymentCurrencyById } = usePayments();
 
   const { isPaying, paymentError, dispatch, notifyError, notifySuccess, clearPaymentError } = usePaymentState(paymentTranslations);
-
-  useBtcCheckoutRecovery(paymentTranslations);
 
   const paymentMethodMap = useMemo(
     () => (paymentMethods || []).reduce((acc, method) => { acc[method.id] = method; return acc; }, {}),
@@ -58,9 +54,9 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     [dispatch, onPay, onResetCart, notifyError, notifySuccess, user, printCustomerReceipt, refreshShiftTickets],
   );
 
-  const btc = useDeferredPayment(buildHandleBtcComplete, handlerContext);
-  const cash = useDeferredPayment(buildHandleCashComplete, handlerContext);
-  const card = useDeferredPayment(buildHandleCardComplete, handlerContext);
+  const btc = useBtcPayment(handlerContext);
+  const cash = usePaymentChannel(buildHandleCashComplete, handlerContext);
+  const card = usePaymentChannel(buildHandleCardComplete, handlerContext);
 
   const handlePay = useMemo(
     () => buildHandlePay({
@@ -101,37 +97,19 @@ export function useCartPayment({ onPay, onResetCart } = {}) {
     ],
   );
 
-  const handleBtcInvoiceReady = useMemo(
-    () => buildHandleBtcInvoiceReady({ setBtcPaymentConfig: btc.setConfig }),
-    [btc.setConfig],
-  );
-
   const btcPayment = useMemo(
-    () => ({
-      config: btc.config,
-      onInvoiceReady: handleBtcInvoiceReady,
-      onComplete: btc.handleComplete,
-      onClose: btc.clearConfig,
-    }),
-    [btc.config, btc.handleComplete, btc.clearConfig, handleBtcInvoiceReady],
+    () => ({ config: btc.config, onInvoiceReady: btc.onInvoiceReady, onComplete: btc.onComplete, onClose: btc.onClose }),
+    [btc.config, btc.onInvoiceReady, btc.onComplete, btc.onClose],
   );
 
   const cashPayment = useMemo(
-    () => ({
-      config: cash.config,
-      onComplete: cash.handleComplete,
-      onClose: cash.clearConfig,
-    }),
-    [cash.config, cash.handleComplete, cash.clearConfig],
+    () => ({ config: cash.config, onComplete: cash.onComplete, onClose: cash.onClose }),
+    [cash.config, cash.onComplete, cash.onClose],
   );
 
   const cardPayment = useMemo(
-    () => ({
-      config: card.config,
-      onComplete: card.handleComplete,
-      onClose: card.clearConfig,
-    }),
-    [card.config, card.handleComplete, card.clearConfig],
+    () => ({ config: card.config, onComplete: card.onComplete, onClose: card.onClose }),
+    [card.config, card.onComplete, card.onClose],
   );
 
   return {
