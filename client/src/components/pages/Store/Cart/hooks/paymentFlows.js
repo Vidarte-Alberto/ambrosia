@@ -20,7 +20,8 @@ export async function processCheckout({
     body: JSON.stringify({
       userId: user.userId,
       items: cartItems.map((item) => ({
-        productId: String(item?.id ?? ""),
+        productId: String(item.productId ?? item.id ?? ""),
+        variantId: item.variantId ?? null,
         quantity: Number(item?.quantity) || 0,
         priceAtOrder: Number(item?.price) || 0,
       })),

@@ -34,22 +34,25 @@ export function useCartOperations({ cart, setCart, products }) {
   }, []);
 
   const getAvailableQuantity = useCallback(
-    (productId) => {
-      const product = products.find((product) => product.id === productId);
+    (productId, variant) => {
+      if (variant) return Number(variant.quantity) || 0;
+      const product = products.find((p) => p.id === productId);
       return Number(product?.quantity) || 0;
     },
     [products],
   );
 
   const addProduct = useCallback(
-    (product) => {
-      const availableQuantity = getAvailableQuantity(product.id);
+    (product, variant = null) => {
+      const availableQuantity = getAvailableQuantity(product.id, variant);
       if (availableQuantity <= 0) {
         notifyOutOfStock();
         return;
       }
 
-      const nextCart = addCartItem(cart, product, availableQuantity);
+      const variantName = variant?._variantName ?? null;
+
+      const nextCart = addCartItem(cart, product, variant, availableQuantity, variantName);
       if (nextCart === cart) {
         notifyOutOfStock();
         return;
@@ -60,31 +63,38 @@ export function useCartOperations({ cart, setCart, products }) {
   );
 
   const updateQuantity = useCallback(
-    (productId, quantity) => {
+    (itemId, quantity) => {
       if (!Number.isFinite(quantity)) {
         return;
       }
 
-      const availableQuantity = getAvailableQuantity(productId);
+      const cartItem = cart.find((item) => item.id === itemId);
+      const availableQuantity = cartItem?.maxQuantity
+        ?? getAvailableQuantity(cartItem?.productId ?? itemId);
+
       if (quantity > availableQuantity) {
         notifyOutOfStock();
-        setCart(setCartItemQuantity(cart, productId, availableQuantity, availableQuantity));
+        if (availableQuantity <= 0) {
+          setCart(removeCartItem(cart, itemId));
+        } else {
+          setCart(setCartItemQuantity(cart, itemId, availableQuantity, availableQuantity));
+        }
         return;
       }
 
       if (quantity <= 0) {
-        setCart(removeCartItem(cart, productId));
+        setCart(removeCartItem(cart, itemId));
         return;
       }
 
-      setCart(setCartItemQuantity(cart, productId, quantity, availableQuantity));
+      setCart(setCartItemQuantity(cart, itemId, quantity, availableQuantity));
     },
     [cart, getAvailableQuantity, notifyOutOfStock, setCart],
   );
 
   const removeProduct = useCallback(
-    (productId) => {
-      setCart(removeCartItem(cart, productId));
+    (itemId) => {
+      setCart(removeCartItem(cart, itemId));
     },
     [cart, setCart],
   );

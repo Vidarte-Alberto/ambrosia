@@ -1,16 +1,21 @@
-export function addCartItem(cart, product, availableQuantity) {
-  const existingCartItem = cart.find((item) => item.id === product.id);
+export function addCartItem(cart, product, variant, availableQuantity, variantName) {
+  const itemId = variant?.id ?? product.id;
+  const existingCartItem = cart.find((item) => item.id === itemId);
 
   if (!existingCartItem) {
     return [
       ...cart,
       {
-        id: product.id,
-        imageUrl: product.imageUrl,
+        id: itemId,
+        productId: product.id,
+        variantId: variant?.id ?? null,
+        variantName: variantName ?? null,
+        imageUrl: variant?.imageUrl ?? product.imageUrl,
         name: product.name,
-        price: product.priceCents,
+        price: variant?.priceCents ?? product.priceCents,
         quantity: 1,
-        subtotal: product.priceCents,
+        subtotal: variant?.priceCents ?? product.priceCents,
+        maxQuantity: availableQuantity,
       },
     ];
   }
@@ -20,10 +25,10 @@ export function addCartItem(cart, product, availableQuantity) {
     return cart;
   }
 
-  return cart.map((item) => (item.id === product.id
+  return cart.map((item) => (item.id === itemId
     ? {
         ...item,
-        imageUrl: item.imageUrl ?? product.imageUrl,
+        imageUrl: item.imageUrl ?? (variant?.imageUrl ?? product.imageUrl),
         quantity: nextQuantity,
         subtotal: nextQuantity * item.price,
       }
@@ -31,9 +36,9 @@ export function addCartItem(cart, product, availableQuantity) {
   );
 }
 
-export function setCartItemQuantity(cart, productId, quantity, availableQuantity) {
+export function setCartItemQuantity(cart, itemId, quantity, availableQuantity) {
   const cappedQuantity = Math.min(quantity, availableQuantity);
-  return cart.map((item) => (item.id === productId
+  return cart.map((item) => (item.id === itemId
     ? {
         ...item,
         quantity: cappedQuantity,
@@ -43,6 +48,6 @@ export function setCartItemQuantity(cart, productId, quantity, availableQuantity
   );
 }
 
-export function removeCartItem(cart, productId) {
-  return cart.filter((item) => item.id !== productId);
+export function removeCartItem(cart, itemId) {
+  return cart.filter((item) => item.id !== itemId);
 }
