@@ -26,7 +26,7 @@ export function CurrencyCard({ selectedCurrency, currencies, onCurrencyChange })
           inputProps={{
             onClick: (event) => event.target.select(),
           }}
-          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().startsWith(inputValue.toLowerCase())}
+          defaultFilter={(textValue, inputValue) => textValue.toLowerCase().includes(inputValue.toLowerCase())}
         >
           {currencies.map((currency) => (
             <AutocompleteItem key={currency.code} textValue={`${currency.code} - ${currency.name}`}>
