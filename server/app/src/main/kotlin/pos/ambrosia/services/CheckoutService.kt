@@ -21,19 +21,14 @@ private fun <T : Any> PreparedStatement.setNullable(
     if (value != null) setObject(index, value, sqlType) else setNull(index, sqlType)
 }
 
-/** Outcome of a [CheckoutService.checkout] attempt. */
 sealed interface CheckoutResult {
-    /** A checkout exists for this request. [alreadyExisted] is true when it was found by payment hash
-     *  instead of being created by this call (idempotent retry from the recovery flow). */
     data class Success(
         val response: StoreCheckoutResponse,
         val alreadyExisted: Boolean,
     ) : CheckoutResult
 
-    /** A `paymentHash` was supplied but Phoenix has not confirmed it as paid yet. Nothing was written. */
     data object NotPaid : CheckoutResult
 
-    /** Items were empty/invalid, or stock was insufficient. */
     data object Invalid : CheckoutResult
 }
 
@@ -65,11 +60,6 @@ class CheckoutService(
         private const val STORE_CANCEL_ORDER =
             "UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'open' AND table_id IS NULL"
 
-        // Serializes checkout attempts on the shared singleton connection so the
-        // "find existing by payment hash -> verify with Phoenix -> insert" sequence is
-        // atomic and concurrent calls (foreground completion + background recovery) for
-        // the same payment cannot interleave their transactions and leave an order with
-        // no linked payment. See CheckoutService.checkout.
         private val checkoutMutex = Mutex()
     }
 
@@ -151,14 +141,6 @@ class CheckoutService(
         }
     }
 
-    /**
-     * Creates a store checkout, or returns the already-recorded one for [StoreCheckoutRequest.paymentHash].
-     *
-     * For BTC payments (non-blank `paymentHash`), this method is the single source of truth: it is
-     * idempotent (a second call with the same hash returns the existing order instead of creating a
-     * duplicate) and it verifies the payment with Phoenix before writing anything. Both the foreground
-     * "payment complete" handler and the background recovery sync call this same endpoint/method.
-     */
     suspend fun checkout(request: StoreCheckoutRequest): CheckoutResult {
         if (request.items.isEmpty()) return CheckoutResult.Invalid
         if (request.items.any { it.quantity <= 0 }) return CheckoutResult.Invalid

@@ -60,7 +60,6 @@ class CheckoutServiceTest {
         createdAt = 0,
     )
 
-    /** Stubs `findCheckoutByPaymentHash` to report no existing order for any payment hash. */
     private fun stubNoExistingCheckout() {
         val findStatement: PreparedStatement = mock()
         val findResultSet: ResultSet = mock()

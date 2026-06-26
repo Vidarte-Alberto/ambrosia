@@ -41,10 +41,6 @@ import pos.ambrosia.utils.PhoenixConnectionException
 import pos.ambrosia.utils.PhoenixNodeInfoException
 import pos.ambrosia.utils.PhoenixServiceException
 
-/**
- * Minimal payment-verification surface consumed by [pos.ambrosia.services.CheckoutService].
- * Extracted as an interface so checkout logic can be unit-tested without a real Phoenix node.
- */
 interface PaymentVerifier {
     suspend fun getIncomingPayment(paymentHash: String): IncomingPayment
 }
