@@ -15,7 +15,6 @@ import { useTranslations } from "next-intl";
 
 import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
-import { ProductTypeChip } from "@/components/shared/ProductTypeChip";
 import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
@@ -33,7 +32,7 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
         <TableColumn className="py-2 px-3 w-[50px]">{productsTranslations("description")}</TableColumn>
         <TableColumn className="py-2 px-3 w-[100px]">{productsTranslations("category")}</TableColumn>
         <TableColumn className="py-2 px-3 w-20">{productsTranslations("sku")}</TableColumn>
-        <TableColumn className="py-2 px-3 w-[90px]">{productsTranslations("variants")}</TableColumn>
+        <TableColumn className="py-2 px-3 w-[90px]">{productsTranslations("stock")}</TableColumn>
         <TableColumn className="py-2 px-3 w-40 text-right">{productsTranslations("actions")}</TableColumn>
       </TableHeader>
       <TableBody>
@@ -82,7 +81,7 @@ export function ProductsTable({ products, categoryNameById, canManageProducts, o
                 <span className="whitespace-nowrap">{product.SKU}</span>
               </TableCell>
               <TableCell>
-                <ProductTypeChip hasVariants={product.hasVariants} />
+                <span className="font-medium">{product.quantity}</span>
               </TableCell>
               <TableCell className="py-2 px-3">
                 <div className="flex justify-end gap-2">

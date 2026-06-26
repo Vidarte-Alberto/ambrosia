@@ -38,7 +38,7 @@ class CheckoutService(
         private const val STORE_DECREMENT_VARIANT_STOCK =
             "UPDATE product_variants SET quantity = quantity - ? WHERE id = ? AND product_id = ? AND is_active = 1 AND quantity >= ?"
         private const val STORE_GET_DEFAULT_VARIANT_ID =
-            "SELECT pv.id FROM product_variants pv JOIN products p ON p.id = pv.product_id WHERE pv.product_id = ? AND pv.is_active = 1 AND p.has_variants = 1 LIMIT 1"
+            "SELECT pv.id FROM product_variants pv WHERE pv.product_id = ? AND pv.is_active = 1 LIMIT 1"
         private const val STORE_INSERT_TICKET =
             "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
         private const val STORE_INSERT_PAYMENT =
