@@ -20,6 +20,7 @@ class ReportService(
             """
             SELECT o.id AS order_id,
                    p.name AS product_name,
+                   op.variant_id,
                    op.quantity,
                    op.price_at_order,
                    u.name AS user_name,
@@ -84,6 +85,7 @@ class ReportService(
         ProductSaleItem(
             orderId = resultSet.getString("order_id"),
             productName = resultSet.getString("product_name"),
+            variantId = resultSet.getString("variant_id"),
             quantity = resultSet.getInt("quantity"),
             priceAtOrder = resultSet.getInt("price_at_order"),
             userName = resultSet.getString("user_name"),
