@@ -15,11 +15,11 @@ class ProductService(
         private const val ADD_PRODUCT =
             "INSERT INTO products (id, SKU, name, description, image_url, min_stock_threshold, max_stock_threshold, has_variants) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         private const val GET_PRODUCTS =
-            "SELECT id, SKU, name, description, image_url, min_stock_threshold, max_stock_threshold, has_variants FROM products WHERE is_deleted = 0"
+            "SELECT p.id, p.SKU, p.name, p.description, p.image_url, p.min_stock_threshold, p.max_stock_threshold, p.has_variants, COALESCE(MIN(CASE WHEN pv.is_active = 1 THEN pv.price_cents END), 0) AS price_cents, CASE WHEN p.has_variants = 0 THEN p.quantity ELSE COALESCE(SUM(CASE WHEN pv.is_active = 1 THEN pv.quantity ELSE 0 END), 0) END AS quantity FROM products p LEFT JOIN product_variants pv ON pv.product_id = p.id WHERE p.is_deleted = 0 GROUP BY p.id"
         private const val GET_PRODUCT_BY_ID =
-            "SELECT id, SKU, name, description, image_url, min_stock_threshold, max_stock_threshold, has_variants FROM products WHERE id = ? AND is_deleted = 0"
+            "SELECT p.id, p.SKU, p.name, p.description, p.image_url, p.min_stock_threshold, p.max_stock_threshold, p.has_variants, COALESCE(MIN(CASE WHEN pv.is_active = 1 THEN pv.price_cents END), 0) AS price_cents, CASE WHEN p.has_variants = 0 THEN p.quantity ELSE COALESCE(SUM(CASE WHEN pv.is_active = 1 THEN pv.quantity ELSE 0 END), 0) END AS quantity FROM products p LEFT JOIN product_variants pv ON pv.product_id = p.id WHERE p.id = ? AND p.is_deleted = 0 GROUP BY p.id"
         private const val GET_PRODUCT_BY_SKU =
-            "SELECT id, SKU, name, description, image_url, min_stock_threshold, max_stock_threshold, has_variants FROM products WHERE SKU = ? AND is_deleted = 0"
+            "SELECT p.id, p.SKU, p.name, p.description, p.image_url, p.min_stock_threshold, p.max_stock_threshold, p.has_variants, COALESCE(MIN(CASE WHEN pv.is_active = 1 THEN pv.price_cents END), 0) AS price_cents, CASE WHEN p.has_variants = 0 THEN p.quantity ELSE COALESCE(SUM(CASE WHEN pv.is_active = 1 THEN pv.quantity ELSE 0 END), 0) END AS quantity FROM products p LEFT JOIN product_variants pv ON pv.product_id = p.id WHERE p.SKU = ? AND p.is_deleted = 0 GROUP BY p.id"
         private const val UPDATE_PRODUCT =
             "UPDATE products SET SKU = ?, name = ?, description = ?, image_url = ?, min_stock_threshold = ?, max_stock_threshold = ?, has_variants = ? WHERE id = ?"
         private const val DELETE_PRODUCT = "UPDATE products SET is_deleted = 1, SKU = ? WHERE id = ?"
@@ -30,7 +30,7 @@ class ProductService(
         private const val DELETE_CATEGORIES =
             "DELETE FROM product_categories WHERE product_id = ?"
         private const val GET_PRODUCTS_BY_CATEGORY =
-            "SELECT DISTINCT p.id, p.SKU, p.name, p.description, p.image_url, p.min_stock_threshold, p.max_stock_threshold, p.has_variants FROM products p INNER JOIN product_categories pc ON p.id = pc.product_id WHERE pc.category_id = ? AND p.is_deleted = 0"
+            "SELECT p.id, p.SKU, p.name, p.description, p.image_url, p.min_stock_threshold, p.max_stock_threshold, p.has_variants, COALESCE(MIN(CASE WHEN pv.is_active = 1 THEN pv.price_cents END), 0) AS price_cents, CASE WHEN p.has_variants = 0 THEN p.quantity ELSE COALESCE(SUM(CASE WHEN pv.is_active = 1 THEN pv.quantity ELSE 0 END), 0) END AS quantity FROM products p INNER JOIN product_categories pc ON p.id = pc.product_id LEFT JOIN product_variants pv ON pv.product_id = p.id WHERE pc.category_id = ? AND p.is_deleted = 0 GROUP BY p.id"
     }
 
     private fun map(result: ResultSet): Product =
@@ -40,6 +40,8 @@ class ProductService(
             name = result.getString("name"),
             description = result.getString("description"),
             imageUrl = result.getString("image_url"),
+            priceCents = result.getInt("price_cents"),
+            quantity = result.getInt("quantity"),
             minStockThreshold = result.getInt("min_stock_threshold"),
             maxStockThreshold = result.getInt("max_stock_threshold"),
             hasVariants = result.getInt("has_variants") == 1,
