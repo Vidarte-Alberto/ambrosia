@@ -9,12 +9,21 @@ const cartEs = {
     },
     card: {
       add: "Agregar",
+      priceFrom: "Desde",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
       showProductDescription: "Descripcion",
       errors: {
         unknownCategory: "Categoría desconocida",
       },
+    },
+    variantSelector: {
+      title: "Seleccionar variante",
+      addToCart: "Agregar al carrito",
+      cancel: "Cancelar",
+      loading: "Cargando...",
+      outOfStock: "Sin stock",
+      inStock: "en almacén",
     },
     summary: {
       clearCart: "Remover Todo",

@@ -54,7 +54,9 @@ const componentsEn = {
     description: "Description",
     close: "Close",
     add: "Add",
+    priceFrom: "From",
     stock: "in stock",
+    totalStock: "total in stock",
     unknownCategory: "Unknown category",
   },
   shifts: {
