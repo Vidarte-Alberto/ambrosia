@@ -60,7 +60,6 @@ import pos.ambrosia.db.tables.WalletInvoiceRatesTable
 import java.io.File
 import java.util.UUID
 
-/** Helper for unit tests that exercise services backed by Exposed `transaction { }` blocks. */
 object ExposedTestDb {
     fun connect(): File {
         val file = File.createTempFile("ambrosia-test", ".db")

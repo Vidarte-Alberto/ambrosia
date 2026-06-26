@@ -24,8 +24,6 @@ object DiningTablesTable : SQLiteUUIDTable("tables") {
     val name = varchar("name", 255)
     val status = varchar("status", 20).default("available")
     val spaceId = reference("space_id", SpacesTable)
-
-    // orders.table_id creates a circular FK — stored as raw varchar to break the cycle
     val orderId = varchar("order_id", 36).nullable()
     val isDeleted = bool("is_deleted").default(false)
 }

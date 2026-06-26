@@ -74,10 +74,6 @@ class ProductService {
         transaction {
             if (!valid(product)) return@transaction null
             val normalizedSku = normalizeSku(product.SKU)
-            if (normalizedSku != null) {
-                val existing = getProductBySKUInternal(normalizedSku)
-                if (existing != null) throw DuplicateProductSkuException()
-            }
 
             try {
                 val id =
@@ -146,10 +142,6 @@ class ProductService {
             if (product.id == null) return@transaction false
             if (!valid(product)) return@transaction false
             val normalizedSku = normalizeSku(product.SKU)
-            if (normalizedSku != null) {
-                val current = getProductBySKUInternal(normalizedSku)
-                if (current != null && current.id != product.id) throw DuplicateProductSkuException()
-            }
 
             val entity = ProductEntity.findById(UUID.fromString(product.id)) ?: return@transaction false
 
@@ -163,6 +155,7 @@ class ProductService {
                 entity.minStockThreshold = product.minStockThreshold
                 entity.maxStockThreshold = product.maxStockThreshold
                 entity.priceCents = product.priceCents
+                entity.flush()
             } catch (e: ExposedSQLException) {
                 if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
                 throw e

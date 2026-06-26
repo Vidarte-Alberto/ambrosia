@@ -9,8 +9,6 @@ import java.util.UUID
 
 object OrdersTable : SQLiteUUIDTable("orders") {
     val userId = reference("user_id", UsersTable)
-
-    // order_id in tables creates a circular FK — stored as raw varchar to break the cycle
     val tableId = varchar("table_id", 36).nullable()
     val status = varchar("status", 20).default("open")
     val total = double("total").default(0.0)

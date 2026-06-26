@@ -10,7 +10,6 @@ import pos.ambrosia.services.BaseCurrencyService
 fun Application.configureRouting() {
     routing {
         get("/") {
-            // TODO: Add link to the documentation
             call.respondText("Root path of the API Nothing to see here")
         }
         get("/base-currency") {

@@ -19,10 +19,10 @@ object DatabaseConnection {
     }
 
     private fun buildDataSource(): HikariDataSource {
-        val dbPath = Path(datadir, "ambrosia.db").toString()
+        val databasePath = Path(datadir, "ambrosia.db").toString()
         val config =
             HikariConfig().apply {
-                jdbcUrl = "jdbc:sqlite:$dbPath"
+                jdbcUrl = "jdbc:sqlite:$databasePath"
                 driverClassName = "org.sqlite.JDBC"
                 maximumPoolSize = 5
                 transactionIsolation = "TRANSACTION_SERIALIZABLE"
