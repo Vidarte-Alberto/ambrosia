@@ -410,6 +410,8 @@ data class Product(
     val name: String,
     val description: String? = null,
     val imageUrl: String? = null,
+    val priceCents: Int = 0,
+    val quantity: Int = 0,
     val minStockThreshold: Int = 0,
     val maxStockThreshold: Int = 0,
     val hasVariants: Boolean = false,
@@ -529,6 +531,7 @@ data class StoreCheckoutResponse(
 data class ProductSaleItem(
     val orderId: String,
     val productName: String,
+    val variantId: String? = null,
     val quantity: Int,
     val priceAtOrder: Int,
     val userName: String,
