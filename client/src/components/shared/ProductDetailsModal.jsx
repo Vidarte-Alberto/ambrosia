@@ -70,13 +70,17 @@ export function ProductDetailsModal({ isOpen, onClose, onAddProduct, showAddButt
         <ModalBody className="space-y-3 pt-0">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-green-800">{formatAmount(product.priceCents)}</h2>
+              <h2 className="text-2xl font-bold text-green-800">
+                {product.hasVariants
+                  ? `${t("priceFrom")} ${formatAmount(product.priceCents)}`
+                  : formatAmount(product.priceCents)}
+              </h2>
               <p className="text-xs">
                 SKU: <span className="text-gray-800">{product.SKU ?? "—"}</span>
               </p>
             </div>
             <Chip size="sm" className={stockChipClassName}>
-              {quantity} {t("stock")}
+              {quantity} {product.hasVariants ? t("totalStock") : t("stock")}
             </Chip>
           </div>
 
