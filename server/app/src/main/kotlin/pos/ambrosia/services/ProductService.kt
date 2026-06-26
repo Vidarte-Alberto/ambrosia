@@ -4,7 +4,6 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList
-import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
@@ -16,7 +15,6 @@ import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.Product
 import pos.ambrosia.models.ProductStockAdjustment
-import pos.ambrosia.utils.DuplicateProductSkuException
 import java.util.UUID
 
 class ProductService {
@@ -67,36 +65,28 @@ class ProductService {
         return true
     }
 
-    private fun isDuplicateSkuViolation(error: ExposedSQLException): Boolean =
-        error.message?.contains("UNIQUE constraint failed: products.SKU", ignoreCase = true) == true
-
     fun addProduct(product: Product): String? =
         transaction {
             if (!valid(product)) return@transaction null
             val normalizedSku = normalizeSku(product.SKU)
 
-            try {
-                val id =
-                    ProductEntity
-                        .new(UUID.randomUUID()) {
-                            this.sku = normalizedSku
-                            this.name = product.name
-                            this.description = product.description
-                            this.imageUrl = product.imageUrl
-                            this.costCents = product.costCents
-                            this.quantity = product.quantity
-                            this.minStockThreshold = product.minStockThreshold
-                            this.maxStockThreshold = product.maxStockThreshold
-                            this.priceCents = product.priceCents
-                        }.id.value
+            val id =
+                ProductEntity
+                    .new(UUID.randomUUID()) {
+                        this.sku = normalizedSku
+                        this.name = product.name
+                        this.description = product.description
+                        this.imageUrl = product.imageUrl
+                        this.costCents = product.costCents
+                        this.quantity = product.quantity
+                        this.minStockThreshold = product.minStockThreshold
+                        this.maxStockThreshold = product.maxStockThreshold
+                        this.priceCents = product.priceCents
+                    }.id.value
 
-                replaceCategories(id, product.categoryIds)
-                logger.info("Product created: $id")
-                id.toString()
-            } catch (e: ExposedSQLException) {
-                if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
-                throw e
-            }
+            replaceCategories(id, product.categoryIds)
+            logger.info("Product created: $id")
+            id.toString()
         }
 
     fun getProducts(): List<Product> =
@@ -145,21 +135,16 @@ class ProductService {
 
             val entity = ProductEntity.findById(UUID.fromString(product.id)) ?: return@transaction false
 
-            try {
-                entity.sku = normalizedSku
-                entity.name = product.name
-                entity.description = product.description
-                entity.imageUrl = product.imageUrl
-                entity.costCents = product.costCents
-                entity.quantity = product.quantity
-                entity.minStockThreshold = product.minStockThreshold
-                entity.maxStockThreshold = product.maxStockThreshold
-                entity.priceCents = product.priceCents
-                entity.flush()
-            } catch (e: ExposedSQLException) {
-                if (isDuplicateSkuViolation(e)) throw DuplicateProductSkuException()
-                throw e
-            }
+            entity.sku = normalizedSku
+            entity.name = product.name
+            entity.description = product.description
+            entity.imageUrl = product.imageUrl
+            entity.costCents = product.costCents
+            entity.quantity = product.quantity
+            entity.minStockThreshold = product.minStockThreshold
+            entity.maxStockThreshold = product.maxStockThreshold
+            entity.priceCents = product.priceCents
+            entity.flush()
 
             replaceCategories(UUID.fromString(product.id), product.categoryIds)
             logger.info("Product updated: ${product.id}")
