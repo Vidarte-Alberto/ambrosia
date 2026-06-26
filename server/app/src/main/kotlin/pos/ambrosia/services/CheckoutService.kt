@@ -32,9 +32,13 @@ class CheckoutService(
         private const val STORE_INSERT_CHECKOUT_ORDER =
             "INSERT INTO orders (id, user_id, table_id, status, total, created_at) VALUES (?, ?, NULL, 'paid', ?, datetime('now'))"
         private const val STORE_INSERT_ORDER_ITEM =
-            "INSERT INTO order_products (order_id, product_id, quantity, price_at_order) VALUES (?, ?, ?, ?)"
+            "INSERT INTO order_products (order_id, product_id, variant_id, quantity, price_at_order) VALUES (?, ?, ?, ?, ?)"
         private const val STORE_DECREMENT_STOCK =
             "UPDATE products SET quantity = quantity - ? WHERE id = ? AND is_deleted = 0 AND quantity >= ?"
+        private const val STORE_DECREMENT_VARIANT_STOCK =
+            "UPDATE product_variants SET quantity = quantity - ? WHERE id = ? AND product_id = ? AND is_active = 1 AND quantity >= ?"
+        private const val STORE_GET_DEFAULT_VARIANT_ID =
+            "SELECT pv.id FROM product_variants pv JOIN products p ON p.id = pv.product_id WHERE pv.product_id = ? AND pv.is_active = 1 AND p.has_variants = 1 LIMIT 1"
         private const val STORE_INSERT_TICKET =
             "INSERT INTO tickets (id, order_id, user_id, ticket_date, status, total_amount, notes) VALUES (?, ?, ?, datetime('now'), 1, ?, ?)"
         private const val STORE_INSERT_PAYMENT =
@@ -42,7 +46,7 @@ class CheckoutService(
         private const val STORE_INSERT_TICKET_PAYMENT =
             "INSERT INTO ticket_payments (payment_id, ticket_id) VALUES (?, ?)"
         private const val STORE_GET_ITEMS =
-            "SELECT product_id, quantity, price_at_order FROM order_products WHERE order_id = ?"
+            "SELECT product_id, variant_id, quantity, price_at_order FROM order_products WHERE order_id = ?"
         private const val STORE_CANCEL_ORDER =
             "UPDATE orders SET status = 'closed' WHERE id = ? AND status = 'open' AND table_id IS NULL"
     }
@@ -56,6 +60,7 @@ class CheckoutService(
             items.add(
                 StoreOrderItem(
                     productId = resultSet.getString("product_id"),
+                    variantId = resultSet.getString("variant_id"),
                     quantity = resultSet.getInt("quantity"),
                     priceAtOrder = resultSet.getInt("price_at_order"),
                 ),
@@ -141,21 +146,38 @@ class CheckoutService(
             }
 
             for (item in request.items) {
+                val effectiveVariantId = item.variantId
+                    ?: connection.prepareStatement(STORE_GET_DEFAULT_VARIANT_ID).use { s ->
+                        s.setString(1, item.productId)
+                        val rs = s.executeQuery()
+                        if (rs.next()) rs.getString("id") else null
+                    }
+
                 connection.prepareStatement(STORE_INSERT_ORDER_ITEM).use { statement ->
                     statement.setString(1, orderId)
                     statement.setString(2, item.productId)
-                    statement.setInt(3, item.quantity)
-                    statement.setInt(4, item.priceAtOrder)
+                    statement.setNullable(3, effectiveVariantId, Types.VARCHAR)
+                    statement.setInt(4, item.quantity)
+                    statement.setInt(5, item.priceAtOrder)
                     statement.executeUpdate()
                 }
 
-                val updatedRows =
-                    connection.prepareStatement(STORE_DECREMENT_STOCK).use { statement ->
-                        statement.setInt(1, item.quantity)
-                        statement.setString(2, item.productId)
-                        statement.setInt(3, item.quantity)
-                        statement.executeUpdate()
+                val updatedRows = if (effectiveVariantId != null) {
+                    connection.prepareStatement(STORE_DECREMENT_VARIANT_STOCK).use { s ->
+                        s.setInt(1, item.quantity)
+                        s.setString(2, effectiveVariantId)
+                        s.setString(3, item.productId)
+                        s.setInt(4, item.quantity)
+                        s.executeUpdate()
                     }
+                } else {
+                    connection.prepareStatement(STORE_DECREMENT_STOCK).use { s ->
+                        s.setInt(1, item.quantity)
+                        s.setString(2, item.productId)
+                        s.setInt(3, item.quantity)
+                        s.executeUpdate()
+                    }
+                }
                 if (updatedRows == 0) {
                     connection.rollback()
                     return null
