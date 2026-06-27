@@ -36,6 +36,10 @@ export async function processCheckout({
     }),
   });
 
+  if (checkoutHttpResponse.status === 202) {
+    return { pending: true };
+  }
+
   const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
   if (!storeCheckoutResult?.orderId) {
     throw new Error("errors.checkout");
