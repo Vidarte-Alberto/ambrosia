@@ -63,7 +63,7 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
               }
               size="sm"
             >
-              {t(`stockStatus.${stockStatus}`)}
+              {t(`status.${stockStatus}`)}
             </Chip>
           </div>
         </div>
