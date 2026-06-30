@@ -7,11 +7,9 @@ import { useTranslations } from "next-intl";
 import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
-import { useFetchList } from "@/lib/http/useFetchList";
 
 export function useProducts() {
-  const t = useTranslations("products");
-  const { fetchList } = useFetchList();
+  const productsTranslation = useTranslations("products");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +38,13 @@ export function useProducts() {
       minStockThreshold: Number.isFinite(minStockNumber) ? minStockNumber : 0,
       maxStockThreshold: Number.isFinite(maxStockNumber) ? maxStockNumber : 0,
       priceCents,
+      isBundle: product.isBundle ?? false,
+      bundleComponents: product.isBundle
+        ? (product.bundleComponents ?? []).map((bundleProduct) => ({
+            componentId: bundleProduct.productId,
+            quantity: bundleProduct.quantity,
+          }))
+        : [],
     };
   };
 
@@ -48,19 +53,19 @@ export function useProducts() {
     message: payload?.message || "Request failed",
   });
 
-  const notifyMutationError = (error) => {
-    if (error?.status === 409) {
+  const notifyMutationError = (mutationError) => {
+    if (mutationError?.status === 409) {
       addToast({
-        title: t("toasts.duplicateSkuTitle"),
-        description: t("toasts.duplicateSkuDescription"),
+        title: productsTranslation("toasts.duplicateSkuTitle"),
+        description: productsTranslation("toasts.duplicateSkuDescription"),
         color: "danger",
       });
       return;
     }
 
     addToast({
-      title: t("toasts.genericErrorTitle"),
-      description: t("toasts.genericErrorDescription"),
+      title: productsTranslation("toasts.genericErrorTitle"),
+      description: productsTranslation("toasts.genericErrorDescription"),
       color: "danger",
     });
   };
@@ -74,18 +79,17 @@ export function useProducts() {
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const productsData = await fetchList("/products");
-      if (productsData === null) return;
+      const response = await httpClient("/products");
+      if (!response.ok) return;
+      const productsData = await parseJsonResponse(response, []);
       setProducts(toArray(productsData));
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      setError(error);
+    } catch (loadError) {
+      setError(loadError);
     } finally {
       setLoading(false);
     }
-  }, [fetchList]);
+  }, []);
 
   const addProduct = async (product) => {
     try {
@@ -97,9 +101,7 @@ export function useProducts() {
 
       const response = await httpClient("/products", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(product, uploadedUrl)),
         notShowError: false,
       });
@@ -107,9 +109,9 @@ export function useProducts() {
       const payload = await ensureSuccess(response);
       await fetchProducts();
       return payload;
-    } catch (error) {
-      notifyMutationError(error);
-      throw error;
+    } catch (addError) {
+      notifyMutationError(addError);
+      throw addError;
     }
   };
 
@@ -125,9 +127,7 @@ export function useProducts() {
 
       const response = await httpClient(`/products/${product.productId}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(buildRequestPayload(product, uploadedUrl, { includeId: true })),
         notShowError: false,
       });
@@ -135,17 +135,26 @@ export function useProducts() {
       const payload = await ensureSuccess(response);
       await fetchProducts();
       return payload;
-    } catch (error) {
-      notifyMutationError(error);
-      throw error;
+    } catch (updateError) {
+      notifyMutationError(updateError);
+      throw updateError;
     }
   };
 
   const deleteProduct = async (product) => {
-    await httpClient(`/products/${product.id}`, {
+    const response = await httpClient(`/products/${product.id}`, {
       method: "DELETE",
       notShowError: false,
     });
+
+    if (response.status === 409) {
+      addToast({
+        title: productsTranslation("toasts.bundleComponentErrorTitle"),
+        description: productsTranslation("toasts.bundleComponentErrorDescription"),
+        color: "danger",
+      });
+      return;
+    }
 
     await fetchProducts();
   };
