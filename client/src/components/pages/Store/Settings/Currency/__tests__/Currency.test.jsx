@@ -61,7 +61,8 @@ beforeEach(() => {
     const message = typeof args[0] === "string" ? args[0] : String(args[0]);
     if (
       message.includes("onAnimationComplete") ||
-      message.includes("Unknown event handler property")
+      message.includes("Unknown event handler property") ||
+      message.includes("Failed to update currency")
     ) return;
     originalError.call(console, ...args);
   };
@@ -119,6 +120,26 @@ describe("Currency", () => {
         expect(addToast).toHaveBeenCalledWith(expect.objectContaining({
           color: "success",
         }));
+      });
+    });
+
+    it("shows an error toast when currency update fails", async () => {
+      const { addToast } = require("@heroui/react");
+      mockUpdateCurrency.mockRejectedValueOnce(new Error("request failed"));
+      await act(async () => { renderCurrency(); });
+
+      const select = screen.getByLabelText("cardCurrency.currencyLabel");
+      await act(async () => {
+        fireEvent.change(select, { target: { value: "EUR" } });
+      });
+
+      await waitFor(() => {
+        expect(mockUpdateCurrency).toHaveBeenCalledWith({ acronym: "EUR" });
+        expect(addToast).toHaveBeenCalledWith({
+          title: "cardCurrency.errorTitle",
+          description: "cardCurrency.errorDescription",
+          color: "danger",
+        });
       });
     });
 
