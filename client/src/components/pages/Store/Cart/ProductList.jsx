@@ -96,22 +96,18 @@ export function ProductList({ products, onAddProduct, categories }) {
                       </div>
                     )}
                   </div>
-                  <CardHeader className="flex flex-row items-start justify-between pb-1">
-                    <div className="flex flex-col">
-                      <h2 className="text-sm md:text-lg font-medium">{name}</h2>
-                      <p className="text-xs">{getCategoryNames(categoryIds)}</p>
-                    </div>
-                    {product.hasVariants && (
-                      <Chip size="sm" className="bg-blue-100 text-blue-700 border border-blue-200">
-                        {cardProductTranslation("card.hasVariants")}
-                      </Chip>
-                    )}
+                  <CardHeader className="flex flex-col items-start pb-1">
+                    <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+                    <p className="text-xs">{getCategoryNames(categoryIds)}</p>
                   </CardHeader>
                   <CardBody className="py-1">
                     <h2 className="text-lg md:text-2xl font-bold text-green-800">
-                      {product.hasVariants && product.maxPriceCents !== priceCents
-                        ? `${formatAmount(priceCents)} - ${formatAmount(product.maxPriceCents)}`
-                        : formatAmount(priceCents)}
+                      {product.hasVariants && product.maxPriceCents !== priceCents ? (
+                        <span className="flex flex-wrap gap-x-1">
+                          <span>{formatAmount(priceCents)} -</span>
+                          <span>{formatAmount(product.maxPriceCents)}</span>
+                        </span>
+                      ) : formatAmount(priceCents)}
                     </h2>
                     <p className="hidden md:block text-xs">
                       SKU: <span className="text-gray-800">{SKU}</span>
@@ -142,6 +138,11 @@ export function ProductList({ products, onAddProduct, categories }) {
                     )}
                   </CardBody>
                   <CardFooter className="flex flex-col pt-0 items-stretch gap-2 md:gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    {product.hasVariants && (
+                      <Chip size="sm" className="bg-blue-100 text-blue-700 border border-blue-200">
+                        {cardProductTranslation("card.hasVariants")}
+                      </Chip>
+                    )}
                     <Chip
                       size="sm"
                       className={
