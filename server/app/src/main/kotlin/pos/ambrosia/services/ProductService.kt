@@ -45,12 +45,18 @@ class ProductService {
         }
     }
 
-    private data class VariantAggregate(val minPriceCents: Int, val maxPriceCents: Int, val quantity: Int)
+    private data class VariantAggregate(
+        val minPriceCents: Int,
+        val maxPriceCents: Int,
+        val quantity: Int,
+    )
 
     private fun variantAggregate(productId: EntityID<UUID>): VariantAggregate {
-        val active = ProductVariantsTable.selectAll()
-            .where { (ProductVariantsTable.productId eq productId) and (ProductVariantsTable.isActive eq true) }
-            .toList()
+        val active =
+            ProductVariantsTable
+                .selectAll()
+                .where { (ProductVariantsTable.productId eq productId) and (ProductVariantsTable.isActive eq true) }
+                .toList()
         val minPriceCents = active.minOfOrNull { it[ProductVariantsTable.priceCents] } ?: 0
         val maxPriceCents = active.maxOfOrNull { it[ProductVariantsTable.priceCents] } ?: 0
         val quantity = active.sumOf { it[ProductVariantsTable.quantity] }
@@ -77,22 +83,25 @@ class ProductService {
 
     private fun fetchOptions(productId: UUID): List<ProductOptionType> {
         val productEntityId = EntityID(productId, ProductsTable)
-        return ProductOptionTypesTable.selectAll()
+        return ProductOptionTypesTable
+            .selectAll()
             .where { ProductOptionTypesTable.productId eq productEntityId }
             .orderBy(ProductOptionTypesTable.displayOrder)
             .map { row ->
                 val typeId = row[ProductOptionTypesTable.id].value
-                val values = ProductOptionValuesTable.selectAll()
-                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(typeId, ProductOptionTypesTable) }
-                    .orderBy(ProductOptionValuesTable.displayOrder)
-                    .map { vRow ->
-                        ProductOptionValue(
-                            id = vRow[ProductOptionValuesTable.id].value.toString(),
-                            optionTypeId = typeId.toString(),
-                            value = vRow[ProductOptionValuesTable.value],
-                            displayOrder = vRow[ProductOptionValuesTable.displayOrder],
-                        )
-                    }
+                val values =
+                    ProductOptionValuesTable
+                        .selectAll()
+                        .where { ProductOptionValuesTable.optionTypeId eq EntityID(typeId, ProductOptionTypesTable) }
+                        .orderBy(ProductOptionValuesTable.displayOrder)
+                        .map { vRow ->
+                            ProductOptionValue(
+                                id = vRow[ProductOptionValuesTable.id].value.toString(),
+                                optionTypeId = typeId.toString(),
+                                value = vRow[ProductOptionValuesTable.value],
+                                displayOrder = vRow[ProductOptionValuesTable.displayOrder],
+                            )
+                        }
                 ProductOptionType(
                     id = typeId.toString(),
                     productId = productId.toString(),
@@ -105,11 +114,14 @@ class ProductService {
 
     private fun fetchVariants(productId: UUID): List<ProductVariant> {
         val productEntityId = EntityID(productId, ProductsTable)
-        return ProductVariantEntity.find { ProductVariantsTable.productId eq productEntityId }
+        return ProductVariantEntity
+            .find { ProductVariantsTable.productId eq productEntityId }
             .map { vEntity ->
-                val optionValueIds = VariantOptionValuesTable.selectAll()
-                    .where { VariantOptionValuesTable.variantId eq vEntity.id }
-                    .map { it[VariantOptionValuesTable.optionValueId].value.toString() }
+                val optionValueIds =
+                    VariantOptionValuesTable
+                        .selectAll()
+                        .where { VariantOptionValuesTable.variantId eq vEntity.id }
+                        .map { it[VariantOptionValuesTable.optionValueId].value.toString() }
                 ProductVariant(
                     id = vEntity.id.value.toString(),
                     productId = productId.toString(),

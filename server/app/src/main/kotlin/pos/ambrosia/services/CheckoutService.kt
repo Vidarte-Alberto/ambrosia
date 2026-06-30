@@ -201,11 +201,14 @@ class CheckoutService(
 
                     val effectiveVariantId: UUID? =
                         item.variantId?.let { UUID.fromString(it) }
-                            ?: ProductVariantsTable.selectAll()
+                            ?: ProductVariantsTable
+                                .selectAll()
                                 .where {
                                     (ProductVariantsTable.productId eq productEntityId) and
                                         (ProductVariantsTable.isActive eq true)
-                                }.firstOrNull()?.get(ProductVariantsTable.id)?.value
+                                }.firstOrNull()
+                                ?.get(ProductVariantsTable.id)
+                                ?.value
 
                     if (effectiveVariantId == null) throw InsufficientStockException()
 

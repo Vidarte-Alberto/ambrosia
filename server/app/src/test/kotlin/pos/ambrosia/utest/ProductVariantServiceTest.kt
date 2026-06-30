@@ -45,7 +45,10 @@ class ProductVariantServiceTest {
     @Test
     fun `getOptionTypes returns list with nested values`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
-        service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"), UpsertOptionValueRequest("Blue"))))
+        service.addOptionType(
+            productId,
+            UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"), UpsertOptionValueRequest("Blue"))),
+        )
 
         val result = service.getOptionTypes(productId)
         assertEquals(1, result.size)
@@ -74,9 +77,20 @@ class ProductVariantServiceTest {
     @Test
     fun `updateOptionType replaces values`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
-        val typeId = service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"))))
+        val typeId =
+            service.addOptionType(
+                productId,
+                UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"))),
+            )
 
-        val result = service.updateOptionType(typeId, UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Blue"), UpsertOptionValueRequest("Green"))))
+        val result =
+            service.updateOptionType(
+                typeId,
+                UpsertOptionTypeRequest(
+                    name = "Color",
+                    values = listOf(UpsertOptionValueRequest("Blue"), UpsertOptionValueRequest("Green")),
+                ),
+            )
         assertTrue(result)
 
         val options = service.getOptionTypes(productId)

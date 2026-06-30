@@ -34,7 +34,6 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.time.DayOfWeek
-
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.UUID

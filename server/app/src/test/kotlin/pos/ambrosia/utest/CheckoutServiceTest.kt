@@ -6,13 +6,13 @@ import org.junit.After
 import org.junit.Before
 import pos.ambrosia.db.tables.OrderEntity
 import pos.ambrosia.db.tables.PaymentEntity
-import pos.ambrosia.services.ProductVariantService
 import pos.ambrosia.models.StoreCheckoutItem
 import pos.ambrosia.models.StoreCheckoutRequest
 import pos.ambrosia.models.phoenix.IncomingPayment
 import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
 import pos.ambrosia.services.PaymentVerifier
+import pos.ambrosia.services.ProductVariantService
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
@@ -54,8 +54,7 @@ class CheckoutServiceTest {
         return ExposedTestDb.seedUser("Alice", roleId)
     }
 
-    private fun productQuantity(productId: String): Int =
-        variantService.getVariants(productId).sumOf { it.quantity }
+    private fun productQuantity(productId: String): Int = variantService.getVariants(productId).sumOf { it.quantity }
 
     private fun validStoreRequest(
         userId: String,
@@ -230,7 +229,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             verifier.result = incomingPayment(paymentHash = "hash-pending", isPaid = false)
 
             val result = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-pending"))
@@ -246,7 +245,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             verifier.error = RuntimeException("phoenix unreachable")
 
             val result = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-unknown"))
@@ -261,7 +260,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             verifier.result = incomingPayment(paymentHash = "hash-paid", isPaid = true)
 
             val result = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-paid"))
@@ -277,7 +276,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             verifier.result = incomingPayment(paymentHash = "hash-recovered", isPaid = true)
             val request = validStoreRequest(userId, items = items, paymentHash = "hash-recovered")
 
@@ -394,7 +393,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             verifier.result = incomingPayment(paymentHash = "hash-123", isPaid = true)
             val checkout = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-123"))
             assertTrue(checkout is CheckoutResult.Success)
@@ -412,7 +411,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             val result = service.checkout(validStoreRequest(userId, items = items, discountAmount = 1.0))
 
             assertTrue(result is CheckoutResult.Success)
@@ -429,7 +428,7 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             val result = service.checkout(validStoreRequest(userId, items = items))
 
             assertTrue(result is CheckoutResult.Success)

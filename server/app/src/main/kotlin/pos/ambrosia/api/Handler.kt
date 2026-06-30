@@ -136,10 +136,12 @@ fun Application.handler() {
                     logger.warn("Duplicate product SKU: ${cause.message}")
                     call.respond(HttpStatusCode.Conflict, Message("SKU already exists"))
                 }
+
                 cause.message?.contains("UNIQUE constraint failed: product_variants.sku", ignoreCase = true) == true -> {
                     logger.warn("Duplicate variant SKU: ${cause.message}")
                     call.respond(HttpStatusCode.Conflict, Message("Variant SKU already exists"))
                 }
+
                 else -> {
                     logger.error("Database operation failed: ${cause.message}", cause)
                     call.respond(HttpStatusCode.InternalServerError, Message("Database operation failed"))

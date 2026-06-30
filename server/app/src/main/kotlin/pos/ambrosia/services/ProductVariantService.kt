@@ -1,10 +1,10 @@
 package pos.ambrosia.services
 
 import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.minus
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.insert
@@ -33,7 +33,8 @@ open class ProductVariantService {
 
     private fun toVariantModel(entity: ProductVariantEntity): ProductVariant {
         val optionValueIds =
-            VariantOptionValuesTable.selectAll()
+            VariantOptionValuesTable
+                .selectAll()
                 .where { VariantOptionValuesTable.variantId eq entity.id }
                 .map { it[VariantOptionValuesTable.optionValueId].value.toString() }
         return ProductVariant(
@@ -65,13 +66,15 @@ open class ProductVariantService {
     open fun getOptionTypes(productId: String): List<ProductOptionType> =
         transaction {
             val productEntityId = EntityID(UUID.fromString(productId), ProductsTable)
-            ProductOptionTypesTable.selectAll()
+            ProductOptionTypesTable
+                .selectAll()
                 .where { ProductOptionTypesTable.productId eq productEntityId }
                 .orderBy(ProductOptionTypesTable.displayOrder)
                 .map { row ->
                     val typeId = row[ProductOptionTypesTable.id].value
                     val values =
-                        ProductOptionValuesTable.selectAll()
+                        ProductOptionValuesTable
+                            .selectAll()
                             .where { ProductOptionValuesTable.optionTypeId eq EntityID(typeId, ProductOptionTypesTable) }
                             .orderBy(ProductOptionValuesTable.displayOrder)
                             .map { vRow ->
@@ -119,10 +122,11 @@ open class ProductVariantService {
             entity.name = req.name
             entity.displayOrder = req.displayOrder
 
-            val existingRows = ProductOptionValuesTable
-                .selectAll()
-                .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
-                .map { it[ProductOptionValuesTable.id] to it[ProductOptionValuesTable.value] }
+            val existingRows =
+                ProductOptionValuesTable
+                    .selectAll()
+                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
+                    .map { it[ProductOptionValuesTable.id] to it[ProductOptionValuesTable.value] }
 
             val newValueStrings = req.values.map { it.value }.toSet()
             val removedIds = existingRows.filter { (_, v) -> v !in newValueStrings }.map { (id, _) -> id }
@@ -157,10 +161,11 @@ open class ProductVariantService {
         transaction {
             val uuid = UUID.fromString(optionTypeId)
             val entity = ProductOptionTypeEntity.findById(uuid) ?: return@transaction false
-            val valueIds = ProductOptionValuesTable
-                .selectAll()
-                .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
-                .map { it[ProductOptionValuesTable.id] }
+            val valueIds =
+                ProductOptionValuesTable
+                    .selectAll()
+                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
+                    .map { it[ProductOptionValuesTable.id] }
             if (valueIds.isNotEmpty()) {
                 VariantOptionValuesTable.deleteWhere {
                     VariantOptionValuesTable.optionValueId inList valueIds
@@ -174,7 +179,8 @@ open class ProductVariantService {
     open fun getVariants(productId: String): List<ProductVariant> =
         transaction {
             val productEntityId = EntityID(UUID.fromString(productId), ProductsTable)
-            ProductVariantEntity.find { ProductVariantsTable.productId eq productEntityId }
+            ProductVariantEntity
+                .find { ProductVariantsTable.productId eq productEntityId }
                 .map { toVariantModel(it) }
         }
 
@@ -192,7 +198,8 @@ open class ProductVariantService {
     fun getDefaultVariant(productId: String): ProductVariant? =
         transaction {
             val productEntityId = EntityID(UUID.fromString(productId), ProductsTable)
-            ProductVariantEntity.find { ProductVariantsTable.productId eq productEntityId }
+            ProductVariantEntity
+                .find { ProductVariantsTable.productId eq productEntityId }
                 .firstOrNull()
                 ?.let { toVariantModel(it) }
         }
@@ -294,7 +301,8 @@ open class ProductVariantService {
                                 ProductsTable,
                             )
                         val defaultVariant =
-                            ProductVariantsTable.selectAll()
+                            ProductVariantsTable
+                                .selectAll()
                                 .where { ProductVariantsTable.productId eq productEntityId }
                                 .firstOrNull() ?: return@transaction false
                         val defaultVariantId = defaultVariant[ProductVariantsTable.id]
