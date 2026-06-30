@@ -12,7 +12,7 @@ const cartEs = {
       hasVariants: "Variantes",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
-      showProductDescription: "Descripcion",
+      showProductDescription: "Descripción",
       errors: {
         unknownCategory: "Categoría desconocida",
       },
@@ -33,6 +33,9 @@ const cartEs = {
       total: "Total",
       subtotal: "Subtotal",
       discount: "Descuento",
+      discountAdd: "Agregar",
+      discountRemove: "Quitar",
+      discountApply: "Aplicar",
       quantity: "Cantidad",
       paymentMethodLabel: "Metodo de pago",
       paymentMethodSelectPlaceholder: "Elige un metodo de pago",
@@ -63,6 +66,8 @@ const cartEs = {
         btcPaid: "Pago con Bitcoin marcado como completado",
         cashPaid: "Pago en efectivo registrado correctamente",
         cardPaid: "Pago con tarjeta registrado correctamente",
+        btcRecovered: "Un pago de Bitcoin pendiente fue completado en segundo plano",
+        btcConfirming: "Pago recibido, confirmando en segundo plano",
       },
       receipt: {
         tableName: "Caja",

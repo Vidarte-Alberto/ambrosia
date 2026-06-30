@@ -1,4 +1,11 @@
 import {
+  deleteCheckout,
+  markCheckoutCompleted,
+  registerBtcCheckoutSync,
+  savePendingCheckout,
+} from "@/lib/btcCheckoutStore";
+
+import {
   classifyPaymentMethod,
   PAYMENT_METHODS,
 } from "../utils/paymentMethods";
@@ -89,6 +96,7 @@ export function buildHandlePay({
           invoiceDescription,
           selectedPaymentMethod,
           currencyId,
+          userId: user.userId,
         });
         return;
       }
@@ -146,10 +154,34 @@ export function buildHandlePay({
 }
 
 export function buildHandleBtcInvoiceReady({ setBtcPaymentConfig }) {
-  return (data) => {
-    setBtcPaymentConfig((prev) => {
-      if (!prev) return prev;
-      return { ...prev, invoiceData: data };
+  return (invoiceReadyData) => {
+    setBtcPaymentConfig((prevConfig) => {
+      if (!prevConfig) return prevConfig;
+
+      if (invoiceReadyData?.invoice?.paymentHash) {
+        const checkoutPayload = {
+          paymentHash: invoiceReadyData.invoice.paymentHash,
+          userId: prevConfig.userId,
+          items: (prevConfig.cartItems || []).map((item) => ({
+            productId: String(item?.id ?? ""),
+            quantity: Number(item?.quantity) || 0,
+            priceAtOrder: Number(item?.price) || 0,
+          })),
+          paymentMethodId: prevConfig.selectedPaymentMethod,
+          currencyId: prevConfig.currencyId,
+          amount: prevConfig.amountFiat,
+          discountAmount: prevConfig.discountAmount ?? 0,
+          transactionId: invoiceReadyData.invoice.serialized || "",
+          satoshiAmount: invoiceReadyData.satoshis ?? null,
+          exchangeRateAtPayment: invoiceReadyData.exchangeRate ?? null,
+          exchangeRateCurrency: prevConfig.currencyAcronym ?? null,
+          fiatAmountAtPayment: prevConfig.amountFiat ?? null,
+        };
+        savePendingCheckout({ paymentHash: invoiceReadyData.invoice.paymentHash, checkoutPayload }).catch(() => {});
+        registerBtcCheckoutSync().catch(() => {});
+      }
+
+      return { ...prevConfig, invoiceData: invoiceReadyData };
     });
   };
 }
@@ -162,6 +194,8 @@ async function runDeferredCheckout({
   buildOnPayPayload,
   successKey,
   errorKey,
+  pendingKey,
+  onCheckoutSuccess,
   finalize,
   dispatch,
   onPay,
@@ -175,6 +209,14 @@ async function runDeferredCheckout({
   dispatch({ type: "start" });
   try {
     const storeCheckoutResult = await processCheckout({ ...checkoutArgs, user });
+
+    if (storeCheckoutResult?.pending) {
+      onResetCart?.();
+      notifySuccess(pendingKey);
+      return;
+    }
+
+    await onCheckoutSuccess?.(storeCheckoutResult);
 
     await refreshShiftTickets?.();
     await printCustomerReceipt?.({
@@ -201,6 +243,8 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
     const config = getConfig();
     if (!config) return;
 
+    const paymentHash = completionData?.invoice?.paymentHash ?? null;
+
     await runDeferredCheckout({
       ...context,
       checkoutArgs: {
@@ -217,7 +261,7 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
         transactionId: completionData?.invoice?.serialized || "",
         satoshiAmount: completionData?.satoshis ?? null,
         exchangeRateAtPayment: config.invoiceData?.exchangeRate ?? null,
-        paymentHash: completionData?.invoice?.paymentHash ?? null,
+        paymentHash,
         exchangeRateCurrency: config.currencyAcronym ?? null,
         fiatAmountAtPayment: config.amountFiat ?? null,
       },
@@ -237,6 +281,12 @@ export function buildHandleBtcComplete({ getConfig, setConfig, ...context }) {
       }),
       successKey: "success.btcPaid",
       errorKey: "errors.btcComplete",
+      pendingKey: "success.btcConfirming",
+      onCheckoutSuccess: async (storeCheckoutResult) => {
+        if (!paymentHash) return;
+        await markCheckoutCompleted(paymentHash, storeCheckoutResult).catch(() => {});
+        await deleteCheckout(paymentHash).catch(() => {});
+      },
       finalize: () => setConfig((previousConfig) => (
         previousConfig ? { ...previousConfig, paymentCompleted: true } : previousConfig
       )),

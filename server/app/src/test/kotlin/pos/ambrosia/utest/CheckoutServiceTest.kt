@@ -4,25 +4,40 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.db.tables.OrderEntity
 import pos.ambrosia.db.tables.PaymentEntity
 import pos.ambrosia.services.ProductVariantService
 import pos.ambrosia.models.StoreCheckoutItem
 import pos.ambrosia.models.StoreCheckoutRequest
+import pos.ambrosia.models.phoenix.IncomingPayment
+import pos.ambrosia.services.CheckoutResult
 import pos.ambrosia.services.CheckoutService
+import pos.ambrosia.services.PaymentVerifier
 import pos.ambrosia.utils.ExposedTestDb
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
+
+private class FakePaymentVerifier : PaymentVerifier {
+    var result: IncomingPayment? = null
+    var error: Throwable? = null
+    var callCount = 0
+
+    override suspend fun getIncomingPayment(paymentHash: String): IncomingPayment {
+        callCount++
+        error?.let { throw it }
+        return result ?: error("FakePaymentVerifier has no stubbed result for $paymentHash")
+    }
+}
 
 class CheckoutServiceTest {
     private lateinit var dbFile: File
-    private val service = CheckoutService()
     private val variantService = ProductVariantService()
+    private val verifier = FakePaymentVerifier()
+    private val service = CheckoutService(verifier)
 
     @Before
     fun setUp() {
@@ -46,6 +61,8 @@ class CheckoutServiceTest {
         userId: String,
         items: List<StoreCheckoutItem>,
         transactionId: String? = null,
+        paymentHash: String? = null,
+        discountAmount: Double = 0.0,
     ) = StoreCheckoutRequest(
         userId = userId,
         items = items,
@@ -54,52 +71,70 @@ class CheckoutServiceTest {
         amount = 10.0,
         transactionId = transactionId,
         ticketNotes = "",
+        paymentHash = paymentHash,
+        discountAmount = discountAmount,
+    )
+
+    private fun incomingPayment(
+        paymentHash: String,
+        isPaid: Boolean,
+    ) = IncomingPayment(
+        type = "incoming_payment",
+        subType = "lightning",
+        paymentHash = paymentHash,
+        isPaid = isPaid,
+        receivedSat = 0,
+        fees = 0,
+        createdAt = 0,
     )
 
     @Test
-    fun `checkout returns null when items list is empty`() {
+    fun `checkout returns Invalid when items list is empty`() {
         runBlocking {
             val userId = seedUser()
             val result = service.checkout(validStoreRequest(userId, items = emptyList()))
-            assertNull(result)
+            assertTrue(result is CheckoutResult.Invalid)
         }
     }
 
     @Test
-    fun `checkout returns null when any item has quantity zero`() {
+    fun `checkout returns Invalid when any item has quantity zero`() {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 0, priceAtOrder = 500))
             val result = service.checkout(validStoreRequest(userId, items = items))
-            assertNull(result)
+            assertTrue(result is CheckoutResult.Invalid)
         }
     }
 
     @Test
-    fun `checkout returns null when any item has negative quantity`() {
+    fun `checkout returns Invalid when any item has negative quantity`() {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = -1, priceAtOrder = 500))
             val result = service.checkout(validStoreRequest(userId, items = items))
-            assertNull(result)
+            assertTrue(result is CheckoutResult.Invalid)
         }
     }
 
     @Test
-    fun `checkout returns StoreCheckoutResponse with unique non-blank IDs on success`() {
+    fun `checkout returns Success with unique non-blank IDs when paymentHash is absent`() {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 2, priceAtOrder = 500))
             val result = service.checkout(validStoreRequest(userId, items = items))
 
-            assertNotNull(result)
-            assertTrue(result.orderId.isNotBlank())
-            assertTrue(result.ticketId.isNotBlank())
-            assertTrue(result.paymentId.isNotBlank())
-            assertEquals(3, setOf(result.orderId, result.ticketId, result.paymentId).size)
+            assertTrue(result is CheckoutResult.Success)
+            assertFalse(result.alreadyExisted)
+            val response = result.response
+            assertTrue(response.orderId.isNotBlank())
+            assertTrue(response.ticketId.isNotBlank())
+            assertTrue(response.paymentId.isNotBlank())
+            assertEquals(3, setOf(response.orderId, response.ticketId, response.paymentId).size)
+            assertEquals(0, verifier.callCount)
         }
     }
 
@@ -116,7 +151,7 @@ class CheckoutServiceTest {
                 )
             val result = service.checkout(validStoreRequest(userId, items = items))
 
-            assertNotNull(result)
+            assertTrue(result is CheckoutResult.Success)
             assertEquals(9, productQuantity(productId1))
             assertEquals(17, productQuantity(productId2))
         }
@@ -130,10 +165,10 @@ class CheckoutServiceTest {
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             val result = service.checkout(validStoreRequest(userId, items = items, transactionId = null))
 
-            assertNotNull(result)
+            assertTrue(result is CheckoutResult.Success)
             val transactionId =
                 transaction {
-                    PaymentEntity.findById(UUID.fromString(result.paymentId))!!.transactionId
+                    PaymentEntity.findById(UUID.fromString(result.response.paymentId))!!.transactionId
                 }
             assertEquals("", transactionId)
         }
@@ -147,24 +182,24 @@ class CheckoutServiceTest {
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             val result = service.checkout(validStoreRequest(userId, items = items, transactionId = "lnbc123"))
 
-            assertNotNull(result)
+            assertTrue(result is CheckoutResult.Success)
             val transactionId =
                 transaction {
-                    PaymentEntity.findById(UUID.fromString(result.paymentId))!!.transactionId
+                    PaymentEntity.findById(UUID.fromString(result.response.paymentId))!!.transactionId
                 }
             assertEquals("lnbc123", transactionId)
         }
     }
 
     @Test
-    fun `checkout returns null and does not persist anything when stock is insufficient`() {
+    fun `checkout returns Invalid and does not persist anything when stock is insufficient`() {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 1)
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 5, priceAtOrder = 500))
             val result = service.checkout(validStoreRequest(userId, items = items))
 
-            assertNull(result)
+            assertTrue(result is CheckoutResult.Invalid)
             assertEquals(1, productQuantity(productId))
             assertTrue(service.getStoreOrders().isEmpty())
         }
@@ -183,7 +218,7 @@ class CheckoutServiceTest {
                 )
             val result = service.checkout(validStoreRequest(userId, items = items))
 
-            assertNull(result)
+            assertTrue(result is CheckoutResult.Invalid)
             assertEquals(10, productQuantity(productId1))
             assertEquals(1, productQuantity(productId2))
             assertTrue(service.getStoreOrders().isEmpty())
@@ -191,10 +226,82 @@ class CheckoutServiceTest {
     }
 
     @Test
+    fun `checkout returns NotPaid when phoenix has not confirmed the payment`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            verifier.result = incomingPayment(paymentHash = "hash-pending", isPaid = false)
+
+            val result = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-pending"))
+
+            assertTrue(result is CheckoutResult.NotPaid)
+            assertEquals(10, productQuantity(productId))
+            assertTrue(service.getStoreOrders().isEmpty())
+        }
+    }
+
+    @Test
+    fun `checkout returns NotPaid when phoenix lookup fails`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            verifier.error = RuntimeException("phoenix unreachable")
+
+            val result = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-unknown"))
+
+            assertTrue(result is CheckoutResult.NotPaid)
+            assertTrue(service.getStoreOrders().isEmpty())
+        }
+    }
+
+    @Test
+    fun `checkout creates a new order when phoenix confirms the BTC payment is paid`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            verifier.result = incomingPayment(paymentHash = "hash-paid", isPaid = true)
+
+            val result = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-paid"))
+
+            assertTrue(result is CheckoutResult.Success)
+            assertFalse(result.alreadyExisted)
+            assertEquals(9, productQuantity(productId))
+        }
+    }
+
+    @Test
+    fun `checkout returns existing order when paymentHash already recorded`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            verifier.result = incomingPayment(paymentHash = "hash-recovered", isPaid = true)
+            val request = validStoreRequest(userId, items = items, paymentHash = "hash-recovered")
+
+            val first = service.checkout(request)
+            assertTrue(first is CheckoutResult.Success)
+            assertFalse(first.alreadyExisted)
+
+            val second = service.checkout(request)
+            assertTrue(second is CheckoutResult.Success)
+            assertTrue(second.alreadyExisted)
+            assertEquals(first.response.orderId, second.response.orderId)
+            assertEquals(first.response.ticketId, second.response.ticketId)
+            assertEquals(first.response.paymentId, second.response.paymentId)
+
+            // Only one order persisted — the recovered checkout must not duplicate.
+            assertEquals(1, service.getStoreOrders().size)
+            assertEquals(9, productQuantity(productId))
+        }
+    }
+
+    @Test
     fun `getStoreOrders returns empty list when no orders found`() {
         runBlocking {
-            val result = service.getStoreOrders()
-            assertTrue(result.isEmpty())
+            assertTrue(service.getStoreOrders().isEmpty())
         }
     }
 
@@ -205,11 +312,11 @@ class CheckoutServiceTest {
             val productId = ExposedTestDb.seedProduct(name = "Widget", quantity = 10)
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 2, priceAtOrder = 500))
             val checkout = service.checkout(validStoreRequest(userId, items = items))
-            assertNotNull(checkout)
+            assertTrue(checkout is CheckoutResult.Success)
 
             val result = service.getStoreOrders()
             assertEquals(1, result.size)
-            assertEquals(checkout.orderId, result[0].id)
+            assertEquals(checkout.response.orderId, result[0].id)
             assertEquals(1, result[0].items.size)
             assertEquals(productId, result[0].items[0].productId)
         }
@@ -231,8 +338,7 @@ class CheckoutServiceTest {
     @Test
     fun `getStoreOrderById returns null when order not found`() {
         runBlocking {
-            val result = service.getStoreOrderById(UUID.randomUUID().toString())
-            assertNull(result)
+            assertEquals(null, service.getStoreOrderById(UUID.randomUUID().toString()))
         }
     }
 
@@ -243,11 +349,10 @@ class CheckoutServiceTest {
             val productId = ExposedTestDb.seedProduct(quantity = 10)
             val items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100))
             val checkout = service.checkout(validStoreRequest(userId, items = items))
-            assertNotNull(checkout)
+            assertTrue(checkout is CheckoutResult.Success)
 
-            val result = service.getStoreOrderById(checkout.orderId)
-            assertNotNull(result)
-            assertEquals(checkout.orderId, result.id)
+            val result = service.getStoreOrderById(checkout.response.orderId)
+            assertEquals(checkout.response.orderId, result?.id)
         }
     }
 
@@ -256,19 +361,15 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val orderId = ExposedTestDb.seedOrder(userId, status = "open")
-            val result = service.cancelStoreOrder(orderId)
-            assertTrue(result)
-
-            val cancelled = service.getStoreOrderById(orderId)
-            assertEquals("closed", cancelled?.status)
+            assertTrue(service.cancelStoreOrder(orderId))
+            assertEquals("closed", service.getStoreOrderById(orderId)?.status)
         }
     }
 
     @Test
     fun `cancelStoreOrder returns false when order not found`() {
         runBlocking {
-            val result = service.cancelStoreOrder(UUID.randomUUID().toString())
-            assertFalse(result)
+            assertFalse(service.cancelStoreOrder(UUID.randomUUID().toString()))
         }
     }
 
@@ -277,16 +378,14 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val orderId = ExposedTestDb.seedOrder(userId, status = "closed")
-            val result = service.cancelStoreOrder(orderId)
-            assertFalse(result)
+            assertFalse(service.cancelStoreOrder(orderId))
         }
     }
 
     @Test
     fun `findCheckoutByPaymentHash returns null when not found`() {
         runBlocking {
-            val result = service.findCheckoutByPaymentHash("non-existent-hash")
-            assertNull(result)
+            assertEquals(null, service.findCheckoutByPaymentHash("non-existent-hash"))
         }
     }
 
@@ -295,27 +394,50 @@ class CheckoutServiceTest {
         runBlocking {
             val userId = seedUser()
             val productId = ExposedTestDb.seedProduct(quantity = 10)
-            val paymentMethodId = ExposedTestDb.seedPaymentMethod("Cash")
-            val currencyId = ExposedTestDb.seedCurrency("USD")
-            val request =
-                StoreCheckoutRequest(
-                    userId = userId,
-                    items = listOf(StoreCheckoutItem(productId = productId, quantity = 1, priceAtOrder = 100)),
-                    paymentMethodId = paymentMethodId,
-                    currencyId = currencyId,
-                    amount = 10.0,
-                    paymentHash = "hash-123",
-                    ticketNotes = "",
-                )
-            val checkout = service.checkout(request)
-            assertNotNull(checkout)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            verifier.result = incomingPayment(paymentHash = "hash-123", isPaid = true)
+            val checkout = service.checkout(validStoreRequest(userId, items = items, paymentHash = "hash-123"))
+            assertTrue(checkout is CheckoutResult.Success)
 
             val result = service.findCheckoutByPaymentHash("hash-123")
-            assertNotNull(result)
-            assertEquals("completed", result["status"])
-            assertEquals(checkout.orderId, result["orderId"])
-            assertEquals(checkout.ticketId, result["ticketId"])
-            assertEquals(checkout.paymentId, result["paymentId"])
+            assertEquals("completed", result?.get("status"))
+            assertEquals(checkout.response.orderId, result?.get("orderId"))
+            assertEquals(checkout.response.ticketId, result?.get("ticketId"))
+            assertEquals(checkout.response.paymentId, result?.get("paymentId"))
+        }
+    }
+
+    @Test
+    fun `checkout persists discountAmount on the order`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val result = service.checkout(validStoreRequest(userId, items = items, discountAmount = 1.0))
+
+            assertTrue(result is CheckoutResult.Success)
+            val persistedDiscountAmount =
+                transaction {
+                    OrderEntity.findById(UUID.fromString(result.response.orderId))!!.discountAmount
+                }
+            assertEquals(1.0, persistedDiscountAmount)
+        }
+    }
+
+    @Test
+    fun `checkout persists zero discountAmount when not provided`() {
+        runBlocking {
+            val userId = seedUser()
+            val productId = ExposedTestDb.seedProduct(quantity = 10)
+            val items = listOf(StoreCheckoutItem(productId, 1, 100))
+            val result = service.checkout(validStoreRequest(userId, items = items))
+
+            assertTrue(result is CheckoutResult.Success)
+            val persistedDiscountAmount =
+                transaction {
+                    OrderEntity.findById(UUID.fromString(result.response.orderId))!!.discountAmount
+                }
+            assertEquals(0.0, persistedDiscountAmount)
         }
     }
 }

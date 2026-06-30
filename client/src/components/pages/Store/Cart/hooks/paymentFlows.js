@@ -28,6 +28,7 @@ export async function processCheckout({
       paymentMethodId: selectedPaymentMethod,
       currencyId,
       amount: paymentAmounts.amountFiat,
+      discountAmount: paymentAmounts.discountAmount,
       transactionId: transactionId || "",
       satoshiAmount,
       exchangeRateAtPayment,
@@ -36,6 +37,10 @@ export async function processCheckout({
       fiatAmountAtPayment,
     }),
   });
+
+  if (checkoutHttpResponse.status === 202) {
+    return { pending: true };
+  }
 
   const storeCheckoutResult = await parseJsonResponse(checkoutHttpResponse, null);
   if (!storeCheckoutResult?.orderId) {

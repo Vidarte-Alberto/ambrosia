@@ -1,5 +1,7 @@
 package pos.ambrosia.services
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
@@ -34,7 +36,24 @@ import java.util.UUID
 
 private class InsufficientStockException : Exception()
 
-class CheckoutService {
+sealed interface CheckoutResult {
+    data class Success(
+        val response: StoreCheckoutResponse,
+        val alreadyExisted: Boolean,
+    ) : CheckoutResult
+
+    data object NotPaid : CheckoutResult
+
+    data object Invalid : CheckoutResult
+}
+
+class CheckoutService(
+    private val paymentVerifier: PaymentVerifier? = null,
+) {
+    companion object {
+        private val checkoutMutex = Mutex()
+    }
+
     private fun toStoreOrder(entity: OrderEntity): StoreOrder {
         val items =
             OrderProductsTable
@@ -118,10 +137,43 @@ class CheckoutService {
             )
         }
 
-    fun checkout(request: StoreCheckoutRequest): StoreCheckoutResponse? {
-        if (request.items.isEmpty()) return null
-        if (request.items.any { it.quantity <= 0 }) return null
+    suspend fun checkout(request: StoreCheckoutRequest): CheckoutResult {
+        if (request.items.isEmpty()) return CheckoutResult.Invalid
+        if (request.items.any { it.quantity <= 0 }) return CheckoutResult.Invalid
 
+        return checkoutMutex.withLock {
+            val paymentHash = request.paymentHash
+            if (!paymentHash.isNullOrBlank()) {
+                findCheckoutByPaymentHash(paymentHash)?.let { existing ->
+                    return@withLock CheckoutResult.Success(
+                        StoreCheckoutResponse(
+                            orderId = existing.getValue("orderId"),
+                            ticketId = existing.getValue("ticketId"),
+                            paymentId = existing.getValue("paymentId"),
+                        ),
+                        alreadyExisted = true,
+                    )
+                }
+
+                val incomingPayment =
+                    paymentVerifier?.let { verifier ->
+                        runCatching { verifier.getIncomingPayment(paymentHash) }.getOrNull()
+                    }
+                if (incomingPayment?.isPaid != true) {
+                    return@withLock CheckoutResult.NotPaid
+                }
+            }
+
+            val response = performCheckout(request)
+            if (response != null) {
+                CheckoutResult.Success(response, alreadyExisted = false)
+            } else {
+                CheckoutResult.Invalid
+            }
+        }
+    }
+
+    private fun performCheckout(request: StoreCheckoutRequest): StoreCheckoutResponse? {
         try {
             UUID.fromString(request.userId)
             UUID.fromString(request.paymentMethodId)
@@ -140,6 +192,7 @@ class CheckoutService {
                         this.tableId = null
                         this.status = "paid"
                         this.total = request.amount
+                        this.discountAmount = request.discountAmount
                         this.createdAt = now
                     }
 
