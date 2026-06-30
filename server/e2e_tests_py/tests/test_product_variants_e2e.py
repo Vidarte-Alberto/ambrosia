@@ -22,7 +22,6 @@ async def product_id(admin_client):
             "name": f"test_product_{uid}",
             "SKU": f"SKU-{uid}",
             "priceCents": 1000,
-            "costCents": 500,
             "quantity": 10,
             "categoryIds": [],
         },
@@ -51,7 +50,7 @@ class TestVariantsCRUD:
         """POST /products/{id}/variants with valid data returns 201 and an id."""
         response = await admin_client.post(
             f"/products/{product_id}/variants",
-            json={"priceCents": 1500, "quantity": 5, "SKU": "VAR-NEW"},
+            json={"priceCents": 1500, "quantity": 5, "SKU": f"VAR-{product_id[:8]}"},
         )
         assert_status_code(response, 201)
         data = response.json()

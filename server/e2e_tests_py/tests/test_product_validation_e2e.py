@@ -106,27 +106,6 @@ class TestProductValidation:
         logger.info("✓ Null SKU correctly accepted on create")
 
     @pytest.mark.asyncio
-    async def test_create_product_with_negative_cost_fails(
-        self, admin_client, category_id
-    ):
-        """POST /products with a negative cost_cents should return 400."""
-        uid = str(uuid.uuid4())[:8]
-        response = await admin_client.post(
-            "/products",
-            json={
-                **VALID_PRODUCT,
-                "SKU": f"SKU-{uid}",
-                "name": f"product_{uid}",
-                "costCents": -1,
-                "categoryIds": [category_id],
-            },
-        )
-        assert_status_code(
-            response, 400, "Negative cost_cents should be rejected on create"
-        )
-        logger.info("✓ Negative cost_cents correctly rejected on create")
-
-    @pytest.mark.asyncio
     async def test_create_product_with_negative_price_fails(
         self, admin_client, category_id
     ):
