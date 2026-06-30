@@ -245,7 +245,77 @@ describe("TicketTemplatesModal", () => {
     fireEvent.click(screen.getByText("templates.confirmDelete"));
 
     await waitFor(() => expect(deleteTemplate).toHaveBeenCalledWith("tpl-new"));
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith(
+      expect.objectContaining({ color: "success", description: "templates.deleteSuccess" }),
+    ));
     expect(screen.getByLabelText("templates.nameLabel")).toHaveValue("");
+  });
+
+  it("shows a success toast when print test succeeds", async () => {
+    const printTicket = jest.fn().mockResolvedValue(true);
+
+    useTemplates.mockReturnValue({
+      templates: [{ id: "tpl-1", name: "Customer", elements: [] }],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate: jest.fn(),
+    });
+
+    usePrinters.mockReturnValue({ printTicket });
+
+    render(<TicketTemplatesModal isOpen onClose={jest.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("templates.nameLabel"), {
+      target: { value: "Customer" },
+    });
+
+    fireEvent.click(screen.getByText("templates.printTest"));
+
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith({
+      title: "templates.printSuccessTitle",
+      description: "templates.printSuccessDescription",
+      color: "success",
+    }));
+  });
+
+  it("shows an error toast when deleting a template fails", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    const deleteTemplate = jest.fn().mockRejectedValue(new Error("delete failed"));
+    const initialTemplate = {
+      id: "tpl-fail",
+      name: "Failing Template",
+      elements: [],
+    };
+
+    useTemplates.mockReturnValue({
+      templates: [initialTemplate],
+      loading: false,
+      error: null,
+      createTemplate: jest.fn(),
+      updateTemplate: jest.fn(),
+      deleteTemplate,
+    });
+
+    usePrinters.mockReturnValue({ printTicket: jest.fn() });
+
+    render(
+      <TicketTemplatesModal
+        isOpen
+        onClose={jest.fn()}
+        initialTemplate={initialTemplate}
+      />,
+    );
+
+    fireEvent.click(screen.getByText("templates.deleteTemplate"));
+    await waitFor(() => expect(screen.getByText("templates.confirmDelete")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("templates.confirmDelete"));
+
+    await waitFor(() => expect(deleteTemplate).toHaveBeenCalledWith("tpl-fail"));
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith(
+      expect.objectContaining({ color: "danger", description: "templates.deleteError" }),
+    ));
   });
 
   it("collapses elements by default, expands on click, remove and add work", async () => {
