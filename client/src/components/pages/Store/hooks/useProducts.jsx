@@ -9,7 +9,7 @@ import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 import { useFetchList } from "@/lib/http/useFetchList";
 
-import { toFiniteNumber } from "../Products/utils/number";
+import { toFiniteNumber } from "@/components/utils/numberParsers";
 import { resolveImageUrl } from "../Products/utils/resolveImageUrl";
 
 import { useProductVariants } from "./useProductVariants";

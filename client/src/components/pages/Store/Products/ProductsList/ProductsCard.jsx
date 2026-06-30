@@ -9,7 +9,7 @@ import { DeleteButton } from "@/components/shared/DeleteButton";
 import { EditButton } from "@/components/shared/EditButton";
 import { VariantsButton } from "@/components/shared/VariantsButton";
 import { ViewButton } from "@/components/shared/ViewButton";
-import { normalizeNumber } from "@/components/utils/number";
+import { toFiniteNumber } from "@/components/utils/numberParsers";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 import { RequirePermission } from "@/hooks/usePermission";
 
@@ -17,8 +17,8 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
   const t = useTranslations("products");
   const { formatAmount } = useCurrency();
   const imageUrl = storedAssetUrl(product?.imageUrl);
-  const quantity = normalizeNumber(product.quantity);
-  const stockStatus = quantity <= 0 ? "out" : quantity <= normalizeNumber(product.minStockThreshold) ? "low" : "ok";
+  const quantity = toFiniteNumber(product.quantity);
+  const stockStatus = quantity <= 0 ? "out" : quantity <= toFiniteNumber(product.minStockThreshold) ? "low" : "ok";
 
   return (
     <Card shadow="none" className="border border-gray-200 rounded-lg">
@@ -51,7 +51,7 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
               }
               size="sm"
             >
-              {normalizeNumber(product.quantity ?? product.productStock)}
+              {toFiniteNumber(product.quantity ?? product.productStock)}
             </Chip>
             <Chip
               className={

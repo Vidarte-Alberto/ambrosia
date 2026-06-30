@@ -9,7 +9,7 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { ProductDetailsModal } from "@/components/shared/ProductDetailsModal";
 import { ViewButton } from "@/components/shared/ViewButton";
-import { normalizeNumber } from "@/components/utils/number";
+import { toFiniteNumber } from "@/components/utils/numberParsers";
 import { storedAssetUrl } from "@/components/utils/storedAssetUrl";
 
 import { VariantSelectorModal } from "./VariantSelectorModal";
@@ -52,7 +52,7 @@ export function ProductList({ products, onAddProduct, categories }) {
   };
 
   const stockStatus = (product) => {
-    const quantity = normalizeNumber(product.quantity);
+    const quantity = toFiniteNumber(product.quantity);
     if (quantity <= 0) return "out";
     if (quantity < defaultMaxStock) return "low";
     return "ok";
@@ -160,7 +160,7 @@ export function ProductList({ products, onAddProduct, categories }) {
                             : "bg-green-200 text-xs text-green-800 border border-green-300"
                       }
                     >
-                      {normalizeNumber(quantity)} {cardProductTranslation("card.stock")}
+                      {toFiniteNumber(quantity)} {cardProductTranslation("card.stock")}
                     </Chip>
                     <div className="flex justify-between">
                       <div className="md:hidden">
