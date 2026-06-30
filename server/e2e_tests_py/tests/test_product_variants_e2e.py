@@ -60,7 +60,9 @@ class TestVariantsCRUD:
     @pytest.mark.asyncio
     async def test_update_variant_returns_200(self, admin_client, product_id):
         """PUT /products/{id}/variants/{variantId} updates the variant."""
-        variant_id = (await admin_client.get(f"/products/{product_id}/variants")).json()[0]["id"]
+        variant_id = (
+            await admin_client.get(f"/products/{product_id}/variants")
+        ).json()[0]["id"]
         response = await admin_client.put(
             f"/products/{product_id}/variants/{variant_id}",
             json={"priceCents": 2000, "quantity": 3},
@@ -78,12 +80,16 @@ class TestVariantsCRUD:
         assert_status_code(create_resp, 201)
         variant_id = create_resp.json()["id"]
 
-        response = await admin_client.delete(f"/products/{product_id}/variants/{variant_id}")
+        response = await admin_client.delete(
+            f"/products/{product_id}/variants/{variant_id}"
+        )
         assert_status_code(response, 204)
         logger.info("✓ DELETE /variants/{id} returns 204")
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_variant_returns_404(self, admin_client, product_id):
+    async def test_update_nonexistent_variant_returns_404(
+        self, admin_client, product_id
+    ):
         """PUT /products/{id}/variants/{variantId} with unknown ID returns 404."""
         response = await admin_client.put(
             f"/products/{product_id}/variants/{DUMMY_ID}",
@@ -97,7 +103,9 @@ class TestVariantsValidation:
     """Input validation for /products/{id}/variants."""
 
     @pytest.mark.asyncio
-    async def test_create_variant_with_negative_price_returns_400(self, admin_client, product_id):
+    async def test_create_variant_with_negative_price_returns_400(
+        self, admin_client, product_id
+    ):
         """POST /products/{id}/variants with negative priceCents returns 400."""
         response = await admin_client.post(
             f"/products/{product_id}/variants",
@@ -107,7 +115,9 @@ class TestVariantsValidation:
         logger.info("✓ Negative priceCents rejected with 400")
 
     @pytest.mark.asyncio
-    async def test_create_variant_with_negative_quantity_returns_400(self, admin_client, product_id):
+    async def test_create_variant_with_negative_quantity_returns_400(
+        self, admin_client, product_id
+    ):
         """POST /products/{id}/variants with negative quantity returns 400."""
         response = await admin_client.post(
             f"/products/{product_id}/variants",
@@ -117,7 +127,9 @@ class TestVariantsValidation:
         logger.info("✓ Negative quantity rejected with 400")
 
     @pytest.mark.asyncio
-    async def test_create_variant_with_duplicate_sku_returns_409(self, admin_client, product_id):
+    async def test_create_variant_with_duplicate_sku_returns_409(
+        self, admin_client, product_id
+    ):
         """POST /products/{id}/variants with a duplicate SKU returns 409."""
         sku = f"DUP-{str(uuid.uuid4())[:8]}"
         first = await admin_client.post(
@@ -138,7 +150,9 @@ class TestOptionTypesCRUD:
     """Happy-path CRUD for /products/{id}/options."""
 
     @pytest.mark.asyncio
-    async def test_get_options_returns_empty_list_initially(self, admin_client, product_id):
+    async def test_get_options_returns_empty_list_initially(
+        self, admin_client, product_id
+    ):
         """GET /products/{id}/options returns empty list for a new product."""
         response = await admin_client.get(f"/products/{product_id}/options")
         assert_status_code(response, 200)
@@ -158,11 +172,16 @@ class TestOptionTypesCRUD:
         logger.info("✓ POST /options returns 201 with id")
 
     @pytest.mark.asyncio
-    async def test_get_options_returns_created_type_with_values(self, admin_client, product_id):
+    async def test_get_options_returns_created_type_with_values(
+        self, admin_client, product_id
+    ):
         """GET /products/{id}/options returns the option type with its values."""
         await admin_client.post(
             f"/products/{product_id}/options",
-            json={"name": "Size", "values": [{"value": "S"}, {"value": "M"}, {"value": "L"}]},
+            json={
+                "name": "Size",
+                "values": [{"value": "S"}, {"value": "M"}, {"value": "L"}],
+            },
         )
         response = await admin_client.get(f"/products/{product_id}/options")
         assert_status_code(response, 200)
@@ -202,7 +221,9 @@ class TestOptionTypesCRUD:
         assert_status_code(create_resp, 201)
         option_type_id = create_resp.json()["id"]
 
-        response = await admin_client.delete(f"/products/{product_id}/options/{option_type_id}")
+        response = await admin_client.delete(
+            f"/products/{product_id}/options/{option_type_id}"
+        )
         assert_status_code(response, 204)
 
         options = (await admin_client.get(f"/products/{product_id}/options")).json()
@@ -210,7 +231,9 @@ class TestOptionTypesCRUD:
         logger.info("✓ DELETE /options/{id} removes option type")
 
     @pytest.mark.asyncio
-    async def test_update_nonexistent_option_type_returns_404(self, admin_client, product_id):
+    async def test_update_nonexistent_option_type_returns_404(
+        self, admin_client, product_id
+    ):
         """PUT /products/{id}/options/{optionTypeId} with unknown ID returns 404."""
         response = await admin_client.put(
             f"/products/{product_id}/options/{DUMMY_ID}",
