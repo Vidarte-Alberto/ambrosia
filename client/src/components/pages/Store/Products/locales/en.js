@@ -86,7 +86,6 @@ const productsEn = {
     saveVariant: "Save",
     cancelVariant: "Cancel",
     deleteVariantConfirm: "Confirm delete",
-    variantChangeImage: "Change image",
     variantRemoveImage: "Remove image",
     variantStockUnit: "in stock",
     hasVariantsHint: "Price and stock are managed per variant after saving.",

@@ -86,7 +86,6 @@ const productsEs = {
     saveVariant: "Guardar",
     cancelVariant: "Cancelar",
     deleteVariantConfirm: "Confirmar eliminación",
-    variantChangeImage: "Cambiar imagen",
     variantRemoveImage: "Quitar imagen",
     variantStockUnit: "en almacén",
     hasVariantsHint: "El precio y stock se gestionan por variante al guardar.",

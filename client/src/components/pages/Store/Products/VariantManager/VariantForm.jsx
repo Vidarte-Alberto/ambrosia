@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, Input, NumberInput, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { VariantImagePicker } from "./VariantImagePicker";
+import { ImageUploader } from "@/components/shared/ImageUploader";
 
 export function VariantForm({ initial = {}, currency, options = [], onSave, onCancel, isLoading }) {
   const productsTranslations = useTranslations("products");
@@ -60,11 +60,6 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
 
   return (
     <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 space-y-3">
-      <VariantImagePicker
-        imageUrl={form.imageUrl}
-        onFileChange={handleImageChange}
-      />
-
       {options.length > 0 && (
         <div className="space-y-2">
           {options.map((optionType) => (
@@ -119,6 +114,14 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
           onValueChange={(v) => setForm((p) => ({ ...p, quantity: v ?? 0 }))}
         />
       </div>
+
+      <ImageUploader
+        isCompact
+        image={form.imageFile ?? form.imageUrl}
+        onChange={handleImageChange}
+        uploadText={productsTranslations("modal.productImageUpload")}
+        uploadDescription={productsTranslations("modal.productImageUploadMessage")}
+      />
 
       <div className="flex gap-2 justify-end pt-1">
         <Button size="sm" variant="bordered" onPress={onCancel} isDisabled={isLoading}>
