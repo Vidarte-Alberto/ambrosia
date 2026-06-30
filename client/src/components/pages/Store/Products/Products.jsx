@@ -9,15 +9,15 @@ import { RequirePermission } from "@/hooks/usePermission";
 import { PageHeader } from "@components/shared/PageHeader";
 
 import { useCategories } from "../hooks/useCategories";
-import { useProductVariants } from "../hooks/useProductVariants";
 import { useProducts } from "../hooks/useProducts";
+import { useProductVariants } from "../hooks/useProductVariants";
 
 import { AddProductsModal } from "./AddProductsModal";
 import { Categories } from "./Categories";
 import { DeleteProductsModal } from "./DeleteProductsModal";
 import { EditProductsModal } from "./EditProductsModal";
-import { ProductVariantsModal } from "./ProductVariantsModal";
 import { ProductsList } from "./ProductsList";
+import { ProductVariantsModal } from "./ProductVariantsModal";
 
 function createEmptyProductForm() {
   return {
@@ -175,7 +175,7 @@ export function Products() {
       <ProductVariantsModal
         product={variantsProduct}
         isOpen={!!variantsProduct}
-        onClose={() => setVariantsProduct(null)}
+        onClose={() => { setVariantsProduct(null); refetchProducts(); }}
       />
 
       <DeleteProductsModal
