@@ -90,7 +90,14 @@ export function ProductList({ products, onAddProduct, categories }) {
                     )}
                   </div>
                   <CardHeader className="flex flex-col items-start pb-1">
-                    <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+                      {product.isBundle && (
+                        <Chip size="sm" className="bg-green-100 text-green-800 border border-green-200 text-xs">
+                          {cardProductTranslation("card.bundle")}
+                        </Chip>
+                      )}
+                    </div>
                     <p className="text-xs">{getCategoryNames(categoryIds)}</p>
                   </CardHeader>
                   <CardBody className="py-1">
