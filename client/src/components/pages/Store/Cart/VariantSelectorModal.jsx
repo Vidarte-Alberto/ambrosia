@@ -75,7 +75,11 @@ export function VariantSelectorModal({ product, isOpen, onClose, onAddToCart }) 
           )}
         </ModalBody>
         <ModalFooter>
-          <Button variant="light" onPress={onClose}>
+          <Button
+            variant="bordered"
+            className="px-6 py-2 border border-border text-foreground hover:bg-muted transition-colors"
+            onPress={onClose}
+          >
             {cartTranslations("variantSelector.cancel")}
           </Button>
           <Button color="primary" isDisabled={isDisabled} onPress={handleAddToCart}>
