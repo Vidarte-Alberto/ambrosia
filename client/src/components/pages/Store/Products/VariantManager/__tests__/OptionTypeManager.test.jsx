@@ -3,12 +3,12 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { OptionTypeManager } from "../OptionTypeManager";
 
 jest.mock("@heroui/react", () => ({
-  Button: ({ children, onPress, isDisabled, startContent }) => (
+  Button: ({ children, onPress, isDisabled }) => (
     <button onClick={onPress} disabled={isDisabled}>
       {children}
     </button>
   ),
-  Card: ({ children, shadow, className }) => <div className={className}>{children}</div>,
+  Card: ({ children, className }) => <div className={className}>{children}</div>,
   CardBody: ({ children, className }) => <div className={className}>{children}</div>,
   Chip: ({ children, endContent }) => (
     <span>

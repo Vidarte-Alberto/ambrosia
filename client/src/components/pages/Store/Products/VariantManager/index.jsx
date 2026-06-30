@@ -9,6 +9,7 @@ import { useCurrency } from "@/components/hooks/useCurrency";
 import { useUpload } from "@/components/hooks/useUpload";
 
 import { resolveImageUrl } from "../utils/resolveImageUrl";
+
 import { OptionTypeManager } from "./OptionTypeManager";
 import { VariantCard } from "./VariantCard";
 import { VariantForm } from "./VariantForm";
@@ -50,36 +51,33 @@ export function VariantManager({
     }
   };
 
-  const handleAddVariant = (variantFormData) =>
-    executeVariantMutation("new", async () => {
-      const resolvedImageUrl = await resolveImageUrl(variantFormData.imageFile, variantFormData.imageUrl, upload);
-      const newVariantId = await onAddVariant(productId, {
-        SKU: variantFormData.SKU,
-        priceCents: variantFormData.priceCents,
-        quantity: variantFormData.quantity,
-        isActive: variantFormData.isActive,
-        optionValueIds: variantFormData.optionValueIds,
-        imageUrl: resolvedImageUrl,
-      });
-      if (newVariantId !== null) setIsAddingNewVariant(false);
-      return newVariantId;
+  const handleAddVariant = (variantFormData) => executeVariantMutation("new", async () => {
+    const resolvedImageUrl = await resolveImageUrl(variantFormData.imageFile, variantFormData.imageUrl, upload);
+    const newVariantId = await onAddVariant(productId, {
+      SKU: variantFormData.SKU,
+      priceCents: variantFormData.priceCents,
+      quantity: variantFormData.quantity,
+      isActive: variantFormData.isActive,
+      optionValueIds: variantFormData.optionValueIds,
+      imageUrl: resolvedImageUrl,
     });
+    if (newVariantId !== null) setIsAddingNewVariant(false);
+    return newVariantId;
+  });
 
-  const handleUpdateVariant = (variantId, variantFormData) =>
-    executeVariantMutation(variantId, async () => {
-      const resolvedImageUrl = await resolveImageUrl(variantFormData.imageFile, variantFormData.imageUrl, upload);
-      return onUpdateVariant(productId, variantId, {
-        SKU: variantFormData.SKU,
-        priceCents: variantFormData.priceCents,
-        quantity: variantFormData.quantity,
-        isActive: variantFormData.isActive,
-        optionValueIds: variantFormData.optionValueIds,
-        imageUrl: resolvedImageUrl,
-      });
+  const handleUpdateVariant = (variantId, variantFormData) => executeVariantMutation(variantId, async () => {
+    const resolvedImageUrl = await resolveImageUrl(variantFormData.imageFile, variantFormData.imageUrl, upload);
+    return onUpdateVariant(productId, variantId, {
+      SKU: variantFormData.SKU,
+      priceCents: variantFormData.priceCents,
+      quantity: variantFormData.quantity,
+      isActive: variantFormData.isActive,
+      optionValueIds: variantFormData.optionValueIds,
+      imageUrl: resolvedImageUrl,
     });
+  });
 
-  const handleDeleteVariant = (variantId) =>
-    executeVariantMutation(variantId, () => onDeleteVariant(productId, variantId));
+  const handleDeleteVariant = (variantId) => executeVariantMutation(variantId, () => onDeleteVariant(productId, variantId));
 
   const isAddFormMutating = variantIdsInProgress.has("new") || isUploading;
 

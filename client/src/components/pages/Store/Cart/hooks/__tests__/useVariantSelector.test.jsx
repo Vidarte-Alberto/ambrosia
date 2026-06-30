@@ -42,8 +42,7 @@ const productDetail = {
 function setup(props = {}) {
   const onClose = jest.fn();
   const onAddToCart = jest.fn();
-  const { result } = renderHook(() =>
-    useVariantSelector({ product, isOpen: true, onClose, onAddToCart, ...props }),
+  const { result } = renderHook(() => useVariantSelector({ product, isOpen: true, onClose, onAddToCart, ...props }),
   );
   return { result, onClose, onAddToCart };
 }
@@ -57,8 +56,7 @@ describe("useVariantSelector", () => {
     });
 
     it("does not fetch when isOpen is false", () => {
-      const { result } = renderHook(() =>
-        useVariantSelector({ product, isOpen: false, onClose: jest.fn(), onAddToCart: jest.fn() }),
+      const { result } = renderHook(() => useVariantSelector({ product, isOpen: false, onClose: jest.fn(), onAddToCart: jest.fn() }),
       );
       expect(mockFetchProductDetail).not.toHaveBeenCalled();
       expect(result.current.isLoading).toBe(false);

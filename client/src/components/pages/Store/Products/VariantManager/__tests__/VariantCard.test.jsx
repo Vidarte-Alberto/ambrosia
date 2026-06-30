@@ -18,7 +18,7 @@ jest.mock("../VariantForm", () => ({
 jest.mock("@heroui/react", () => ({
   Card: ({ children }) => <div>{children}</div>,
   CardBody: ({ children }) => <div>{children}</div>,
-  Image: ({ src, alt }) => <img src={src} alt={alt} />,
+  Image: ({ src, alt }) => <div role="img" aria-label={alt} data-src={src} />,
   Button: ({ children, onPress, isLoading }) => (
     <button onClick={onPress} aria-busy={isLoading}>
       {children}

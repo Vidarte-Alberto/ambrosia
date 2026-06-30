@@ -8,8 +8,9 @@ import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 import { useFetchList } from "@/lib/http/useFetchList";
-import { resolveImageUrl } from "../Products/utils/resolveImageUrl";
+
 import { toFiniteNumber } from "../Products/utils/number";
+import { resolveImageUrl } from "../Products/utils/resolveImageUrl";
 
 import { useProductVariants } from "./useProductVariants";
 
@@ -42,7 +43,6 @@ export function useProducts() {
     quantity: toFiniteNumber(product.productStock),
     isActive: true,
   });
-
 
   const buildHttpError = (response, payload) => ({
     status: response.status,

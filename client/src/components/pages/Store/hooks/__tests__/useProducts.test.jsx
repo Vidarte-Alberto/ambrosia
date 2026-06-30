@@ -177,21 +177,19 @@ describe("useProducts", () => {
     const upload = jest.fn();
     useUpload.mockReturnValue({ upload, isUploading: false });
 
-    httpClient.mockImplementation((url, options = {}) =>
-      Promise.resolve({
-        ok: true,
-        _isProductPost: url === "/products" && options?.method === "POST",
-        _isVariantPost: url.includes("/variants") && options?.method === "POST",
-      })
+    httpClient.mockImplementation((url, options = {}) => Promise.resolve({
+      ok: true,
+      _isProductPost: url === "/products" && options?.method === "POST",
+      _isVariantPost: url.includes("/variants") && options?.method === "POST",
+    }),
     );
-    parseJsonResponse.mockImplementation((response, fallback) =>
-      Promise.resolve(
-        response?._isProductPost
-          ? { id: 2, message: "Product added successfully" }
-          : response?._isVariantPost
-            ? { id: 5 }
-            : (Array.isArray(fallback) ? [] : null)
-      )
+    parseJsonResponse.mockImplementation((response, fallback) => Promise.resolve(
+      response?._isProductPost
+        ? { id: 2, message: "Product added successfully" }
+        : response?._isVariantPost
+          ? { id: 5 }
+          : (Array.isArray(fallback) ? [] : null),
+    ),
     );
 
     renderWithProvider();

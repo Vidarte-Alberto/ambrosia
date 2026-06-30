@@ -6,8 +6,8 @@ import { useTranslations } from "next-intl";
 
 import { useProductVariants } from "@components/pages/Store/hooks/useProductVariants";
 
-import { VariantManager } from "./VariantManager";
 import { useEditProduct } from "./hooks/useEditProduct";
+import { VariantManager } from "./VariantManager";
 
 export function ProductVariantsModal({ product, isOpen, onClose }) {
   const productsTranslations = useTranslations("products");

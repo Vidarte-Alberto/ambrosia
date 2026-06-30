@@ -53,7 +53,7 @@ function OptionValueInput({ values, onChange }) {
               key={value}
               size="sm"
               className="bg-gray-100 text-gray-700"
-              endContent={
+              endContent={(
                 <button
                   type="button"
                   onClick={() => removeValue(value)}
@@ -62,7 +62,7 @@ function OptionValueInput({ values, onChange }) {
                 >
                   <X className="w-3 h-3" />
                 </button>
-              }
+              )}
             >
               {value}
             </Chip>
@@ -182,52 +182,51 @@ export function OptionTypeManager({
       )}
 
       <div className="space-y-2">
-        {options.map((optionType) =>
-          editingId === optionType.id ? (
-            <OptionTypeForm
-              key={optionType.id}
-              initial={optionType}
-              onSave={(data) => handleUpdate(optionType.id, data)}
-              onCancel={() => setEditingId(null)}
-              isSaving={isSaving}
-            />
-          ) : (
-            <Card key={optionType.id} shadow="none" className="border border-gray-200 bg-white">
-              <CardBody className="p-3">
-                <div className="flex items-start gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800">{optionType.name}</p>
-                    <div className="flex flex-wrap gap-1 mt-1.5">
-                      {optionType.values.map((val) => (
-                        <Chip key={val.id} size="sm" className="bg-gray-100 text-gray-700 border border-gray-200">
-                          {val.value}
-                        </Chip>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      type="button"
-                      data-testid={`edit-option-type-${optionType.id}`}
-                      onClick={() => setEditingId(optionType.id)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      data-testid={`delete-option-type-${optionType.id}`}
-                      onClick={() => handleDelete(optionType.id)}
-                      disabled={isSaving}
-                      className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+        {options.map((optionType) => (editingId === optionType.id ? (
+          <OptionTypeForm
+            key={optionType.id}
+            initial={optionType}
+            onSave={(data) => handleUpdate(optionType.id, data)}
+            onCancel={() => setEditingId(null)}
+            isSaving={isSaving}
+          />
+        ) : (
+          <Card key={optionType.id} shadow="none" className="border border-gray-200 bg-white">
+            <CardBody className="p-3">
+              <div className="flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800">{optionType.name}</p>
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {optionType.values.map((val) => (
+                      <Chip key={val.id} size="sm" className="bg-gray-100 text-gray-700 border border-gray-200">
+                        {val.value}
+                      </Chip>
+                    ))}
                   </div>
                 </div>
-              </CardBody>
-            </Card>
-          )
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button
+                    type="button"
+                    data-testid={`edit-option-type-${optionType.id}`}
+                    onClick={() => setEditingId(optionType.id)}
+                    className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    data-testid={`delete-option-type-${optionType.id}`}
+                    onClick={() => handleDelete(optionType.id)}
+                    disabled={isSaving}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )),
         )}
 
         {isAddingNew && (

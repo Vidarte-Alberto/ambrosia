@@ -13,11 +13,11 @@ export function ProductPricingFields({ data, onChange, currency }) {
         placeholder={productsTranslations("modal.productPricePlaceholder")}
         isRequired
         errorMessage={productsTranslations("modal.errorMsgInputFieldEmpty")}
-        startContent={
+        startContent={(
           <span className="text-default-400 text-small">
             {currency?.acronym || "$"}
           </span>
-        }
+        )}
         minValue={0}
         value={data.productPrice}
         onValueChange={(value) => {
