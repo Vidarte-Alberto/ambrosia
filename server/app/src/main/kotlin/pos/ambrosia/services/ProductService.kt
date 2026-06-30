@@ -248,7 +248,12 @@ class ProductService {
 
     fun deleteProduct(id: String): Boolean =
         transaction {
-            val uuid = try { UUID.fromString(id) } catch (_: IllegalArgumentException) { return@transaction false }
+            val uuid =
+                try {
+                    UUID.fromString(id)
+                } catch (_: IllegalArgumentException) {
+                    return@transaction false
+                }
             val entity = ProductEntity.findById(uuid) ?: return@transaction false
             ProductVariantsTable.deleteWhere { ProductVariantsTable.productId eq entity.id }
             entity.isDeleted = true
