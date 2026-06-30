@@ -265,57 +265,61 @@ open class ProductVariantService {
             true
         }
 
-    fun adjustStock(adjustments: List<ProductStockAdjustment>): Boolean =
-        transaction {
-            if (adjustments.isEmpty()) return@transaction true
-            if (adjustments.any { it.quantity < 0 }) return@transaction false
+    fun adjustStock(adjustments: List<ProductStockAdjustment>): Boolean {
+        if (adjustments.isEmpty()) return true
+        if (adjustments.any { it.quantity < 0 }) return false
+        return try {
+            transaction {
+                for (adjustment in adjustments) {
+                    if (adjustment.quantity == 0) continue
 
-            for (adjustment in adjustments) {
-                if (adjustment.quantity == 0) continue
-
-                val updated =
-                    if (adjustment.variantId != null) {
-                        val variantEntityId =
-                            EntityID(
-                                try {
-                                    UUID.fromString(adjustment.variantId)
-                                } catch (_: IllegalArgumentException) {
-                                    return@transaction false
-                                },
-                                ProductVariantsTable,
-                            )
-                        ProductVariantsTable.update({
-                            (ProductVariantsTable.id eq variantEntityId) and
-                                (ProductVariantsTable.quantity greaterEq adjustment.quantity)
-                        }) {
-                            it[ProductVariantsTable.quantity] = ProductVariantsTable.quantity - adjustment.quantity
+                    val updated =
+                        if (adjustment.variantId != null) {
+                            val variantEntityId =
+                                EntityID(
+                                    try {
+                                        UUID.fromString(adjustment.variantId)
+                                    } catch (_: IllegalArgumentException) {
+                                        error("Invalid variantId: ${adjustment.variantId}")
+                                    },
+                                    ProductVariantsTable,
+                                )
+                            ProductVariantsTable.update({
+                                (ProductVariantsTable.id eq variantEntityId) and
+                                    (ProductVariantsTable.quantity greaterEq adjustment.quantity)
+                            }) {
+                                it[ProductVariantsTable.quantity] = ProductVariantsTable.quantity - adjustment.quantity
+                            }
+                        } else {
+                            val productEntityId =
+                                EntityID(
+                                    try {
+                                        UUID.fromString(adjustment.productId)
+                                    } catch (_: IllegalArgumentException) {
+                                        error("Invalid productId: ${adjustment.productId}")
+                                    },
+                                    ProductsTable,
+                                )
+                            val defaultVariant =
+                                ProductVariantsTable
+                                    .selectAll()
+                                    .where { ProductVariantsTable.productId eq productEntityId }
+                                    .firstOrNull() ?: error("No variant found for product: ${adjustment.productId}")
+                            val defaultVariantId = defaultVariant[ProductVariantsTable.id]
+                            ProductVariantsTable.update({
+                                (ProductVariantsTable.id eq defaultVariantId) and
+                                    (ProductVariantsTable.quantity greaterEq adjustment.quantity)
+                            }) {
+                                it[ProductVariantsTable.quantity] = ProductVariantsTable.quantity - adjustment.quantity
+                            }
                         }
-                    } else {
-                        val productEntityId =
-                            EntityID(
-                                try {
-                                    UUID.fromString(adjustment.productId)
-                                } catch (_: IllegalArgumentException) {
-                                    return@transaction false
-                                },
-                                ProductsTable,
-                            )
-                        val defaultVariant =
-                            ProductVariantsTable
-                                .selectAll()
-                                .where { ProductVariantsTable.productId eq productEntityId }
-                                .firstOrNull() ?: return@transaction false
-                        val defaultVariantId = defaultVariant[ProductVariantsTable.id]
-                        ProductVariantsTable.update({
-                            (ProductVariantsTable.id eq defaultVariantId) and
-                                (ProductVariantsTable.quantity greaterEq adjustment.quantity)
-                        }) {
-                            it[ProductVariantsTable.quantity] = ProductVariantsTable.quantity - adjustment.quantity
-                        }
-                    }
 
-                if (updated == 0) return@transaction false
+                    if (updated == 0) error("Insufficient stock for adjustment")
+                }
             }
             true
+        } catch (_: Exception) {
+            false
         }
+    }
 }

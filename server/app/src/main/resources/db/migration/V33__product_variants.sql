@@ -64,7 +64,7 @@ SELECT
     id,
     COALESCE(price_cents, 0),
     cost_cents,
-    0,
+    quantity,
     1
 FROM products
 WHERE is_deleted = 0;

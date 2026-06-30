@@ -169,8 +169,6 @@ describe("useProducts", () => {
   });
 
   it("sends null SKU when the SKU field is blank", async () => {
-    // Use mockReset + mockImplementation to be robust against extra fetchProducts
-    // calls that can happen due to test ordering (previous test leaving pending effects).
     httpClient.mockReset();
     parseJsonResponse.mockReset();
 

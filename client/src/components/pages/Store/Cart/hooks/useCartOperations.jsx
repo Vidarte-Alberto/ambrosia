@@ -36,8 +36,8 @@ export function useCartOperations({ cart, setCart, products }) {
   const getAvailableQuantity = useCallback(
     (productId, variant) => {
       if (variant) return Number(variant.quantity) || 0;
-      const product = products.find((p) => p.id === productId);
-      return Number(product?.quantity) || 0;
+      const matchedProduct = products.find((product) => product.id === productId);
+      return Number(matchedProduct?.quantity) || 0;
     },
     [products],
   );
@@ -50,7 +50,7 @@ export function useCartOperations({ cart, setCart, products }) {
         return;
       }
 
-      const variantName = variant?._variantName ?? null;
+      const variantName = variant?.displayName ?? null;
 
       const nextCart = addCartItem(cart, product, variant, availableQuantity, variantName);
       if (nextCart === cart) {

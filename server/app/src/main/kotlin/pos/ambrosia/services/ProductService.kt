@@ -255,7 +255,9 @@ class ProductService {
                     return@transaction false
                 }
             val entity = ProductEntity.findById(uuid) ?: return@transaction false
-            ProductVariantsTable.deleteWhere { ProductVariantsTable.productId eq entity.id }
+            ProductVariantsTable.update({ ProductVariantsTable.productId eq entity.id }) {
+                it[ProductVariantsTable.isActive] = false
+            }
             entity.isDeleted = true
             entity.sku = "DELETED-$id"
             logger.info("Product deleted: $id")

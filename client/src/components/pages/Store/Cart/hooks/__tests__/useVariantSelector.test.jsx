@@ -201,7 +201,7 @@ describe("useVariantSelector", () => {
   });
 
   describe("handleAddToCart", () => {
-    it("calls onAddToCart with product and variant (with _variantName) then onClose", async () => {
+    it("calls onAddToCart with product and variant (with displayName) then onClose", async () => {
       mockFetchProductDetail.mockResolvedValue(productDetail);
       const { result, onAddToCart, onClose } = setup();
       await waitFor(() => expect(result.current.isLoading).toBe(false));
@@ -212,7 +212,7 @@ describe("useVariantSelector", () => {
 
       expect(onAddToCart).toHaveBeenCalledWith(
         product,
-        expect.objectContaining({ id: "v1", _variantName: "Red / S" }),
+        expect.objectContaining({ id: "v1", displayName: "Red / S" }),
       );
       expect(onClose).toHaveBeenCalled();
     });

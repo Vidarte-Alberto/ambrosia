@@ -25,17 +25,24 @@ export function useProducts() {
 
   const normalizeSku = (sku) => sku?.trim() || null;
 
-  const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => ({
-    ...(includeId ? { id: product.productId } : {}),
-    SKU: normalizeSku(product.productSKU),
-    name: product.productName,
-    description: product.productDescription || null,
-    imageUrl,
-    categoryIds: toArray(product.productCategories),
-    hasVariants: product.hasVariants ?? false,
-    minStockThreshold: toFiniteNumber(product.productMinStock),
-    maxStockThreshold: toFiniteNumber(product.productMaxStock),
-  });
+  const buildRequestPayload = (product, imageUrl, { includeId = false } = {}) => {
+    const hasVariants = product.hasVariants ?? false;
+    return {
+      ...(includeId ? { id: product.productId } : {}),
+      SKU: normalizeSku(product.productSKU),
+      name: product.productName,
+      description: product.productDescription || null,
+      imageUrl,
+      categoryIds: toArray(product.productCategories),
+      hasVariants,
+      ...(!hasVariants ? {
+        priceCents: Math.round(toFiniteNumber(product.productPrice) * 100),
+        quantity: toFiniteNumber(product.productStock),
+      } : {}),
+      minStockThreshold: toFiniteNumber(product.productMinStock),
+      maxStockThreshold: toFiniteNumber(product.productMaxStock),
+    };
+  };
 
   const buildDefaultVariantPayload = (product) => ({
     SKU: normalizeSku(product.productSKU),
@@ -100,15 +107,6 @@ export function useProducts() {
       });
 
       const payload = await ensureSuccess(response);
-      const newProductId = payload?.id;
-
-      if (newProductId && !product.hasVariants) {
-        const newVariantId = await addVariant(newProductId, buildDefaultVariantPayload(product));
-        if (newVariantId === null) {
-          await httpClient(`/products/${newProductId}`, { method: "DELETE" });
-          throw buildHttpError({ status: 422 }, null);
-        }
-      }
 
       await fetchProducts();
       return payload;
