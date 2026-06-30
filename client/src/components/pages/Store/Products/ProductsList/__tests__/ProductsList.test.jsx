@@ -6,6 +6,10 @@ jest.mock("next-intl", () => ({
   useTranslations: () => (key) => key,
 }));
 
+jest.mock("@/components/hooks/useCurrency", () => ({
+  useCurrency: () => ({ formatAmount: (cents) => `$${cents}` }),
+}));
+
 jest.mock("@/hooks/usePermission", () => ({
   usePermission: () => true,
   RequirePermission: ({ children }) => children,

@@ -55,7 +55,7 @@ export function VariantCard({ variant, currency, options, onSave, onDelete, isPr
           </div>
 
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">
+            <p data-testid="variant-display-name" className="text-sm font-medium text-gray-800 truncate">
               {displayName}
             </p>
             {variant.SKU && (
@@ -91,6 +91,7 @@ export function VariantCard({ variant, currency, options, onSave, onDelete, isPr
               <>
                 <button
                   type="button"
+                  data-testid="edit-variant"
                   onClick={() => setIsEditing(true)}
                   className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                 >
@@ -98,6 +99,7 @@ export function VariantCard({ variant, currency, options, onSave, onDelete, isPr
                 </button>
                 <button
                   type="button"
+                  data-testid="delete-variant"
                   onClick={() => setIsConfirmingDelete(true)}
                   className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors"
                 >
