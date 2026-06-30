@@ -1,6 +1,7 @@
 package pos.ambrosia.services
 
 import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.inList
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
@@ -117,17 +118,54 @@ open class ProductVariantService {
             val entity = ProductOptionTypeEntity.findById(uuid) ?: return@transaction false
             entity.name = req.name
             entity.displayOrder = req.displayOrder
-            ProductOptionValuesTable.deleteWhere {
-                ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable)
+
+            val existingRows = ProductOptionValuesTable
+                .selectAll()
+                .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
+                .map { it[ProductOptionValuesTable.id] to it[ProductOptionValuesTable.value] }
+
+            val newValueStrings = req.values.map { it.value }.toSet()
+            val removedIds = existingRows.filter { (_, v) -> v !in newValueStrings }.map { (id, _) -> id }
+
+            if (removedIds.isNotEmpty()) {
+                VariantOptionValuesTable.deleteWhere { VariantOptionValuesTable.optionValueId inList removedIds }
+                ProductOptionValuesTable.deleteWhere { ProductOptionValuesTable.id inList removedIds }
             }
-            insertOptionValues(uuid, req.values)
+
+            val existingByValue = existingRows.associate { (id, v) -> v to id }
+            for ((index, valueReq) in req.values.withIndex()) {
+                val existingId = existingByValue[valueReq.value]
+                val order = if (valueReq.displayOrder != 0) valueReq.displayOrder else index
+                if (existingId != null) {
+                    ProductOptionValuesTable.update({ ProductOptionValuesTable.id eq existingId }) {
+                        it[displayOrder] = order
+                    }
+                } else {
+                    ProductOptionValueEntity.new(UUID.randomUUID()) {
+                        this.optionTypeId = EntityID(uuid, ProductOptionTypesTable)
+                        this.value = valueReq.value
+                        this.displayOrder = order
+                    }
+                }
+            }
+
             logger.info("Option type updated: $optionTypeId")
             true
         }
 
     fun deleteOptionType(optionTypeId: String): Boolean =
         transaction {
-            val entity = ProductOptionTypeEntity.findById(UUID.fromString(optionTypeId)) ?: return@transaction false
+            val uuid = UUID.fromString(optionTypeId)
+            val entity = ProductOptionTypeEntity.findById(uuid) ?: return@transaction false
+            val valueIds = ProductOptionValuesTable
+                .selectAll()
+                .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
+                .map { it[ProductOptionValuesTable.id] }
+            if (valueIds.isNotEmpty()) {
+                VariantOptionValuesTable.deleteWhere {
+                    VariantOptionValuesTable.optionValueId inList valueIds
+                }
+            }
             entity.delete()
             logger.info("Option type deleted: $optionTypeId")
             true
