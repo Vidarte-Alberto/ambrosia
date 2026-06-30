@@ -51,7 +51,6 @@ export function ProductList({ products, onAddProduct, categories }) {
     return names.length > 0 ? names.join(", ") : cardProductTranslation("card.errors.unknownCategory");
   };
 
-
   const stockStatus = (product) => {
     const quantity = normalizeNumber(product.quantity);
     if (quantity <= 0) return "out";
@@ -103,8 +102,8 @@ export function ProductList({ products, onAddProduct, categories }) {
                   </CardHeader>
                   <CardBody className="py-1">
                     <h2 className="text-lg md:text-2xl font-bold text-green-800">
-                      {product.hasVariants
-                        ? `${cardProductTranslation("card.priceFrom")} ${formatAmount(priceCents)}`
+                      {product.hasVariants && product.maxPriceCents !== priceCents
+                        ? `${formatAmount(priceCents)} - ${formatAmount(product.maxPriceCents)}`
                         : formatAmount(priceCents)}
                     </h2>
                     <p className="hidden md:block text-xs">

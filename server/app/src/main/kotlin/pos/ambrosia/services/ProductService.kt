@@ -45,25 +45,29 @@ class ProductService {
         }
     }
 
-    private fun variantAggregate(productId: EntityID<UUID>): Pair<Int, Int> {
+    private data class VariantAggregate(val minPriceCents: Int, val maxPriceCents: Int, val quantity: Int)
+
+    private fun variantAggregate(productId: EntityID<UUID>): VariantAggregate {
         val active = ProductVariantsTable.selectAll()
             .where { (ProductVariantsTable.productId eq productId) and (ProductVariantsTable.isActive eq true) }
             .toList()
-        val priceCents = active.minOfOrNull { it[ProductVariantsTable.priceCents] } ?: 0
+        val minPriceCents = active.minOfOrNull { it[ProductVariantsTable.priceCents] } ?: 0
+        val maxPriceCents = active.maxOfOrNull { it[ProductVariantsTable.priceCents] } ?: 0
         val quantity = active.sumOf { it[ProductVariantsTable.quantity] }
-        return priceCents to quantity
+        return VariantAggregate(minPriceCents, maxPriceCents, quantity)
     }
 
     private fun toModel(entity: ProductEntity): Product {
-        val (priceCents, quantity) = variantAggregate(entity.id)
+        val aggregate = variantAggregate(entity.id)
         return Product(
             id = entity.id.value.toString(),
             SKU = entity.sku,
             name = entity.name,
             description = entity.description,
             imageUrl = entity.imageUrl,
-            priceCents = priceCents,
-            quantity = quantity,
+            priceCents = aggregate.minPriceCents,
+            maxPriceCents = aggregate.maxPriceCents,
+            quantity = aggregate.quantity,
             minStockThreshold = entity.minStockThreshold,
             maxStockThreshold = entity.maxStockThreshold,
             hasVariants = entity.hasVariants,

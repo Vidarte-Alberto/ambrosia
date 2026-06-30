@@ -9,7 +9,6 @@ const cartEs = {
     },
     card: {
       add: "Agregar",
-      priceFrom: "Desde",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
       showProductDescription: "Descripcion",
