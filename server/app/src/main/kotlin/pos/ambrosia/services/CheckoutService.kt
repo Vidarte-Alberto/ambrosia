@@ -20,6 +20,8 @@ import pos.ambrosia.db.tables.OrdersTable
 import pos.ambrosia.db.tables.PaymentEntity
 import pos.ambrosia.db.tables.PaymentMethodsTable
 import pos.ambrosia.db.tables.PaymentsTable
+import pos.ambrosia.db.tables.ProductBundleComponentsTable
+import pos.ambrosia.db.tables.ProductEntity
 import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.db.tables.TicketEntity
 import pos.ambrosia.db.tables.TicketPaymentsTable
@@ -196,15 +198,37 @@ class CheckoutService(
 
                 for (item in request.items) {
                     val productEntityId = EntityID(UUID.fromString(item.productId), ProductsTable)
-                    val updated =
-                        ProductsTable.update({
-                            (ProductsTable.id eq productEntityId) and
-                                (ProductsTable.isDeleted eq false) and
-                                (ProductsTable.quantity greaterEq item.quantity)
-                        }) {
-                            it[ProductsTable.quantity] = ProductsTable.quantity - item.quantity
+                    val product = ProductEntity.findById(productEntityId) ?: throw InsufficientStockException()
+
+                    if (product.isBundle) {
+                        val components =
+                            ProductBundleComponentsTable
+                                .selectAll()
+                                .where { ProductBundleComponentsTable.bundleId eq productEntityId }
+                                .toList()
+                        for (row in components) {
+                            val needed = row[ProductBundleComponentsTable.quantity] * item.quantity
+                            val updatedRowCount =
+                                ProductsTable.update({
+                                    (ProductsTable.id eq row[ProductBundleComponentsTable.componentId]) and
+                                        (ProductsTable.isDeleted eq false) and
+                                        (ProductsTable.quantity greaterEq needed)
+                                }) {
+                                    it[ProductsTable.quantity] = ProductsTable.quantity - needed
+                                }
+                            if (updatedRowCount == 0) throw InsufficientStockException()
                         }
-                    if (updated == 0) throw InsufficientStockException()
+                    } else {
+                        val updated =
+                            ProductsTable.update({
+                                (ProductsTable.id eq productEntityId) and
+                                    (ProductsTable.isDeleted eq false) and
+                                    (ProductsTable.quantity greaterEq item.quantity)
+                            }) {
+                                it[ProductsTable.quantity] = ProductsTable.quantity - item.quantity
+                            }
+                        if (updated == 0) throw InsufficientStockException()
+                    }
 
                     OrderProductsTable.insert {
                         it[orderId] = order.id
