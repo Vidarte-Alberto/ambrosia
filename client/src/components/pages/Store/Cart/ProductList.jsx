@@ -96,9 +96,16 @@ export function ProductList({ products, onAddProduct, categories }) {
                       </div>
                     )}
                   </div>
-                  <CardHeader className="flex flex-col items-start pb-1">
-                    <h2 className="text-sm md:text-lg font-medium">{name}</h2>
-                    <p className="text-xs">{getCategoryNames(categoryIds)}</p>
+                  <CardHeader className="flex flex-row items-start justify-between pb-1">
+                    <div className="flex flex-col">
+                      <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+                      <p className="text-xs">{getCategoryNames(categoryIds)}</p>
+                    </div>
+                    {product.hasVariants && (
+                      <Chip size="sm" className="bg-blue-100 text-blue-700 border border-blue-200">
+                        {cardProductTranslation("card.hasVariants")}
+                      </Chip>
+                    )}
                   </CardHeader>
                   <CardBody className="py-1">
                     <h2 className="text-lg md:text-2xl font-bold text-green-800">

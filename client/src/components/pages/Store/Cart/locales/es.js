@@ -9,6 +9,7 @@ const cartEs = {
     },
     card: {
       add: "Agregar",
+      hasVariants: "Variantes",
       stock: "en almacén",
       showProductDetails: "Ver detalles",
       showProductDescription: "Descripcion",
