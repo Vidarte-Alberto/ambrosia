@@ -40,7 +40,7 @@ export function ProductsCard({ product, canManageProducts, onEditProduct, onDele
         <div className="flex flex-col justify-center flex-1 min-w-0">
           <p className="font-medium wrap-break-word text-sm my-1">{product.name}</p>
           <p className="text-green-800 font-semibold text-sm my-1">{formatAmount(product.priceCents)}</p>
-          <div className="flex gap-1.5 my-1">
+          <div className="flex flex-wrap gap-1.5 my-1">
             <Chip
               className={
                 stockStatus === "out"
