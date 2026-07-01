@@ -98,6 +98,50 @@ class TestVariantsCRUD:
         assert_status_code(response, 404)
         logger.info("✓ PUT /variants/{unknown} returns 404")
 
+    @pytest.mark.asyncio
+    async def test_update_variant_for_wrong_product_returns_404(
+        self, admin_client, product_id
+    ):
+        """PUT /products/{wrongId}/variants/{variantId} cannot update another product."""
+        other_product_id = await _create_product(admin_client)
+        variant_id = (
+            await admin_client.get(f"/products/{product_id}/variants")
+        ).json()[0]["id"]
+
+        response = await admin_client.put(
+            f"/products/{other_product_id}/variants/{variant_id}",
+            json={"priceCents": 2000, "quantity": 3},
+        )
+
+        assert_status_code(response, 404)
+        await admin_client.delete(f"/products/{other_product_id}")
+        logger.info("✓ PUT /variants/{id} rejects wrong product")
+
+    @pytest.mark.asyncio
+    async def test_delete_variant_for_wrong_product_returns_404(
+        self, admin_client, product_id
+    ):
+        """DELETE /products/{wrongId}/variants/{variantId} cannot delete another product."""
+        other_product_id = await _create_product(admin_client)
+        variant_id = (
+            await admin_client.get(f"/products/{product_id}/variants")
+        ).json()[0]["id"]
+
+        response = await admin_client.delete(
+            f"/products/{other_product_id}/variants/{variant_id}"
+        )
+
+        assert_status_code(response, 404)
+        await admin_client.delete(f"/products/{other_product_id}")
+        logger.info("✓ DELETE /variants/{id} rejects wrong product")
+
+    @pytest.mark.asyncio
+    async def test_delete_nonexistent_variant_returns_404(self, admin_client, product_id):
+        """DELETE /products/{id}/variants/{variantId} with unknown ID returns 404."""
+        response = await admin_client.delete(f"/products/{product_id}/variants/{DUMMY_ID}")
+        assert_status_code(response, 404)
+        logger.info("✓ DELETE /variants/{unknown} returns 404")
+
 
 class TestVariantsValidation:
     """Input validation for /products/{id}/variants."""
@@ -144,6 +188,34 @@ class TestVariantsValidation:
         )
         assert_status_code(second, 409)
         logger.info("✓ Duplicate SKU correctly returns 409")
+
+    @pytest.mark.asyncio
+    async def test_create_variant_with_foreign_option_value_returns_400(
+        self, admin_client, product_id
+    ):
+        """POST /variants rejects option values from another product."""
+        other_product_id = await _create_product(admin_client)
+        option_response = await admin_client.post(
+            f"/products/{other_product_id}/options",
+            json={"name": "Color", "values": [{"value": "Red"}]},
+        )
+        assert_status_code(option_response, 201)
+        foreign_option_value_id = (
+            await admin_client.get(f"/products/{other_product_id}/options")
+        ).json()[0]["values"][0]["id"]
+
+        response = await admin_client.post(
+            f"/products/{product_id}/variants",
+            json={
+                "priceCents": 500,
+                "quantity": 1,
+                "optionValueIds": [foreign_option_value_id],
+            },
+        )
+
+        assert_status_code(response, 400)
+        await admin_client.delete(f"/products/{other_product_id}")
+        logger.info("✓ Foreign option value rejected with 400")
 
 
 class TestOptionTypesCRUD:
@@ -241,3 +313,71 @@ class TestOptionTypesCRUD:
         )
         assert_status_code(response, 404)
         logger.info("✓ PUT /options/{unknown} returns 404")
+
+    @pytest.mark.asyncio
+    async def test_update_option_type_for_wrong_product_returns_404(
+        self, admin_client, product_id
+    ):
+        """PUT /products/{wrongId}/options/{optionTypeId} cannot update another product."""
+        other_product_id = await _create_product(admin_client)
+        create_resp = await admin_client.post(
+            f"/products/{product_id}/options",
+            json={"name": "Color", "values": [{"value": "Red"}]},
+        )
+        assert_status_code(create_resp, 201)
+        option_type_id = create_resp.json()["id"]
+
+        response = await admin_client.put(
+            f"/products/{other_product_id}/options/{option_type_id}",
+            json={"name": "Size", "values": []},
+        )
+
+        assert_status_code(response, 404)
+        await admin_client.delete(f"/products/{other_product_id}")
+        logger.info("✓ PUT /options/{id} rejects wrong product")
+
+    @pytest.mark.asyncio
+    async def test_delete_option_type_for_wrong_product_returns_404(
+        self, admin_client, product_id
+    ):
+        """DELETE /products/{wrongId}/options/{optionTypeId} cannot delete another product."""
+        other_product_id = await _create_product(admin_client)
+        create_resp = await admin_client.post(
+            f"/products/{product_id}/options",
+            json={"name": "Color", "values": [{"value": "Red"}]},
+        )
+        assert_status_code(create_resp, 201)
+        option_type_id = create_resp.json()["id"]
+
+        response = await admin_client.delete(
+            f"/products/{other_product_id}/options/{option_type_id}"
+        )
+
+        assert_status_code(response, 404)
+        await admin_client.delete(f"/products/{other_product_id}")
+        logger.info("✓ DELETE /options/{id} rejects wrong product")
+
+    @pytest.mark.asyncio
+    async def test_delete_nonexistent_option_type_returns_404(
+        self, admin_client, product_id
+    ):
+        """DELETE /products/{id}/options/{optionTypeId} with unknown ID returns 404."""
+        response = await admin_client.delete(f"/products/{product_id}/options/{DUMMY_ID}")
+        assert_status_code(response, 404)
+        logger.info("✓ DELETE /options/{unknown} returns 404")
+
+
+async def _create_product(admin_client):
+    uid = str(uuid.uuid4())[:8]
+    response = await admin_client.post(
+        "/products",
+        json={
+            "name": f"test_product_{uid}",
+            "SKU": f"SKU-{uid}",
+            "priceCents": 1000,
+            "quantity": 10,
+            "categoryIds": [],
+        },
+    )
+    assert_status_code(response, 201, "Failed to create helper product")
+    return response.json()["id"]

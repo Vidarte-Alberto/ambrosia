@@ -78,6 +78,21 @@ describe("findMatchingVariant", () => {
     expect(findMatchingVariant(variants, ["val-red", "val-s"])).toBe(variants[0]);
   });
 
+  it("ignores inactive matching variants", () => {
+    const withInactive = [
+      { id: "inactive", isActive: false, optionValueIds: ["val-red", "val-s"] },
+      { id: "active", isActive: true, optionValueIds: ["val-red", "val-s"] },
+    ];
+    expect(findMatchingVariant(withInactive, ["val-red", "val-s"])).toBe(withInactive[1]);
+  });
+
+  it("returns null when only an inactive variant matches", () => {
+    const withInactive = [
+      { id: "inactive", isActive: false, optionValueIds: ["val-red", "val-s"] },
+    ];
+    expect(findMatchingVariant(withInactive, ["val-red", "val-s"])).toBeNull();
+  });
+
   it("matches regardless of selection order", () => {
     expect(findMatchingVariant(variants, ["val-s", "val-red"])).toBe(variants[0]);
   });

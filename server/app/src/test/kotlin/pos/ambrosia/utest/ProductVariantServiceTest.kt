@@ -59,10 +59,12 @@ class ProductVariantServiceTest {
     @Test
     fun `addOptionType returns id and creates values`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
-        val req = UpsertOptionTypeRequest(name = "Size", values = listOf(UpsertOptionValueRequest("S"), UpsertOptionValueRequest("M")))
-        val id = service.addOptionType(productId, req)
+        val optionTypeRequest =
+            UpsertOptionTypeRequest(name = "Size", values = listOf(UpsertOptionValueRequest("S"), UpsertOptionValueRequest("M")))
+        val optionTypeId = service.addOptionType(productId, optionTypeRequest)
 
-        assertTrue(id.isNotBlank())
+        assertNotNull(optionTypeId)
+        assertTrue(optionTypeId.isNotBlank())
         val options = service.getOptionTypes(productId)
         assertEquals(1, options.size)
         assertEquals(2, options[0].values.size)
@@ -70,28 +72,35 @@ class ProductVariantServiceTest {
 
     @Test
     fun `updateOptionType returns false when not found`() {
-        val result = service.updateOptionType(UUID.randomUUID().toString(), UpsertOptionTypeRequest(name = "Color"))
-        assertFalse(result)
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val optionTypeWasUpdated =
+            service.updateOptionType(
+                productId,
+                UUID.randomUUID().toString(),
+                UpsertOptionTypeRequest(name = "Color"),
+            )
+        assertFalse(optionTypeWasUpdated)
     }
 
     @Test
     fun `updateOptionType replaces values`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
-        val typeId =
+        val optionTypeId =
             service.addOptionType(
                 productId,
                 UpsertOptionTypeRequest(name = "Color", values = listOf(UpsertOptionValueRequest("Red"))),
             )
 
-        val result =
+        val optionTypeWasUpdated =
             service.updateOptionType(
-                typeId,
+                productId,
+                optionTypeId!!,
                 UpsertOptionTypeRequest(
                     name = "Color",
                     values = listOf(UpsertOptionValueRequest("Blue"), UpsertOptionValueRequest("Green")),
                 ),
             )
-        assertTrue(result)
+        assertTrue(optionTypeWasUpdated)
 
         val options = service.getOptionTypes(productId)
         assertEquals(2, options[0].values.size)
@@ -100,16 +109,54 @@ class ProductVariantServiceTest {
     @Test
     fun `deleteOptionType returns true on success`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
-        val typeId = service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color"))
-        val result = service.deleteOptionType(typeId)
-        assertTrue(result)
+        val optionTypeId = service.addOptionType(productId, UpsertOptionTypeRequest(name = "Color"))
+        val optionTypeWasDeleted = service.deleteOptionType(productId, optionTypeId!!)
+        assertTrue(optionTypeWasDeleted)
         assertTrue(service.getOptionTypes(productId).isEmpty())
     }
 
     @Test
     fun `deleteOptionType returns false when not found`() {
-        val result = service.deleteOptionType(UUID.randomUUID().toString())
-        assertFalse(result)
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val optionTypeWasDeleted = service.deleteOptionType(productId, UUID.randomUUID().toString())
+        assertFalse(optionTypeWasDeleted)
+    }
+
+    @Test
+    fun `updateOptionType returns false when option type belongs to another product`() {
+        val ownerProductId = ExposedTestDb.seedProduct(name = "Prod1")
+        val unrelatedProductId = ExposedTestDb.seedProduct(name = "Prod2")
+        val ownerOptionTypeId = service.addOptionType(ownerProductId, UpsertOptionTypeRequest(name = "Color"))
+
+        val optionTypeWasUpdated =
+            service.updateOptionType(
+                unrelatedProductId,
+                ownerOptionTypeId!!,
+                UpsertOptionTypeRequest(name = "Size"),
+            )
+
+        assertFalse(optionTypeWasUpdated)
+        assertEquals("Color", service.getOptionTypes(ownerProductId)[0].name)
+    }
+
+    @Test
+    fun `deleteOptionType returns false when option type belongs to another product`() {
+        val ownerProductId = ExposedTestDb.seedProduct(name = "Prod1")
+        val unrelatedProductId = ExposedTestDb.seedProduct(name = "Prod2")
+        val ownerOptionTypeId = service.addOptionType(ownerProductId, UpsertOptionTypeRequest(name = "Color"))
+
+        val optionTypeWasDeleted = service.deleteOptionType(unrelatedProductId, ownerOptionTypeId!!)
+
+        assertFalse(optionTypeWasDeleted)
+        assertEquals(1, service.getOptionTypes(ownerProductId).size)
+    }
+
+    @Test
+    fun `option type mutations return false for invalid UUID`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+
+        assertFalse(service.updateOptionType(productId, "not-a-uuid", UpsertOptionTypeRequest(name = "Color")))
+        assertFalse(service.deleteOptionType(productId, "not-a-uuid"))
     }
 
     // --- Variants ---
@@ -183,9 +230,9 @@ class ProductVariantServiceTest {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
         val id = service.addVariant(productId, UpsertVariantRequest(priceCents = 1000, quantity = 5))
         assertNotNull(id)
-        assertTrue(id!!.isNotBlank())
+        assertTrue(id.isNotBlank())
 
-        val variant = service.getVariantById(id!!)
+        val variant = service.getVariantById(id)
         assertEquals(1000, variant?.priceCents)
         assertEquals(5, variant?.quantity)
     }
@@ -201,16 +248,17 @@ class ProductVariantServiceTest {
 
     @Test
     fun `updateVariant returns false when not found`() {
-        val result = service.updateVariant(UUID.randomUUID().toString(), UpsertVariantRequest(priceCents = 500))
-        assertFalse(result)
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val variantWasUpdated = service.updateVariant(productId, UUID.randomUUID().toString(), UpsertVariantRequest(priceCents = 500))
+        assertFalse(variantWasUpdated)
     }
 
     @Test
     fun `updateVariant returns false when priceCents is negative`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
         val variantId = service.getVariants(productId)[0].id!!
-        val result = service.updateVariant(variantId, UpsertVariantRequest(priceCents = -1))
-        assertFalse(result)
+        val variantWasUpdated = service.updateVariant(productId, variantId, UpsertVariantRequest(priceCents = -1))
+        assertFalse(variantWasUpdated)
     }
 
     @Test
@@ -218,8 +266,8 @@ class ProductVariantServiceTest {
         val productId = ExposedTestDb.seedProduct(name = "Prod1", priceCents = 1000)
         val variantId = service.getVariants(productId)[0].id!!
 
-        val result = service.updateVariant(variantId, UpsertVariantRequest(priceCents = 800, quantity = 3))
-        assertTrue(result)
+        val variantWasUpdated = service.updateVariant(productId, variantId, UpsertVariantRequest(priceCents = 800, quantity = 3))
+        assertTrue(variantWasUpdated)
 
         val updated = service.getVariantById(variantId)
         assertEquals(800, updated?.priceCents)
@@ -230,15 +278,94 @@ class ProductVariantServiceTest {
     fun `deleteVariant returns true on success`() {
         val productId = ExposedTestDb.seedProduct(name = "Prod1")
         val variantId = service.getVariants(productId)[0].id!!
-        val result = service.deleteVariant(variantId)
-        assertTrue(result)
+        val variantWasDeleted = service.deleteVariant(productId, variantId)
+        assertTrue(variantWasDeleted)
         assertNull(service.getVariantById(variantId))
     }
 
     @Test
     fun `deleteVariant returns false when not found`() {
-        val result = service.deleteVariant(UUID.randomUUID().toString())
-        assertFalse(result)
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+        val variantWasDeleted = service.deleteVariant(productId, UUID.randomUUID().toString())
+        assertFalse(variantWasDeleted)
+    }
+
+    @Test
+    fun `updateVariant returns false when variant belongs to another product`() {
+        val ownerProductId = ExposedTestDb.seedProduct(name = "Prod1", priceCents = 1000)
+        val unrelatedProductId = ExposedTestDb.seedProduct(name = "Prod2")
+        val ownerVariantId = service.getVariants(ownerProductId)[0].id!!
+
+        val variantWasUpdated = service.updateVariant(unrelatedProductId, ownerVariantId, UpsertVariantRequest(priceCents = 800))
+
+        assertFalse(variantWasUpdated)
+        assertEquals(1000, service.getVariantById(ownerVariantId)?.priceCents)
+    }
+
+    @Test
+    fun `deleteVariant returns false when variant belongs to another product`() {
+        val ownerProductId = ExposedTestDb.seedProduct(name = "Prod1")
+        val unrelatedProductId = ExposedTestDb.seedProduct(name = "Prod2")
+        val ownerVariantId = service.getVariants(ownerProductId)[0].id!!
+
+        val variantWasDeleted = service.deleteVariant(unrelatedProductId, ownerVariantId)
+
+        assertFalse(variantWasDeleted)
+        assertNotNull(service.getVariantById(ownerVariantId))
+    }
+
+    @Test
+    fun `variant mutations return false for invalid UUID`() {
+        val productId = ExposedTestDb.seedProduct(name = "Prod1")
+
+        assertFalse(service.updateVariant(productId, "not-a-uuid", UpsertVariantRequest(priceCents = 500)))
+        assertFalse(service.deleteVariant(productId, "not-a-uuid"))
+    }
+
+    @Test
+    fun `addVariant returns null when option value belongs to another product`() {
+        val targetProductId = ExposedTestDb.seedProduct(name = "Prod1")
+        val optionOwnerProductId = ExposedTestDb.seedProduct(name = "Prod2")
+        service.addOptionType(
+            optionOwnerProductId,
+            UpsertOptionTypeRequest(
+                name = "Color",
+                values = listOf(UpsertOptionValueRequest("Red")),
+            ),
+        )
+        val foreignOptionValueId = service.getOptionTypes(optionOwnerProductId)[0].values[0].id!!
+
+        val createdVariantId =
+            service.addVariant(
+                targetProductId,
+                UpsertVariantRequest(priceCents = 500, optionValueIds = listOf(foreignOptionValueId)),
+            )
+
+        assertNull(createdVariantId)
+    }
+
+    @Test
+    fun `updateVariant returns false when option value belongs to another product`() {
+        val targetProductId = ExposedTestDb.seedProduct(name = "Prod1")
+        val optionOwnerProductId = ExposedTestDb.seedProduct(name = "Prod2")
+        val targetVariantId = service.getVariants(targetProductId)[0].id!!
+        service.addOptionType(
+            optionOwnerProductId,
+            UpsertOptionTypeRequest(
+                name = "Color",
+                values = listOf(UpsertOptionValueRequest("Red")),
+            ),
+        )
+        val foreignOptionValueId = service.getOptionTypes(optionOwnerProductId)[0].values[0].id!!
+
+        val variantWasUpdated =
+            service.updateVariant(
+                targetProductId,
+                targetVariantId,
+                UpsertVariantRequest(priceCents = 500, optionValueIds = listOf(foreignOptionValueId)),
+            )
+
+        assertFalse(variantWasUpdated)
     }
 
     // --- Stock Adjustment ---

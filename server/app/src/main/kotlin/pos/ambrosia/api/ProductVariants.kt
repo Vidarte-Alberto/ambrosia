@@ -18,24 +18,24 @@ import pos.ambrosia.services.ProductVariantService
 import pos.ambrosia.utils.authorizePermission
 
 fun Application.configureProductVariants() {
-    val service = ProductVariantService()
-    routing { route("/products/{id}") { productVariants(service) } }
+    val productVariantService = ProductVariantService()
+    routing { route("/products/{id}") { productVariants(productVariantService) } }
 }
 
-fun Route.productVariants(service: ProductVariantService) {
+fun Route.productVariants(productVariantService: ProductVariantService) {
     authorizePermission("products_read") {
         get("/variants") {
             val productId =
                 call.parameters["id"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
-            val variants = service.getVariants(productId)
+            val variants = productVariantService.getVariants(productId)
             call.respond(HttpStatusCode.OK, variants)
         }
         get("/options") {
             val productId =
                 call.parameters["id"]
                     ?: return@get call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
-            val options = service.getOptionTypes(productId)
+            val options = productVariantService.getOptionTypes(productId)
             call.respond(HttpStatusCode.OK, options)
         }
     }
@@ -44,9 +44,9 @@ fun Route.productVariants(service: ProductVariantService) {
             val productId =
                 call.parameters["id"]
                     ?: return@post call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
-            val body = call.receive<UpsertVariantRequest>()
+            val variantRequest = call.receive<UpsertVariantRequest>()
             val variantId =
-                service.addVariant(productId, body)
+                productVariantService.addVariant(productId, variantRequest)
                     ?: return@post call.respond(HttpStatusCode.BadRequest, Message("Invalid variant data"))
             call.respond(
                 HttpStatusCode.Created,
@@ -54,52 +54,68 @@ fun Route.productVariants(service: ProductVariantService) {
             )
         }
         put("/variants/{variantId}") {
+            val productId =
+                call.parameters["id"]
+                    ?: return@put call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
             val variantId =
                 call.parameters["variantId"]
                     ?: return@put call.respond(HttpStatusCode.BadRequest, Message("Missing variant ID"))
-            val body = call.receive<UpsertVariantRequest>()
-            val ok = service.updateVariant(variantId, body)
-            if (!ok) return@put call.respond(HttpStatusCode.NotFound, Message("Variant not found or invalid data"))
+            val variantRequest = call.receive<UpsertVariantRequest>()
+            val variantWasUpdated = productVariantService.updateVariant(productId, variantId, variantRequest)
+            if (!variantWasUpdated) return@put call.respond(HttpStatusCode.NotFound, Message("Variant not found or invalid data"))
             call.respond(
                 HttpStatusCode.OK,
                 mapOf("id" to variantId, "message" to "Variant updated successfully"),
             )
         }
         delete("/variants/{variantId}") {
+            val productId =
+                call.parameters["id"]
+                    ?: return@delete call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
             val variantId =
                 call.parameters["variantId"]
                     ?: return@delete call.respond(HttpStatusCode.BadRequest, Message("Missing variant ID"))
-            service.deleteVariant(variantId)
+            val variantWasDeleted = productVariantService.deleteVariant(productId, variantId)
+            if (!variantWasDeleted) return@delete call.respond(HttpStatusCode.NotFound, Message("Variant not found"))
             call.respond(HttpStatusCode.NoContent)
         }
         post("/options") {
             val productId =
                 call.parameters["id"]
                     ?: return@post call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
-            val body = call.receive<UpsertOptionTypeRequest>()
-            val optionTypeId = service.addOptionType(productId, body)
+            val optionTypeRequest = call.receive<UpsertOptionTypeRequest>()
+            val optionTypeId =
+                productVariantService.addOptionType(productId, optionTypeRequest)
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, Message("Invalid option type data"))
             call.respond(
                 HttpStatusCode.Created,
                 mapOf("id" to optionTypeId, "message" to "Option type created successfully"),
             )
         }
         put("/options/{optionTypeId}") {
+            val productId =
+                call.parameters["id"]
+                    ?: return@put call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
             val optionTypeId =
                 call.parameters["optionTypeId"]
                     ?: return@put call.respond(HttpStatusCode.BadRequest, Message("Missing option type ID"))
-            val body = call.receive<UpsertOptionTypeRequest>()
-            val ok = service.updateOptionType(optionTypeId, body)
-            if (!ok) return@put call.respond(HttpStatusCode.NotFound, Message("Option type not found"))
+            val optionTypeRequest = call.receive<UpsertOptionTypeRequest>()
+            val optionTypeWasUpdated = productVariantService.updateOptionType(productId, optionTypeId, optionTypeRequest)
+            if (!optionTypeWasUpdated) return@put call.respond(HttpStatusCode.NotFound, Message("Option type not found"))
             call.respond(
                 HttpStatusCode.OK,
                 mapOf("id" to optionTypeId, "message" to "Option type updated successfully"),
             )
         }
         delete("/options/{optionTypeId}") {
+            val productId =
+                call.parameters["id"]
+                    ?: return@delete call.respond(HttpStatusCode.BadRequest, Message("Missing product ID"))
             val optionTypeId =
                 call.parameters["optionTypeId"]
                     ?: return@delete call.respond(HttpStatusCode.BadRequest, Message("Missing option type ID"))
-            service.deleteOptionType(optionTypeId)
+            val optionTypeWasDeleted = productVariantService.deleteOptionType(productId, optionTypeId)
+            if (!optionTypeWasDeleted) return@delete call.respond(HttpStatusCode.NotFound, Message("Option type not found"))
             call.respond(HttpStatusCode.NoContent)
         }
     }

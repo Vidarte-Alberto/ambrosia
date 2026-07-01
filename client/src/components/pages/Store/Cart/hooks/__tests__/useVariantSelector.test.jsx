@@ -170,6 +170,23 @@ describe("useVariantSelector", () => {
 
       expect(result.current.isDisabled).toBe(true);
     });
+
+    it("does not match inactive variants even when they have stock", async () => {
+      mockFetchProductDetail.mockResolvedValue({
+        ...productDetail,
+        variants: [
+          { id: "v1", isActive: false, optionValueIds: ["val-red", "val-s"], priceCents: 1000, quantity: 5 },
+        ],
+      });
+      const { result } = setup();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      act(() => result.current.toggleOptionValue("type-color", "val-red"));
+      act(() => result.current.toggleOptionValue("type-size", "val-s"));
+
+      expect(result.current.matchedVariant).toBeNull();
+      expect(result.current.isDisabled).toBe(true);
+    });
   });
 
   describe("isValueAvailable", () => {
@@ -192,6 +209,21 @@ describe("useVariantSelector", () => {
         ],
       };
       mockFetchProductDetail.mockResolvedValue(detailWithNoStock);
+      const { result } = setup();
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      const colorOption = productDetail.options[0];
+      expect(result.current.isValueAvailable(colorOption, "val-red")).toBe(false);
+    });
+
+    it("returns false when matching variants are inactive", async () => {
+      mockFetchProductDetail.mockResolvedValue({
+        ...productDetail,
+        variants: [
+          { id: "v1", isActive: false, optionValueIds: ["val-red", "val-s"], priceCents: 1000, quantity: 5 },
+          { id: "v2", isActive: false, optionValueIds: ["val-red", "val-l"], priceCents: 1200, quantity: 5 },
+        ],
+      });
       const { result } = setup();
       await waitFor(() => expect(result.current.isLoading).toBe(false));
 

@@ -6,10 +6,10 @@ import { useTranslations } from "next-intl";
 
 import { useUpload } from "@/components/hooks/useUpload";
 import { toArray } from "@/components/utils/array";
+import { toFiniteNumber } from "@/components/utils/numberParsers";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 import { useFetchList } from "@/lib/http/useFetchList";
 
-import { toFiniteNumber } from "@/components/utils/numberParsers";
 import { resolveImageUrl } from "../Products/utils/resolveImageUrl";
 
 import { useProductVariants } from "./useProductVariants";
@@ -21,7 +21,7 @@ export function useProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { upload, isUploading } = useUpload();
-  const { addVariant, updateVariant } = useProductVariants();
+  const { updateVariant } = useProductVariants();
 
   const normalizeSku = (sku) => sku?.trim() || null;
 

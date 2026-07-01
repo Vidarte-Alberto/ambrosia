@@ -9,6 +9,7 @@ export function deriveVariantDisplayName(optionValueIds, options) {
 export function findMatchingVariant(variants, selectedOptionValueIds) {
   if (!variants?.length || !selectedOptionValueIds?.length) return null;
   return variants.find((variant) => {
+    if (variant.isActive === false) return false;
     const ids = variant.optionValueIds ?? [];
     return (
       ids.length === selectedOptionValueIds.length &&

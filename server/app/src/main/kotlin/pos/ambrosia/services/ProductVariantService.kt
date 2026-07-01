@@ -31,6 +31,21 @@ import java.util.UUID
 open class ProductVariantService {
     private fun normalizeSku(sku: String?): String? = sku?.takeIf { it.isNotBlank() }
 
+    private fun parseUuid(value: String): UUID? =
+        try {
+            UUID.fromString(value)
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+
+    private fun productEntityId(productId: String): EntityID<UUID>? = parseUuid(productId)?.let { EntityID(it, ProductsTable) }
+
+    private fun productExists(productEntityId: EntityID<UUID>): Boolean =
+        !ProductsTable
+            .selectAll()
+            .where { ProductsTable.id eq productEntityId }
+            .empty()
+
     private fun toVariantModel(entity: ProductVariantEntity): ProductVariant {
         val optionValueIds =
             VariantOptionValuesTable
@@ -50,105 +65,176 @@ open class ProductVariantService {
         )
     }
 
+    private fun toOptionTypeModel(
+        productId: String,
+        optionTypeId: UUID,
+        name: String,
+        displayOrder: Int,
+    ): ProductOptionType {
+        val optionValues =
+            ProductOptionValuesTable
+                .selectAll()
+                .where { ProductOptionValuesTable.optionTypeId eq EntityID(optionTypeId, ProductOptionTypesTable) }
+                .orderBy(ProductOptionValuesTable.displayOrder)
+                .map { valueRow ->
+                    ProductOptionValue(
+                        id = valueRow[ProductOptionValuesTable.id].value.toString(),
+                        optionTypeId = optionTypeId.toString(),
+                        value = valueRow[ProductOptionValuesTable.value],
+                        displayOrder = valueRow[ProductOptionValuesTable.displayOrder],
+                    )
+                }
+        return ProductOptionType(
+            id = optionTypeId.toString(),
+            productId = productId,
+            name = name,
+            displayOrder = displayOrder,
+            values = optionValues,
+        )
+    }
+
     private fun insertOptionValues(
         optionTypeId: UUID,
         values: List<pos.ambrosia.models.UpsertOptionValueRequest>,
     ) {
-        for ((index, valueReq) in values.withIndex()) {
+        for ((valueIndex, optionValueRequest) in values.withIndex()) {
             ProductOptionValueEntity.new(UUID.randomUUID()) {
                 this.optionTypeId = EntityID(optionTypeId, ProductOptionTypesTable)
-                this.value = valueReq.value
-                this.displayOrder = if (valueReq.displayOrder != 0) valueReq.displayOrder else index
+                this.value = optionValueRequest.value
+                this.displayOrder = if (optionValueRequest.displayOrder != 0) optionValueRequest.displayOrder else valueIndex
+            }
+        }
+    }
+
+    private fun requestedOptionValueEntityIds(optionValueIds: List<String>): List<EntityID<UUID>>? {
+        val requestedOptionValueUuids =
+            optionValueIds.map { optionValueId ->
+                parseUuid(optionValueId) ?: return null
+            }
+        if (requestedOptionValueUuids.distinct().size != requestedOptionValueUuids.size) return null
+        return requestedOptionValueUuids.map { EntityID(it, ProductOptionValuesTable) }
+    }
+
+    private fun optionValueIdsBelongToProduct(
+        productEntityId: EntityID<UUID>,
+        optionValueIds: List<String>,
+    ): Boolean {
+        val requestedOptionValueIds = requestedOptionValueEntityIds(optionValueIds) ?: return false
+        if (requestedOptionValueIds.isEmpty()) return true
+
+        val productOptionTypeIds =
+            ProductOptionTypesTable
+                .selectAll()
+                .where { ProductOptionTypesTable.productId eq productEntityId }
+                .map { it[ProductOptionTypesTable.id] }
+        if (productOptionTypeIds.isEmpty()) return false
+
+        val validProductOptionValueIds =
+            ProductOptionValuesTable
+                .selectAll()
+                .where {
+                    (ProductOptionValuesTable.optionTypeId inList productOptionTypeIds) and
+                        (ProductOptionValuesTable.id inList requestedOptionValueIds)
+                }.map { it[ProductOptionValuesTable.id] }
+                .toSet()
+        return requestedOptionValueIds.all { it in validProductOptionValueIds }
+    }
+
+    private fun replaceVariantOptionValues(
+        variantEntity: ProductVariantEntity,
+        optionValueIds: List<String>,
+    ) {
+        VariantOptionValuesTable.deleteWhere { VariantOptionValuesTable.variantId eq variantEntity.id }
+        for (optionValueId in optionValueIds) {
+            VariantOptionValuesTable.insert {
+                it[VariantOptionValuesTable.variantId] = variantEntity.id
+                it[VariantOptionValuesTable.optionValueId] =
+                    EntityID(parseUuid(optionValueId)!!, ProductOptionValuesTable)
             }
         }
     }
 
     open fun getOptionTypes(productId: String): List<ProductOptionType> =
         transaction {
-            val productEntityId = EntityID(UUID.fromString(productId), ProductsTable)
+            val productEntityId = productEntityId(productId) ?: return@transaction emptyList()
             ProductOptionTypesTable
                 .selectAll()
                 .where { ProductOptionTypesTable.productId eq productEntityId }
                 .orderBy(ProductOptionTypesTable.displayOrder)
-                .map { row ->
-                    val typeId = row[ProductOptionTypesTable.id].value
-                    val values =
-                        ProductOptionValuesTable
-                            .selectAll()
-                            .where { ProductOptionValuesTable.optionTypeId eq EntityID(typeId, ProductOptionTypesTable) }
-                            .orderBy(ProductOptionValuesTable.displayOrder)
-                            .map { vRow ->
-                                ProductOptionValue(
-                                    id = vRow[ProductOptionValuesTable.id].value.toString(),
-                                    optionTypeId = typeId.toString(),
-                                    value = vRow[ProductOptionValuesTable.value],
-                                    displayOrder = vRow[ProductOptionValuesTable.displayOrder],
-                                )
-                            }
-                    ProductOptionType(
-                        id = typeId.toString(),
+                .map { optionTypeRow ->
+                    val optionTypeId = optionTypeRow[ProductOptionTypesTable.id].value
+                    toOptionTypeModel(
                         productId = productId,
-                        name = row[ProductOptionTypesTable.name],
-                        displayOrder = row[ProductOptionTypesTable.displayOrder],
-                        values = values,
+                        optionTypeId = optionTypeId,
+                        name = optionTypeRow[ProductOptionTypesTable.name],
+                        displayOrder = optionTypeRow[ProductOptionTypesTable.displayOrder],
                     )
                 }
         }
 
     fun addOptionType(
         productId: String,
-        req: UpsertOptionTypeRequest,
-    ): String =
+        optionTypeRequest: UpsertOptionTypeRequest,
+    ): String? =
         transaction {
-            val typeId =
+            val productEntityId = productEntityId(productId) ?: return@transaction null
+            if (!productExists(productEntityId)) return@transaction null
+            val optionTypeId =
                 ProductOptionTypeEntity
                     .new(UUID.randomUUID()) {
-                        this.productId = EntityID(UUID.fromString(productId), ProductsTable)
-                        this.name = req.name
-                        this.displayOrder = req.displayOrder
+                        this.productId = productEntityId
+                        this.name = optionTypeRequest.name
+                        this.displayOrder = optionTypeRequest.displayOrder
                     }.id.value
-            insertOptionValues(typeId, req.values)
-            logger.info("Option type created: $typeId for product $productId")
-            typeId.toString()
+            insertOptionValues(optionTypeId, optionTypeRequest.values)
+            logger.info("Option type created: $optionTypeId for product $productId")
+            optionTypeId.toString()
         }
 
     fun updateOptionType(
+        productId: String,
         optionTypeId: String,
-        req: UpsertOptionTypeRequest,
+        optionTypeRequest: UpsertOptionTypeRequest,
     ): Boolean =
         transaction {
-            val uuid = UUID.fromString(optionTypeId)
-            val entity = ProductOptionTypeEntity.findById(uuid) ?: return@transaction false
-            entity.name = req.name
-            entity.displayOrder = req.displayOrder
+            val productEntityId = productEntityId(productId) ?: return@transaction false
+            val optionTypeUuid = parseUuid(optionTypeId) ?: return@transaction false
+            val optionTypeEntity = ProductOptionTypeEntity.findById(optionTypeUuid) ?: return@transaction false
+            if (optionTypeEntity.productId != productEntityId) return@transaction false
+            optionTypeEntity.name = optionTypeRequest.name
+            optionTypeEntity.displayOrder = optionTypeRequest.displayOrder
 
             val existingRows =
                 ProductOptionValuesTable
                     .selectAll()
-                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
+                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(optionTypeUuid, ProductOptionTypesTable) }
                     .map { it[ProductOptionValuesTable.id] to it[ProductOptionValuesTable.value] }
 
-            val newValueStrings = req.values.map { it.value }.toSet()
-            val removedIds = existingRows.filter { (_, v) -> v !in newValueStrings }.map { (id, _) -> id }
+            val requestedOptionValueNames = optionTypeRequest.values.map { it.value }.toSet()
+            val removedOptionValueIds =
+                existingRows
+                    .filter { (_, optionValueName) -> optionValueName !in requestedOptionValueNames }
+                    .map { (optionValueId, _) -> optionValueId }
 
-            if (removedIds.isNotEmpty()) {
-                VariantOptionValuesTable.deleteWhere { VariantOptionValuesTable.optionValueId inList removedIds }
-                ProductOptionValuesTable.deleteWhere { ProductOptionValuesTable.id inList removedIds }
+            if (removedOptionValueIds.isNotEmpty()) {
+                VariantOptionValuesTable.deleteWhere { VariantOptionValuesTable.optionValueId inList removedOptionValueIds }
+                ProductOptionValuesTable.deleteWhere { ProductOptionValuesTable.id inList removedOptionValueIds }
             }
 
             val existingByValue = existingRows.associate { (id, v) -> v to id }
-            for ((index, valueReq) in req.values.withIndex()) {
-                val existingId = existingByValue[valueReq.value]
-                val order = if (valueReq.displayOrder != 0) valueReq.displayOrder else index
-                if (existingId != null) {
-                    ProductOptionValuesTable.update({ ProductOptionValuesTable.id eq existingId }) {
-                        it[displayOrder] = order
+            for ((valueIndex, optionValueRequest) in optionTypeRequest.values.withIndex()) {
+                val existingOptionValueId = existingByValue[optionValueRequest.value]
+                val optionValueDisplayOrder =
+                    if (optionValueRequest.displayOrder != 0) optionValueRequest.displayOrder else valueIndex
+                if (existingOptionValueId != null) {
+                    ProductOptionValuesTable.update({ ProductOptionValuesTable.id eq existingOptionValueId }) {
+                        it[displayOrder] = optionValueDisplayOrder
                     }
                 } else {
                     ProductOptionValueEntity.new(UUID.randomUUID()) {
-                        this.optionTypeId = EntityID(uuid, ProductOptionTypesTable)
-                        this.value = valueReq.value
-                        this.displayOrder = order
+                        this.optionTypeId = EntityID(optionTypeUuid, ProductOptionTypesTable)
+                        this.value = optionValueRequest.value
+                        this.displayOrder = optionValueDisplayOrder
                     }
                 }
             }
@@ -157,28 +243,33 @@ open class ProductVariantService {
             true
         }
 
-    fun deleteOptionType(optionTypeId: String): Boolean =
+    fun deleteOptionType(
+        productId: String,
+        optionTypeId: String,
+    ): Boolean =
         transaction {
-            val uuid = UUID.fromString(optionTypeId)
-            val entity = ProductOptionTypeEntity.findById(uuid) ?: return@transaction false
-            val valueIds =
+            val productEntityId = productEntityId(productId) ?: return@transaction false
+            val optionTypeUuid = parseUuid(optionTypeId) ?: return@transaction false
+            val optionTypeEntity = ProductOptionTypeEntity.findById(optionTypeUuid) ?: return@transaction false
+            if (optionTypeEntity.productId != productEntityId) return@transaction false
+            val optionValueIds =
                 ProductOptionValuesTable
                     .selectAll()
-                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(uuid, ProductOptionTypesTable) }
+                    .where { ProductOptionValuesTable.optionTypeId eq EntityID(optionTypeUuid, ProductOptionTypesTable) }
                     .map { it[ProductOptionValuesTable.id] }
-            if (valueIds.isNotEmpty()) {
+            if (optionValueIds.isNotEmpty()) {
                 VariantOptionValuesTable.deleteWhere {
-                    VariantOptionValuesTable.optionValueId inList valueIds
+                    VariantOptionValuesTable.optionValueId inList optionValueIds
                 }
             }
-            entity.delete()
+            optionTypeEntity.delete()
             logger.info("Option type deleted: $optionTypeId")
             true
         }
 
     open fun getVariants(productId: String): List<ProductVariant> =
         transaction {
-            val productEntityId = EntityID(UUID.fromString(productId), ProductsTable)
+            val productEntityId = productEntityId(productId) ?: return@transaction emptyList()
             ProductVariantEntity
                 .find { ProductVariantsTable.productId eq productEntityId }
                 .map { toVariantModel(it) }
@@ -197,7 +288,7 @@ open class ProductVariantService {
 
     fun getDefaultVariant(productId: String): ProductVariant? =
         transaction {
-            val productEntityId = EntityID(UUID.fromString(productId), ProductsTable)
+            val productEntityId = productEntityId(productId) ?: return@transaction null
             ProductVariantEntity
                 .find { ProductVariantsTable.productId eq productEntityId }
                 .firstOrNull()
@@ -206,61 +297,63 @@ open class ProductVariantService {
 
     fun addVariant(
         productId: String,
-        req: UpsertVariantRequest,
+        variantRequest: UpsertVariantRequest,
     ): String? =
         transaction {
-            if (req.priceCents < 0) return@transaction null
-            if (req.quantity < 0) return@transaction null
-            val entity =
+            val productEntityId = productEntityId(productId) ?: return@transaction null
+            if (!productExists(productEntityId)) return@transaction null
+            if (variantRequest.priceCents < 0) return@transaction null
+            if (variantRequest.quantity < 0) return@transaction null
+            if (!optionValueIdsBelongToProduct(productEntityId, variantRequest.optionValueIds)) return@transaction null
+            val variantEntity =
                 ProductVariantEntity.new(UUID.randomUUID()) {
-                    this.productId = EntityID(UUID.fromString(productId), ProductsTable)
-                    this.sku = normalizeSku(req.SKU)
-                    this.priceCents = req.priceCents
-                    this.costCents = req.costCents
-                    this.quantity = req.quantity
-                    this.isActive = req.isActive
-                    this.imageUrl = req.imageUrl
+                    this.productId = productEntityId
+                    this.sku = normalizeSku(variantRequest.SKU)
+                    this.priceCents = variantRequest.priceCents
+                    this.costCents = variantRequest.costCents
+                    this.quantity = variantRequest.quantity
+                    this.isActive = variantRequest.isActive
+                    this.imageUrl = variantRequest.imageUrl
                 }
-            for (optionValueId in req.optionValueIds) {
-                VariantOptionValuesTable.insert {
-                    it[VariantOptionValuesTable.variantId] = entity.id
-                    it[VariantOptionValuesTable.optionValueId] = EntityID(UUID.fromString(optionValueId), ProductOptionValuesTable)
-                }
-            }
-            logger.info("Variant created: ${entity.id.value} for product $productId")
-            entity.id.value.toString()
+            replaceVariantOptionValues(variantEntity, variantRequest.optionValueIds)
+            logger.info("Variant created: ${variantEntity.id.value} for product $productId")
+            variantEntity.id.value.toString()
         }
 
     fun updateVariant(
+        productId: String,
         variantId: String,
-        req: UpsertVariantRequest,
+        variantRequest: UpsertVariantRequest,
     ): Boolean =
         transaction {
-            if (req.priceCents < 0) return@transaction false
-            if (req.quantity < 0) return@transaction false
-            val uuid = UUID.fromString(variantId)
-            val entity = ProductVariantEntity.findById(uuid) ?: return@transaction false
-            entity.sku = normalizeSku(req.SKU)
-            entity.priceCents = req.priceCents
-            entity.costCents = req.costCents
-            entity.quantity = req.quantity
-            entity.isActive = req.isActive
-            entity.imageUrl = req.imageUrl
-            VariantOptionValuesTable.deleteWhere { VariantOptionValuesTable.variantId eq entity.id }
-            for (optionValueId in req.optionValueIds) {
-                VariantOptionValuesTable.insert {
-                    it[VariantOptionValuesTable.variantId] = entity.id
-                    it[VariantOptionValuesTable.optionValueId] = EntityID(UUID.fromString(optionValueId), ProductOptionValuesTable)
-                }
-            }
+            val productEntityId = productEntityId(productId) ?: return@transaction false
+            if (variantRequest.priceCents < 0) return@transaction false
+            if (variantRequest.quantity < 0) return@transaction false
+            if (!optionValueIdsBelongToProduct(productEntityId, variantRequest.optionValueIds)) return@transaction false
+            val variantUuid = parseUuid(variantId) ?: return@transaction false
+            val variantEntity = ProductVariantEntity.findById(variantUuid) ?: return@transaction false
+            if (variantEntity.productId != productEntityId) return@transaction false
+            variantEntity.sku = normalizeSku(variantRequest.SKU)
+            variantEntity.priceCents = variantRequest.priceCents
+            variantEntity.costCents = variantRequest.costCents
+            variantEntity.quantity = variantRequest.quantity
+            variantEntity.isActive = variantRequest.isActive
+            variantEntity.imageUrl = variantRequest.imageUrl
+            replaceVariantOptionValues(variantEntity, variantRequest.optionValueIds)
             logger.info("Variant updated: $variantId")
             true
         }
 
-    fun deleteVariant(variantId: String): Boolean =
+    fun deleteVariant(
+        productId: String,
+        variantId: String,
+    ): Boolean =
         transaction {
-            val entity = ProductVariantEntity.findById(UUID.fromString(variantId)) ?: return@transaction false
-            entity.delete()
+            val productEntityId = productEntityId(productId) ?: return@transaction false
+            val variantUuid = parseUuid(variantId) ?: return@transaction false
+            val variantEntity = ProductVariantEntity.findById(variantUuid) ?: return@transaction false
+            if (variantEntity.productId != productEntityId) return@transaction false
+            variantEntity.delete()
             logger.info("Variant deleted: $variantId")
             true
         }

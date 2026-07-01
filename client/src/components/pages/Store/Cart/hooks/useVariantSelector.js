@@ -13,19 +13,32 @@ export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
 
   useEffect(() => {
     if (!isOpen || !product) return;
-    setProductDetail(null);
-    setIsLoading(true);
-    setSelectedValues({});
-    fetchProductDetail(product.id)
-      .then((detail) => {
+    let isCancelled = false;
+
+    const loadProductDetail = async () => {
+      if (isCancelled) return;
+      setProductDetail(null);
+      setIsLoading(true);
+      setSelectedValues({});
+
+      try {
+        const detail = await fetchProductDetail(product.id);
+        if (isCancelled) return;
         setProductDetail(detail);
         setIsLoading(false);
-      })
-      .catch(() => {
+      } catch {
+        if (isCancelled) return;
         setProductDetail(null);
         setSelectedValues({});
         setIsLoading(false);
-      });
+      }
+    };
+
+    loadProductDetail();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [isOpen, product, fetchProductDetail]);
   const options = useMemo(() => productDetail?.options ?? [], [productDetail]);
   const variants = useMemo(() => productDetail?.variants ?? [], [productDetail]);
@@ -40,15 +53,16 @@ export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
     const hypotheticalSelection = { ...selectedValues, [optionType.id]: valueId };
     const hypotheticalIds = options.map((option) => hypotheticalSelection[option.id]).filter(Boolean);
     return variants.some((variant) => {
+      if (variant.isActive === false) return false;
       const variantValueIds = variant.optionValueIds ?? [];
       return hypotheticalIds.every((id) => variantValueIds.includes(id)) && variant.quantity > 0;
     });
   };
 
   const toggleOptionValue = useCallback((optionTypeId, valueId) => {
-    setSelectedValues((previousValues) => ({
-      ...previousValues,
-      [optionTypeId]: previousValues[optionTypeId] === valueId ? undefined : valueId,
+    setSelectedValues((previousSelectedValues) => ({
+      ...previousSelectedValues,
+      [optionTypeId]: previousSelectedValues[optionTypeId] === valueId ? undefined : valueId,
     }));
   }, []);
 
