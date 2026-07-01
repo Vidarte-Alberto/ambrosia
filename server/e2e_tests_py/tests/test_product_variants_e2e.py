@@ -136,9 +136,13 @@ class TestVariantsCRUD:
         logger.info("✓ DELETE /variants/{id} rejects wrong product")
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_variant_returns_404(self, admin_client, product_id):
+    async def test_delete_nonexistent_variant_returns_404(
+        self, admin_client, product_id
+    ):
         """DELETE /products/{id}/variants/{variantId} with unknown ID returns 404."""
-        response = await admin_client.delete(f"/products/{product_id}/variants/{DUMMY_ID}")
+        response = await admin_client.delete(
+            f"/products/{product_id}/variants/{DUMMY_ID}"
+        )
         assert_status_code(response, 404)
         logger.info("✓ DELETE /variants/{unknown} returns 404")
 
@@ -275,7 +279,10 @@ class TestOptionTypesCRUD:
 
         update_resp = await admin_client.put(
             f"/products/{product_id}/options/{option_type_id}",
-            json={"name": "Color", "values": [{"value": "Blue"}, {"value": "Green"}]},
+            json={
+                "name": "Color",
+                "values": [{"value": "Blue"}, {"value": "Green"}],
+            },
         )
         assert_status_code(update_resp, 200)
 
@@ -362,7 +369,9 @@ class TestOptionTypesCRUD:
         self, admin_client, product_id
     ):
         """DELETE /products/{id}/options/{optionTypeId} with unknown ID returns 404."""
-        response = await admin_client.delete(f"/products/{product_id}/options/{DUMMY_ID}")
+        response = await admin_client.delete(
+            f"/products/{product_id}/options/{DUMMY_ID}"
+        )
         assert_status_code(response, 404)
         logger.info("✓ DELETE /options/{unknown} returns 404")
 
