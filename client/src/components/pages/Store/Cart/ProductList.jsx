@@ -108,8 +108,8 @@ export function ProductList({ products, onAddProduct, categories }) {
                     )}
                   </div>
                   <CardHeader className="flex flex-row items-start justify-between pb-1">
-                    <div className="flex flex-col min-w-0">
-                      <h2 className="text-sm md:text-lg font-medium">{name}</h2>
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <h2 className="text-sm md:text-lg font-medium [overflow-wrap:anywhere]">{name}</h2>
                       <p className="text-xs">{categoryNames || cardProductTranslation("card.noCategory")}</p>
                     </div>
                     {product.hasVariants && (
