@@ -10,12 +10,12 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
   const productsTranslations = useTranslations("products");
 
   const buildInitialOptionValues = () => {
-    const map = {};
-    options.forEach((type) => {
-      const matchedValue = type.values.find((v) => initial.optionValueIds?.includes(v.id));
-      if (matchedValue) map[type.id] = matchedValue.id;
+    const selectedOptionValueIdsByType = {};
+    options.forEach((optionType) => {
+      const matchedOptionValue = optionType.values.find((optionValue) => initial.optionValueIds?.includes(optionValue.id));
+      if (matchedOptionValue) selectedOptionValueIdsByType[optionType.id] = matchedOptionValue.id;
     });
-    return map;
+    return selectedOptionValueIdsByType;
   };
 
   const [form, setForm] = useState({
@@ -28,18 +28,22 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
     selectedOptionValues: buildInitialOptionValues(),
   });
 
+  const updateForm = (formUpdates) => {
+    setForm((previousForm) => ({ ...previousForm, ...formUpdates }));
+  };
+
   const handleImageChange = (file) => {
     if (file === null) {
-      setForm((p) => ({ ...p, imageFile: null, imageUrl: null, imageRemoved: true }));
+      updateForm({ imageFile: null, imageUrl: null, imageRemoved: true });
     } else {
-      setForm((p) => ({ ...p, imageFile: file, imageRemoved: false }));
+      updateForm({ imageFile: file, imageRemoved: false });
     }
   };
 
   const handleOptionValueChange = (optionTypeId, valueId) => {
-    setForm((p) => ({
-      ...p,
-      selectedOptionValues: { ...p.selectedOptionValues, [optionTypeId]: valueId },
+    setForm((previousForm) => ({
+      ...previousForm,
+      selectedOptionValues: { ...previousForm.selectedOptionValues, [optionTypeId]: valueId },
     }));
   };
 
@@ -56,7 +60,8 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
     });
   };
 
-  const allOptionsSelected = options.length === 0 || options.every((type) => form.selectedOptionValues[type.id]);
+  const allOptionsSelected =
+    options.length === 0 || options.every((optionType) => form.selectedOptionValues[optionType.id]);
 
   return (
     <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 space-y-3">
@@ -69,10 +74,10 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
               label={optionType.name}
               placeholder={productsTranslations("selectOptionValuePlaceholder")}
               selectedKeys={form.selectedOptionValues[optionType.id] ? [form.selectedOptionValues[optionType.id]] : []}
-              onSelectionChange={(keys) => handleOptionValueChange(optionType.id, [...keys][0])}
+              onSelectionChange={(selectedKeys) => handleOptionValueChange(optionType.id, [...selectedKeys][0])}
             >
-              {optionType.values.map((val) => (
-                <SelectItem key={val.id}>{val.value}</SelectItem>
+              {optionType.values.map((optionValue) => (
+                <SelectItem key={optionValue.id}>{optionValue.value}</SelectItem>
               ))}
             </Select>
           ))}
@@ -88,7 +93,7 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
         label={productsTranslations("variantSku")}
         placeholder={productsTranslations("variantSkuPlaceholder")}
         value={form.SKU}
-        onChange={(e) => setForm((p) => ({ ...p, SKU: e.target.value }))}
+        onChange={(skuChangeEvent) => updateForm({ SKU: skuChangeEvent.target.value })}
       />
 
       <div className="grid grid-cols-2 gap-3">
@@ -102,7 +107,7 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
           startContent={
             <span className="text-default-400 text-small">{currency?.acronym ?? "$"}</span>
           }
-          onValueChange={(v) => setForm((p) => ({ ...p, priceCents: Math.round((v ?? 0) * 100) }))}
+          onValueChange={(priceValue) => updateForm({ priceCents: Math.round((priceValue ?? 0) * 100) })}
         />
         <NumberInput
           size="sm"
@@ -111,7 +116,7 @@ export function VariantForm({ initial = {}, currency, options = [], onSave, onCa
           value={form.quantity}
           minValue={0}
           step={1}
-          onValueChange={(v) => setForm((p) => ({ ...p, quantity: v ?? 0 }))}
+          onValueChange={(quantityValue) => updateForm({ quantity: quantityValue ?? 0 })}
         />
       </div>
 

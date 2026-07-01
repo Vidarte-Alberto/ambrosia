@@ -5,24 +5,26 @@ import { Button, Card, CardBody, Chip, Input } from "@heroui/react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-function OptionValueInput({ values, onChange }) {
+function OptionValueInput({ optionValueNames, onOptionValueNamesChange }) {
   const productsTranslations = useTranslations("products");
-  const [draft, setDraft] = useState("");
+  const [pendingOptionValueName, setPendingOptionValueName] = useState("");
 
   const addValue = () => {
-    const trimmed = draft.trim();
-    if (!trimmed || values.includes(trimmed)) return;
-    onChange([...values, trimmed]);
-    setDraft("");
+    const trimmedOptionValueName = pendingOptionValueName.trim();
+    if (!trimmedOptionValueName || optionValueNames.includes(trimmedOptionValueName)) return;
+    onOptionValueNamesChange([...optionValueNames, trimmedOptionValueName]);
+    setPendingOptionValueName("");
   };
 
   const removeValue = (valueToRemove) => {
-    onChange(values.filter((v) => v !== valueToRemove));
+    onOptionValueNamesChange(
+      optionValueNames.filter((existingOptionValueName) => existingOptionValueName !== valueToRemove),
+    );
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
+  const handleKeyDown = (keyboardEvent) => {
+    if (keyboardEvent.key === "Enter") {
+      keyboardEvent.preventDefault();
       addValue();
     }
   };
@@ -33,30 +35,30 @@ function OptionValueInput({ values, onChange }) {
         <Input
           size="sm"
           placeholder={productsTranslations("optionValuePlaceholder")}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          value={pendingOptionValueName}
+          onChange={(optionValueChangeEvent) => setPendingOptionValueName(optionValueChangeEvent.target.value)}
           onKeyDown={handleKeyDown}
         />
         <Button
           size="sm"
           variant="flat"
           onPress={addValue}
-          isDisabled={!draft.trim()}
+          isDisabled={!pendingOptionValueName.trim()}
         >
           <Plus className="w-4 h-4" />
         </Button>
       </div>
-      {values.length > 0 && (
+      {optionValueNames.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {values.map((value) => (
+          {optionValueNames.map((optionValueName) => (
             <Chip
-              key={value}
+              key={optionValueName}
               size="sm"
               className="bg-gray-100 text-gray-700"
               endContent={(
                 <button
                   type="button"
-                  onClick={() => removeValue(value)}
+                  onClick={() => removeValue(optionValueName)}
                   className="ml-0.5 text-gray-400 hover:text-gray-600"
                   aria-label={productsTranslations("removeOptionValue")}
                 >
@@ -64,7 +66,7 @@ function OptionValueInput({ values, onChange }) {
                 </button>
               )}
             >
-              {value}
+              {optionValueName}
             </Chip>
           ))}
         </div>
@@ -75,12 +77,16 @@ function OptionValueInput({ values, onChange }) {
 
 function OptionTypeForm({ initial, onSave, onCancel, isSaving }) {
   const productsTranslations = useTranslations("products");
-  const [name, setName] = useState(initial?.name ?? "");
-  const [values, setValues] = useState(initial?.values?.map((v) => v.value) ?? []);
+  const [optionTypeName, setOptionTypeName] = useState(initial?.name ?? "");
+  const [optionValueNames, setOptionValueNames] =
+    useState(initial?.values?.map((initialOptionValue) => initialOptionValue.value) ?? []);
 
   const handleSave = () => {
-    if (!name.trim()) return;
-    onSave({ name: name.trim(), values: values.map((v, i) => ({ value: v, displayOrder: i })) });
+    if (!optionTypeName.trim()) return;
+    onSave({
+      name: optionTypeName.trim(),
+      values: optionValueNames.map((optionValueName, displayOrder) => ({ value: optionValueName, displayOrder })),
+    });
   };
 
   return (
@@ -89,10 +95,10 @@ function OptionTypeForm({ initial, onSave, onCancel, isSaving }) {
         size="sm"
         label={productsTranslations("optionTypeName")}
         placeholder={productsTranslations("optionTypeNamePlaceholder")}
-        value={name}
-        onChange={(e) => setName(e.target.value)}
+        value={optionTypeName}
+        onChange={(optionTypeNameChangeEvent) => setOptionTypeName(optionTypeNameChangeEvent.target.value)}
       />
-      <OptionValueInput values={values} onChange={setValues} />
+      <OptionValueInput optionValueNames={optionValueNames} onOptionValueNamesChange={setOptionValueNames} />
       <div className="flex gap-2 justify-end pt-1">
         <Button size="sm" variant="bordered" onPress={onCancel} isDisabled={isSaving}>
           {productsTranslations("cancelVariant")}
@@ -103,7 +109,7 @@ function OptionTypeForm({ initial, onSave, onCancel, isSaving }) {
           className="bg-green-800"
           onPress={handleSave}
           isLoading={isSaving}
-          isDisabled={!name.trim() || values.length === 0}
+          isDisabled={!optionTypeName.trim() || optionValueNames.length === 0}
         >
           {productsTranslations("saveVariant")}
         </Button>
@@ -114,7 +120,7 @@ function OptionTypeForm({ initial, onSave, onCancel, isSaving }) {
 
 export function OptionTypeManager({
   productId,
-  options = [],
+  options: optionTypes = [],
   onAddOptionType,
   onUpdateOptionType,
   onDeleteOptionType,
@@ -122,14 +128,14 @@ export function OptionTypeManager({
 }) {
   const productsTranslations = useTranslations("products");
   const [isAddingNew, setIsAddingNew] = useState(false);
-  const [editingId, setEditingId] = useState(null);
+  const [editingOptionTypeId, setEditingOptionTypeId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleAdd = async (data) => {
+  const handleAdd = async (optionTypeRequest) => {
     setIsSaving(true);
     try {
-      const newId = await onAddOptionType(productId, data);
-      if (newId) {
+      const createdOptionTypeId = await onAddOptionType(productId, optionTypeRequest);
+      if (createdOptionTypeId) {
         await onRefresh?.();
         setIsAddingNew(false);
       }
@@ -138,13 +144,13 @@ export function OptionTypeManager({
     }
   };
 
-  const handleUpdate = async (optionTypeId, data) => {
+  const handleUpdate = async (optionTypeId, optionTypeRequest) => {
     setIsSaving(true);
     try {
-      const wasUpdated = await onUpdateOptionType(productId, optionTypeId, data);
-      if (wasUpdated) {
+      const optionTypeWasUpdated = await onUpdateOptionType(productId, optionTypeId, optionTypeRequest);
+      if (optionTypeWasUpdated) {
         await onRefresh?.();
-        setEditingId(null);
+        setEditingOptionTypeId(null);
       }
     } finally {
       setIsSaving(false);
@@ -177,17 +183,17 @@ export function OptionTypeManager({
         )}
       </div>
 
-      {options.length === 0 && !isAddingNew && (
+      {optionTypes.length === 0 && !isAddingNew && (
         <p className="text-sm text-gray-400 py-1">{productsTranslations("noOptionTypes")}</p>
       )}
 
       <div className="space-y-2">
-        {options.map((optionType) => (editingId === optionType.id ? (
+        {optionTypes.map((optionType) => (editingOptionTypeId === optionType.id ? (
           <OptionTypeForm
             key={optionType.id}
             initial={optionType}
-            onSave={(data) => handleUpdate(optionType.id, data)}
-            onCancel={() => setEditingId(null)}
+            onSave={(optionTypeRequest) => handleUpdate(optionType.id, optionTypeRequest)}
+            onCancel={() => setEditingOptionTypeId(null)}
             isSaving={isSaving}
           />
         ) : (
@@ -197,9 +203,13 @@ export function OptionTypeManager({
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800">{optionType.name}</p>
                   <div className="flex flex-wrap gap-1 mt-1.5">
-                    {optionType.values.map((val) => (
-                      <Chip key={val.id} size="sm" className="bg-gray-100 text-gray-700 border border-gray-200">
-                        {val.value}
+                    {optionType.values.map((optionValue) => (
+                      <Chip
+                        key={optionValue.id}
+                        size="sm"
+                        className="bg-gray-100 text-gray-700 border border-gray-200"
+                      >
+                        {optionValue.value}
                       </Chip>
                     ))}
                   </div>
@@ -208,7 +218,7 @@ export function OptionTypeManager({
                   <button
                     type="button"
                     data-testid={`edit-option-type-${optionType.id}`}
-                    onClick={() => setEditingId(optionType.id)}
+                    onClick={() => setEditingOptionTypeId(optionType.id)}
                     className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     <Pencil className="w-4 h-4" />

@@ -28,7 +28,7 @@ jest.mock("@heroui/react", () => ({
       type="number"
       value={value}
       min={minValue}
-      onChange={(e) => onValueChange?.(Number(e.target.value))}
+      onChange={(numberInputChangeEvent) => onValueChange?.(Number(numberInputChangeEvent.target.value))}
     />
   ),
   Select: ({ label, children }) => <div aria-label={label}>{children}</div>,
