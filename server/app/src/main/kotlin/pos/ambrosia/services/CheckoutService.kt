@@ -111,13 +111,10 @@ class CheckoutService(
                     return@transaction false
                 }
             val entity = OrderEntity.findById(uuid)
-            if (entity == null || entity.status != "open" || entity.tableId != null) {
-                false
-            } else {
-                entity.status = "closed"
-                logger.info("Store order cancelled: $id")
-                true
-            }
+            if (entity == null || entity.status != "open" || entity.tableId != null) return@transaction false
+            entity.status = "closed"
+            logger.info("Store order cancelled: $id")
+            true
         }
 
     fun findCheckoutByPaymentHash(paymentHash: String): Map<String, String>? =
@@ -164,12 +161,8 @@ class CheckoutService(
                 }
             }
 
-            val response = performCheckout(request)
-            if (response != null) {
-                CheckoutResult.Success(response, alreadyExisted = false)
-            } else {
-                CheckoutResult.Invalid
-            }
+            val response = performCheckout(request) ?: return@withLock CheckoutResult.Invalid
+            CheckoutResult.Success(response, alreadyExisted = false)
         }
     }
 
