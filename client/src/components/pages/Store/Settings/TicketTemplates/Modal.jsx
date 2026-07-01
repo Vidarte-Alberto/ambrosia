@@ -100,6 +100,11 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
         broadcast: false,
         forceTemplateName: true,
       });
+      addToast({
+        title: settingsTranslations("templates.printSuccessTitle"),
+        description: settingsTranslations("templates.printSuccessDescription"),
+        color: "success",
+      });
     } catch (error) {
       console.error("Error printing test ticket:", error);
       addToast({
@@ -123,8 +128,10 @@ export function TicketTemplatesModal({ isOpen, onClose, initialTemplate = null }
     try {
       await deleteTemplate(selectedId);
       resetForm();
+      addToast({ color: "success", description: settingsTranslations("templates.deleteSuccess") });
     } catch (error) {
       console.error("Failed to delete template:", error);
+      addToast({ color: "danger", description: settingsTranslations("templates.deleteError") });
     } finally {
       setDeleting(false);
     }
