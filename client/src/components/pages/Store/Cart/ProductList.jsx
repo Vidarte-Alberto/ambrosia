@@ -17,6 +17,24 @@ import { VariantSelectorModal } from "./VariantSelectorModal";
 const XL_BREAKPOINT_PX = 1280;
 const XL_COLUMN_COUNT = 3;
 const DEFAULT_COLUMN_COUNT = 2;
+const LOW_STOCK_THRESHOLD = 11;
+
+function getStockLevel(productQuantity) {
+  const quantity = toFiniteNumber(productQuantity);
+  if (quantity <= 0) return "out";
+  if (quantity < LOW_STOCK_THRESHOLD) return "low";
+  return "ok";
+}
+
+function getStockChipClassName(stockLevel) {
+  if (stockLevel === "out") {
+    return "bg-rose-100 text-rose-800 border border-rose-200 text-xs";
+  }
+  if (stockLevel === "low") {
+    return "bg-amber-100 text-amber-800 border border-amber-200 text-xs";
+  }
+  return "bg-green-200 text-xs text-green-800 border border-green-300";
+}
 
 function useColumnCount() {
   const [columnCount, setColumnCount] = useState(DEFAULT_COLUMN_COUNT);
@@ -32,7 +50,6 @@ function useColumnCount() {
 export function ProductList({ products, onAddProduct, categories }) {
   const cardProductTranslation = useTranslations("cart");
   const { formatAmount } = useCurrency();
-  const defaultMaxStock = 11;
   const [showProductDetails, setShowProductDetails] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [variantProduct, setVariantProduct] = useState(null);
@@ -44,18 +61,11 @@ export function ProductList({ products, onAddProduct, categories }) {
   }, [products, columnCount]);
 
   const getCategoryNames = (categoryIds) => {
-    const ids = categoryIds ?? [];
+    const selectedCategoryIds = categoryIds ?? [];
     return categories
-      .filter((cat) => ids.includes(cat.id))
-      .map((cat) => cat.name)
+      .filter((category) => selectedCategoryIds.includes(category.id))
+      .map((category) => category.name)
       .join(", ");
-  };
-
-  const stockStatus = (product) => {
-    const quantity = toFiniteNumber(product.quantity);
-    if (quantity <= 0) return "out";
-    if (quantity < defaultMaxStock) return "low";
-    return "ok";
   };
 
   const handleShowProductDetails = (product) => {
@@ -77,8 +87,8 @@ export function ProductList({ products, onAddProduct, categories }) {
         {productColumns.map((productColumn, columnIndex) => (
           <div key={columnIndex} className="flex flex-col gap-3 md:gap-4 flex-1 min-w-0">
             {productColumn.map((product) => {
-              const status = stockStatus(product);
               const { id, description, priceCents, name, imageUrl, SKU, categoryIds, quantity } = product;
+              const stockLevel = getStockLevel(quantity);
               const productImageUrl = storedAssetUrl(imageUrl);
               const categoryNames = getCategoryNames(categoryIds);
               return (
@@ -150,15 +160,10 @@ export function ProductList({ products, onAddProduct, categories }) {
                       <Chip size="sm" className="sm:hidden bg-blue-100 text-blue-700 border border-blue-200">
                         {cardProductTranslation("card.hasVariants")}
                       </Chip>
-                    )}                    <Chip
+                    )}
+                    <Chip
                       size="sm"
-                      className={
-                        status === "out"
-                          ? "bg-rose-100 text-rose-800 border border-rose-200 text-xs"
-                          : status === "low"
-                            ? "bg-amber-100 text-amber-800 border border-amber-200 text-xs"
-                            : "bg-green-200 text-xs text-green-800 border border-green-300"
-                      }
+                      className={getStockChipClassName(stockLevel)}
                     >
                       {toFiniteNumber(quantity)} {cardProductTranslation("card.stock")}
                     </Chip>

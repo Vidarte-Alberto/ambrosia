@@ -39,10 +39,10 @@ const productDetail = {
   ],
 };
 
-function setup(props = {}) {
+function setup(selectorProps = {}) {
   const onClose = jest.fn();
   const onAddToCart = jest.fn();
-  const { result } = renderHook(() => useVariantSelector({ product, isOpen: true, onClose, onAddToCart, ...props }),
+  const { result } = renderHook(() => useVariantSelector({ product, isOpen: true, onClose, onAddToCart, ...selectorProps }),
   );
   return { result, onClose, onAddToCart };
 }

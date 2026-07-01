@@ -1,12 +1,12 @@
 export function addCartItem(cart, product, variant, availableQuantity, variantName) {
-  const itemId = variant?.id ?? product.id;
-  const existingCartItem = cart.find((item) => item.id === itemId);
+  const cartItemId = variant?.id ?? product.id;
+  const existingCartItem = cart.find((cartItem) => cartItem.id === cartItemId);
 
   if (!existingCartItem) {
     return [
       ...cart,
       {
-        id: itemId,
+        id: cartItemId,
         productId: product.id,
         variantId: variant?.id ?? null,
         variantName: variantName ?? null,
@@ -25,29 +25,29 @@ export function addCartItem(cart, product, variant, availableQuantity, variantNa
     return cart;
   }
 
-  return cart.map((item) => (item.id === itemId
+  return cart.map((cartItem) => (cartItem.id === cartItemId
     ? {
-        ...item,
-        imageUrl: item.imageUrl ?? (variant?.imageUrl ?? product.imageUrl),
+        ...cartItem,
+        imageUrl: cartItem.imageUrl ?? (variant?.imageUrl ?? product.imageUrl),
         quantity: nextQuantity,
-        subtotal: nextQuantity * item.price,
+        subtotal: nextQuantity * cartItem.price,
       }
-    : item),
+    : cartItem),
   );
 }
 
-export function setCartItemQuantity(cart, itemId, quantity, availableQuantity) {
+export function setCartItemQuantity(cart, cartItemId, quantity, availableQuantity) {
   const cappedQuantity = Math.min(quantity, availableQuantity);
-  return cart.map((item) => (item.id === itemId
+  return cart.map((cartItem) => (cartItem.id === cartItemId
     ? {
-        ...item,
+        ...cartItem,
         quantity: cappedQuantity,
-        subtotal: cappedQuantity * item.price,
+        subtotal: cappedQuantity * cartItem.price,
       }
-    : item),
+    : cartItem),
   );
 }
 
-export function removeCartItem(cart, itemId) {
-  return cart.filter((item) => item.id !== itemId);
+export function removeCartItem(cart, cartItemId) {
+  return cart.filter((cartItem) => cartItem.id !== cartItemId);
 }

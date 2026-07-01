@@ -52,9 +52,9 @@ export function Cart() {
   } = usePersistentCart();
 
   const handleApplyDiscount = useCallback(
-    (value, type) => {
-      setDiscount(value);
-      setDiscountType(type);
+    (discountValue, selectedDiscountType) => {
+      setDiscount(discountValue);
+      setDiscountType(selectedDiscountType);
     },
     [setDiscount, setDiscountType],
   );
@@ -80,15 +80,15 @@ export function Cart() {
   } = usePendingRemoval();
 
   const visibleCart = useMemo(
-    () => cart.filter((item) => !pendingRemovals.has(item.id)),
+    () => cart.filter((cartItem) => !pendingRemovals.has(cartItem.id)),
     [cart, pendingRemovals],
   );
 
   const handleAddProduct = useCallback(
     (product, variant = null) => {
-      const itemId = variant?.id ?? product.id;
-      if (pendingRemovals.has(itemId)) {
-        cancelRemoval(itemId);
+      const cartItemId = variant?.id ?? product.id;
+      if (pendingRemovals.has(cartItemId)) {
+        cancelRemoval(cartItemId);
         return;
       }
       addProduct(product, variant);

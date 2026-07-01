@@ -1,4 +1,10 @@
-import { deriveVariantDisplayName, findMatchingVariant } from "../variantUtils";
+import {
+  deriveVariantDisplayName,
+  findMatchingVariant,
+  variantHasOptionValues,
+  variantIsActive,
+  variantIsAvailableForSale,
+} from "../variantUtils";
 
 const options = [
   {
@@ -113,5 +119,34 @@ describe("findMatchingVariant", () => {
   it("handles variant with null optionValueIds", () => {
     const withNull = [{ id: "v-null", optionValueIds: null }];
     expect(findMatchingVariant(withNull, ["val-red"])).toBeNull();
+  });
+});
+
+describe("variantHasOptionValues", () => {
+  it("returns true when variant includes every selected option value", () => {
+    const variant = { id: "v1", optionValueIds: ["val-red", "val-s"] };
+
+    expect(variantHasOptionValues(variant, ["val-red"])).toBe(true);
+  });
+
+  it("returns false when variant misses a selected option value", () => {
+    const variant = { id: "v1", optionValueIds: ["val-red", "val-s"] };
+
+    expect(variantHasOptionValues(variant, ["val-blue"])).toBe(false);
+  });
+});
+
+describe("variantIsActive", () => {
+  it("treats variants as active unless isActive is explicitly false", () => {
+    expect(variantIsActive({ id: "active" })).toBe(true);
+    expect(variantIsActive({ id: "inactive", isActive: false })).toBe(false);
+  });
+});
+
+describe("variantIsAvailableForSale", () => {
+  it("requires an active variant with stock", () => {
+    expect(variantIsAvailableForSale({ id: "available", quantity: 1 })).toBe(true);
+    expect(variantIsAvailableForSale({ id: "inactive", isActive: false, quantity: 1 })).toBe(false);
+    expect(variantIsAvailableForSale({ id: "out-of-stock", quantity: 0 })).toBe(false);
   });
 });

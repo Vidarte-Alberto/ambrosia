@@ -6,6 +6,13 @@ import { useTranslations } from "next-intl";
 import { useCurrency } from "@/components/hooks/useCurrency";
 import { useVariantSelector } from "@/components/pages/Store/Cart/hooks/useVariantSelector";
 
+function getOptionValueButtonClassName(optionValueIsAvailable, optionValueIsSelected) {
+  const unavailableClassName = "opacity-40 border-dashed cursor-not-allowed";
+  return `min-h-[44px] px-4 transition-opacity ${
+    !optionValueIsAvailable && !optionValueIsSelected ? unavailableClassName : ""
+  }`;
+}
+
 export function VariantSelectorModal({ product, isOpen, onClose, onAddToCart }) {
   const cartTranslations = useTranslations("cart");
   const { formatAmount } = useCurrency();
@@ -38,15 +45,15 @@ export function VariantSelectorModal({ product, isOpen, onClose, onAddToCart }) 
               <p className="text-sm font-medium">{optionType.name}</p>
               <div className="flex flex-wrap gap-2">
                 {optionType.values.map((optionValue) => {
-                  const selected = selectedValues[optionType.id] === optionValue.id;
-                  const available = isValueAvailable(optionType, optionValue.id);
+                  const optionValueIsSelected = selectedValues[optionType.id] === optionValue.id;
+                  const optionValueIsAvailable = isValueAvailable(optionType, optionValue.id);
                   return (
                     <Button
                       key={optionValue.id}
                       size="sm"
-                      variant={selected ? "solid" : "bordered"}
-                      color={selected ? "primary" : "default"}
-                      className={`min-h-[44px] px-4 transition-opacity ${!available && !selected ? "opacity-40 border-dashed cursor-not-allowed" : ""}`}
+                      variant={optionValueIsSelected ? "solid" : "bordered"}
+                      color={optionValueIsSelected ? "primary" : "default"}
+                      className={getOptionValueButtonClassName(optionValueIsAvailable, optionValueIsSelected)}
                       onPress={() => toggleOptionValue(optionType.id, optionValue.id)}
                     >
                       {optionValue.value}

@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useProductVariants } from "@/components/pages/Store/hooks/useProductVariants";
-import { deriveVariantDisplayName, findMatchingVariant } from "@/components/pages/Store/utils/variantUtils";
+import {
+  deriveVariantDisplayName,
+  findMatchingVariant,
+  variantHasOptionValues,
+  variantIsAvailableForSale,
+} from "@/components/pages/Store/utils/variantUtils";
 
 export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
   const { fetchProductDetail } = useProductVariants();
@@ -22,9 +27,9 @@ export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
       setSelectedValues({});
 
       try {
-        const detail = await fetchProductDetail(product.id);
+        const productDetailResponse = await fetchProductDetail(product.id);
         if (isCancelled) return;
-        setProductDetail(detail);
+        setProductDetail(productDetailResponse);
         setIsLoading(false);
       } catch {
         if (isCancelled) return;
@@ -50,13 +55,11 @@ export function useVariantSelector({ product, isOpen, onClose, onAddToCart }) {
   const isDisabled = isLoading || !allSelected || !matchedVariant || isOutOfStock;
 
   const isValueAvailable = (optionType, valueId) => {
-    const hypotheticalSelection = { ...selectedValues, [optionType.id]: valueId };
-    const hypotheticalIds = options.map((option) => hypotheticalSelection[option.id]).filter(Boolean);
-    return variants.some((variant) => {
-      if (variant.isActive === false) return false;
-      const variantValueIds = variant.optionValueIds ?? [];
-      return hypotheticalIds.every((id) => variantValueIds.includes(id)) && variant.quantity > 0;
-    });
+    const selectionWithCandidateValue = { ...selectedValues, [optionType.id]: valueId };
+    const candidateOptionValueIds = options.map((option) => selectionWithCandidateValue[option.id]).filter(Boolean);
+    return variants.some((variant) => (
+      variantIsAvailableForSale(variant) && variantHasOptionValues(variant, candidateOptionValueIds)
+    ));
   };
 
   const toggleOptionValue = useCallback((optionTypeId, valueId) => {

@@ -63,38 +63,38 @@ export function useCartOperations({ cart, setCart, products }) {
   );
 
   const updateQuantity = useCallback(
-    (itemId, quantity) => {
+    (cartItemId, quantity) => {
       if (!Number.isFinite(quantity)) {
         return;
       }
 
-      const cartItem = cart.find((item) => item.id === itemId);
+      const cartItem = cart.find((existingCartItem) => existingCartItem.id === cartItemId);
       const availableQuantity = cartItem?.maxQuantity
-        ?? getAvailableQuantity(cartItem?.productId ?? itemId);
+        ?? getAvailableQuantity(cartItem?.productId ?? cartItemId);
 
       if (quantity > availableQuantity) {
         notifyOutOfStock();
         if (availableQuantity <= 0) {
-          setCart(removeCartItem(cart, itemId));
+          setCart(removeCartItem(cart, cartItemId));
         } else {
-          setCart(setCartItemQuantity(cart, itemId, availableQuantity, availableQuantity));
+          setCart(setCartItemQuantity(cart, cartItemId, availableQuantity, availableQuantity));
         }
         return;
       }
 
       if (quantity <= 0) {
-        setCart(removeCartItem(cart, itemId));
+        setCart(removeCartItem(cart, cartItemId));
         return;
       }
 
-      setCart(setCartItemQuantity(cart, itemId, quantity, availableQuantity));
+      setCart(setCartItemQuantity(cart, cartItemId, quantity, availableQuantity));
     },
     [cart, getAvailableQuantity, notifyOutOfStock, setCart],
   );
 
   const removeProduct = useCallback(
-    (itemId) => {
-      setCart(removeCartItem(cart, itemId));
+    (cartItemId) => {
+      setCart(removeCartItem(cart, cartItemId));
     },
     [cart, setCart],
   );

@@ -4,11 +4,11 @@ import { VariantSelectorModal } from "../VariantSelectorModal";
 
 const mockUseVariantSelector = jest.fn();
 jest.mock("@/components/pages/Store/Cart/hooks/useVariantSelector", () => ({
-  useVariantSelector: (...args) => mockUseVariantSelector(...args),
+  useVariantSelector: (...selectorHookArgs) => mockUseVariantSelector(...selectorHookArgs),
 }));
 
 jest.mock("@/components/hooks/useCurrency", () => ({
-  useCurrency: () => ({ formatAmount: (cents) => `$${(cents / 100).toFixed(2)}` }),
+  useCurrency: () => ({ formatAmount: (amountCents) => `$${(amountCents / 100).toFixed(2)}` }),
 }));
 
 jest.mock("@heroui/react", () => ({
@@ -39,15 +39,15 @@ const defaultHookState = {
   handleAddToCart: jest.fn(),
 };
 
-function renderModal(props = {}, hookState = {}) {
-  mockUseVariantSelector.mockReturnValue({ ...defaultHookState, ...hookState });
+function renderModal(componentProps = {}, selectorHookState = {}) {
+  mockUseVariantSelector.mockReturnValue({ ...defaultHookState, ...selectorHookState });
   return render(
     <VariantSelectorModal
       product={product}
       isOpen
       onClose={jest.fn()}
       onAddToCart={jest.fn()}
-      {...props}
+      {...componentProps}
     />,
   );
 }

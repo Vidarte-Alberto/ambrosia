@@ -6,7 +6,7 @@ import { ProductList } from "../ProductList";
 
 jest.mock("@/components/hooks/useCurrency", () => ({
   useCurrency: () => ({
-    formatAmount: (value) => `fmt-${value}`,
+    formatAmount: (amountCents) => `fmt-${amountCents}`,
   }),
 }));
 

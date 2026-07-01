@@ -153,14 +153,14 @@ const mockConfig = {
 
 beforeEach(() => {
   localStorage.clear();
-  console.warn = (...args) => {
+  console.warn = (...warningArgs) => {
     if (
-      typeof args[0] === "string" &&
-      args[0].includes("aria-label")
+      typeof warningArgs[0] === "string" &&
+      warningArgs[0].includes("aria-label")
     ) {
       return;
     }
-    originalWarn.call(console, ...args);
+    originalWarn.call(console, ...warningArgs);
   };
 
   jest.clearAllMocks();
