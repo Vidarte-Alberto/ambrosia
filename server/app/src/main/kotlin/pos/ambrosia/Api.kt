@@ -41,6 +41,7 @@ import pos.ambrosia.api.configurePrinters
 import pos.ambrosia.api.configureProductVariants
 import pos.ambrosia.api.configureProducts
 import pos.ambrosia.api.configureProjects
+import pos.ambrosia.api.configureRecovery
 import pos.ambrosia.api.configureReports
 import pos.ambrosia.api.configureRoles
 import pos.ambrosia.api.configureRouting
@@ -104,6 +105,7 @@ class Api {
         configurePayments()
         configureTickets()
         configureReports()
+        configureRecovery()
         configureShifts()
         configureWallet()
         configureBackup()

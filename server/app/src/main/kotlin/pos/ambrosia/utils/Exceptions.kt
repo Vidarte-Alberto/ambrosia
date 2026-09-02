@@ -121,3 +121,27 @@ class OrderNotRefundableException(
     val code: String = "not_refundable",
     val source: String = "ambrosia",
 ) : IllegalStateException(message)
+
+sealed class RecoveryException(
+    val code: String,
+) : RuntimeException(code)
+
+class RecoveryAuthorizationException(
+    code: String,
+) : RecoveryException(code)
+
+class RecoveryConflictException : RecoveryException("recovery_action_in_progress")
+
+class RecoveryUnsupportedException(
+    reason: String,
+) : RecoveryException(reason)
+
+class RecoveryInvalidRequestException(
+    code: String,
+) : RecoveryException(code)
+
+class RecoveryRateLimitException(
+    val retryAfterSeconds: Long,
+) : RecoveryException("recovery_authorization_rate_limited")
+
+class RecoveryActionNotFoundException : RecoveryException("action_not_found")

@@ -11,6 +11,7 @@ import io.ktor.server.response.respondText
 import org.jetbrains.exposed.v1.exceptions.ExposedSQLException
 import pos.ambrosia.logger
 import pos.ambrosia.models.Message
+import pos.ambrosia.models.RecoveryErrorResponse
 import pos.ambrosia.models.WalletErrorResponse
 import pos.ambrosia.utils.AdminOnlyException
 import pos.ambrosia.utils.DatabaseException
@@ -35,6 +36,13 @@ import pos.ambrosia.utils.PhoenixServiceException
 import pos.ambrosia.utils.PrintTicketException
 import pos.ambrosia.utils.ProductIsBundleComponentException
 import pos.ambrosia.utils.ResourceNotFoundException
+import pos.ambrosia.utils.RecoveryActionNotFoundException
+import pos.ambrosia.utils.RecoveryAuthorizationException
+import pos.ambrosia.utils.RecoveryConflictException
+import pos.ambrosia.utils.RecoveryException
+import pos.ambrosia.utils.RecoveryInvalidRequestException
+import pos.ambrosia.utils.RecoveryRateLimitException
+import pos.ambrosia.utils.RecoveryUnsupportedException
 import pos.ambrosia.utils.TimeEntryLockedException
 import pos.ambrosia.utils.UnauthorizedApiException
 import pos.ambrosia.utils.UnsupportedBackendOperationException
@@ -180,6 +188,20 @@ fun Application.handler() {
         exception<DatabaseException> { call, cause ->
             logger.error("Database operation failed: ${cause.message}")
             call.respond(HttpStatusCode.InternalServerError, Message(cause.message ?: "Database operation failed"))
+        }
+        exception<RecoveryException> { call, cause ->
+            val status =
+                when (cause) {
+                    is RecoveryAuthorizationException -> HttpStatusCode.Unauthorized
+                    is RecoveryConflictException -> HttpStatusCode.Conflict
+                    is RecoveryUnsupportedException -> HttpStatusCode.UnprocessableEntity
+                    is RecoveryInvalidRequestException -> HttpStatusCode.BadRequest
+                    is RecoveryRateLimitException -> HttpStatusCode.TooManyRequests
+                    is RecoveryActionNotFoundException -> HttpStatusCode.NotFound
+                }
+            val retryAfter = (cause as? RecoveryRateLimitException)?.retryAfterSeconds
+            if (retryAfter != null) call.response.headers.append("Retry-After", retryAfter.toString())
+            call.respond(status, RecoveryErrorResponse(cause.code, retryAfter))
         }
 
         // --- Generic and SQL Exceptions Last ---

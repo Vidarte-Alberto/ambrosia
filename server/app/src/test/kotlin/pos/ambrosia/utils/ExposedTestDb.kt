@@ -57,6 +57,7 @@ import pos.ambrosia.db.tables.ProductsTable
 import pos.ambrosia.db.tables.ProjectEntity
 import pos.ambrosia.db.tables.ProjectsTable
 import pos.ambrosia.db.tables.PushSubscriptionsTable
+import pos.ambrosia.db.tables.RecoveryActionsTable
 import pos.ambrosia.db.tables.RefundEntity
 import pos.ambrosia.db.tables.RefundsTable
 import pos.ambrosia.db.tables.RoleEntity
@@ -130,6 +131,7 @@ object ExposedTestDb {
                 TicketTemplateElementsTable,
                 OrderProductsTable,
                 RefundsTable,
+                RecoveryActionsTable,
                 AdminNotificationsTable,
                 AdminNotificationReceiptsTable,
                 AdminNotificationPreferencesTable,
@@ -159,6 +161,7 @@ object ExposedTestDb {
                 ClientsTable,
                 PayoutAccountsTable,
                 RefundsTable,
+                RecoveryActionsTable,
                 OrderProductsTable,
                 TicketTemplateElementsTable,
                 TicketTemplatesTable,
