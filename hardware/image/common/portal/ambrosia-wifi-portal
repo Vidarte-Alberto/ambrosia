@@ -41,6 +41,7 @@ dnsmasq_proc = None
 # Populated by main() before start_ap(). AP mode disables scanning, so we have
 # to capture the airwaves while wlan0 is still managed by NM.
 scanned_ssids = []
+connection_lock = threading.Lock()
 
 
 def sh(cmd, timeout=None):
@@ -56,7 +57,12 @@ def wifi_is_real():
     r = sh(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device"])
     for line in r.stdout.splitlines():
         parts = line.split(":")
-        if len(parts) >= 3 and parts[0] == WLAN and parts[1] == "wifi" and parts[2] == "connected":
+        if (
+            len(parts) >= 3
+            and parts[0] == WLAN
+            and parts[1] == "wifi"
+            and parts[2] == "connected"
+        ):
             return True
     return False
 
@@ -81,7 +87,10 @@ def recover_orange_pi_wifi_once():
         return
 
     WIFI_RECOVERY_MARKER.touch()
-    print("Orange Pi Wi-Fi is associated; cycling wlan0 to prevent a stalled TCP link.", flush=True)
+    print(
+        "Orange Pi Wi-Fi is associated; cycling wlan0 to prevent a stalled TCP link.",
+        flush=True,
+    )
     try:
         sh(["nmcli", "device", "disconnect", WLAN], timeout=15)
         time.sleep(2)
@@ -116,7 +125,9 @@ def scan_ssids():
     radio can't scan. Hidden SSIDs (empty name) and duplicates are dropped."""
     sh(["nmcli", "device", "wifi", "rescan", "ifname", WLAN], timeout=15)
     time.sleep(3)
-    r = sh(["nmcli", "-t", "-f", "SSID,SIGNAL", "device", "wifi", "list", "ifname", WLAN])
+    r = sh(
+        ["nmcli", "-t", "-f", "SSID,SIGNAL", "device", "wifi", "list", "ifname", WLAN]
+    )
     seen = {}
     for line in r.stdout.splitlines():
         # nmcli -t escapes ":" inside SSIDs as "\:" — rsplit on the last
@@ -155,8 +166,8 @@ def write_confs():
         f"interface={WLAN}\n"
         f"bind-interfaces\n"
         f"dhcp-range={DHCP_START},{DHCP_END},255.255.255.0,12h\n"
-        f"dhcp-option=3,{AP_IP}\n"     # gateway
-        f"dhcp-option=6,{AP_IP}\n"     # DNS
+        f"dhcp-option=3,{AP_IP}\n"  # gateway
+        f"dhcp-option=6,{AP_IP}\n"  # DNS
         # Redirect all DNS lookups to the portal IP for captive-portal detection
         f"address=/#/{AP_IP}\n"
         f"dhcp-authoritative\n"
@@ -192,7 +203,8 @@ def start_ap():
 
     hostapd_proc = subprocess.Popen(
         ["hostapd", str(HOSTAPD_CONF)],
-        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
     # Give hostapd ~2s to establish; then start dnsmasq
     time.sleep(2)
@@ -202,7 +214,8 @@ def start_ap():
 
     dnsmasq_proc = subprocess.Popen(
         ["dnsmasq", "--conf-file=" + str(DNSMASQ_CONF), "--no-daemon"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.STDOUT,
     )
     time.sleep(1)
     if dnsmasq_proc.poll() is not None:
@@ -289,7 +302,7 @@ code { font-family: ui-monospace, Menlo, monospace; background: #f4f4f4; padding
   </div>
   <button type="submit">Conectar</button>
 </form>
-<p style="margin-top: 24px;"><small>Si sale bien, esta red (<code>{{ ap_ssid }}</code>) desaparecerá en unos segundos. Podrás acceder al POS en <code>https://{{ hostname }}.local/</code> desde tu Wi-Fi.</small></p>
+<p style="margin-top: 24px;"><small>Si sale bien, esta red (<code>{{ ap_ssid }}</code>) desaparecerá en unos segundos. Podrás configurar la conexión segura en <code>http://{{ hostname }}.local/trust/</code> desde tu Wi-Fi.</small></p>
 <script>
 (function(){
   var ssidInput = document.getElementById('ssid');
@@ -344,20 +357,20 @@ small{color:#666;}
 </style>
 </head><body>
 <h1>Casi listo</h1>
-<p>Ya guardamos el nombre y contraseña de <b>{{ ssid }}</b>. Lee esto antes de tocar el botón:</p>
+<p>Vamos a intentar conectar la unidad a <b>{{ ssid }}</b>. Lee esto antes de tocar el botón:</p>
 
 <div class="step">
   <h3>Qué va a pasar</h3>
   <ol style="margin:0 0 10px;padding-left:1.4em;">
-    <li>Se <b>copia</b> la dirección del POS a tu portapapeles.</li>
+    <li>Se <b>copia</b> la dirección para instalar el certificado a tu portapapeles.</li>
     <li>Esta red de configuración (<code>{{ ap_ssid }}</code>) se <b>cierra</b> y esta ventana se cerrará sola.</li>
-    <li>Tu teléfono se conectará solo a <b>{{ ssid }}</b> (espera unos segundos).</li>
-    <li>Entonces abre <b>Chrome</b> o <b>Safari</b> y <b>pega</b> la dirección en la barra para entrar al POS.</li>
+    <li>Conecta tu teléfono a <b>{{ ssid }}</b> si no se conecta automáticamente.</li>
+    <li>Entonces abre <b>Chrome</b> o <b>Safari</b> y <b>pega</b> la dirección en la barra. Instala el certificado y comprueba HTTPS antes de entrar al POS.</li>
   </ol>
-  <div class="url-box" id="posurl">https://{{ hostname }}.local/</div>
+  <div class="url-box" id="posurl">http://{{ hostname }}.local/trust/</div>
   <button class="btn btn-primary" id="btn-go" type="button">Copiar dirección y terminar</button>
   <div class="pending" id="pending">
-    <b>¡Listo!</b> Dirección copiada. Tu teléfono se está conectando a <b>{{ ssid }}</b> — pégala en Chrome o Safari cuando esté listo.
+    <b>¡Listo!</b> Dirección copiada. Conecta tu teléfono a <b>{{ ssid }}</b> — pégala en Chrome o Safari cuando esté listo.
   </div>
 </div>
 
@@ -372,57 +385,72 @@ small{color:#666;}
 (function(){
   var btn = document.getElementById('btn-go');
   var pending = document.getElementById('pending');
-  var url = "https://{{ hostname }}.local/";
+  var url = document.getElementById('posurl').textContent.trim();
 
-  function commit(){
-    btn.disabled = true;
-    btn.textContent = '✓ Dirección copiada — cambiando red…';
-    btn.classList.add('done');
+  function showConnectionError(){
+    btn.disabled = false;
+    btn.textContent = 'Reintentar conexión';
+    btn.classList.remove('done');
+    pending.textContent = 'No pudimos confirmar la solicitud. Si la red de configuración sigue disponible, vuelve a intentarlo.';
     pending.classList.add('show');
-    // Fire-and-forget POST; phone may lose the AP mid-request, that's fine.
+  }
+
+  function commit(copied){
+    btn.textContent = 'Enviando solicitud…';
     try {
-      fetch('/commit', {method:'POST', body:new FormData(document.getElementById('commit-form'))}).catch(function(){});
-    } catch(e) {}
+      fetch('/commit', {
+        method: 'POST',
+        body: new FormData(document.getElementById('commit-form'))
+      }).then(function(response){
+        if (!response.ok) throw new Error('Connection request failed');
+        btn.textContent = copied ? '✓ Dirección copiada — cambiando red…' : 'Guarda la dirección — cambiando red…';
+        btn.classList.add('done');
+        pending.textContent = copied
+          ? 'Dirección copiada. Conecta tu teléfono a tu Wi-Fi y pégala en Chrome o Safari.'
+          : 'No se pudo copiar. Guarda la dirección que aparece arriba y ábrela cuando estés en tu Wi-Fi.';
+        pending.classList.add('show');
+      }).catch(showConnectionError);
+    } catch(error) {
+      showConnectionError();
+    }
   }
 
-  // navigator.clipboard.writeText requires a secure context (HTTPS or
-  // localhost); we're on plain HTTP at 10.42.1.1 so it'll reject. The
-  // document.execCommand('copy') path works on HTTP in any browser engine
-  // old enough to care, including Android's captive-portal WebView.
+  // HTTP captive portals may not expose the Clipboard API. Copying is
+  // best-effort and must never prevent the Wi-Fi connection request.
   function legacyCopy(text){
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '0'; ta.style.left = '0';
-    ta.style.width = '1px'; ta.style.height = '1px';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    ta.setSelectionRange(0, text.length);
-    var ok = false;
-    try { ok = document.execCommand('copy'); } catch(e){}
-    document.body.removeChild(ta);
-    return ok;
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    try {
+      textarea.focus();
+      textarea.select();
+      textarea.setSelectionRange(0, text.length);
+      return document.execCommand('copy');
+    } catch(error) {
+      return false;
+    } finally {
+      document.body.removeChild(textarea);
+    }
   }
 
-  function selectUrl(){
-    // Nothing copied — at least highlight the URL so the user can long-press.
-    var sel = window.getSelection(); var r = document.createRange();
-    r.selectNodeContents(document.getElementById('posurl'));
-    sel.removeAllRanges(); sel.addRange(r);
+  function copyAndCommit(){
+    commit(legacyCopy(url));
   }
 
   btn.addEventListener('click', function(){
-    var copied = false;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      // Try modern API first; if it rejects (insecure context) fall through.
-      navigator.clipboard.writeText(url).then(function(){ copied = true; commit(); },
-        function(){ copied = legacyCopy(url); if (!copied) selectUrl(); commit(); });
-    } else {
-      copied = legacyCopy(url);
-      if (!copied) selectUrl();
-      commit();
+    if (btn.disabled) return;
+    btn.disabled = true;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function(){ commit(true); }, copyAndCommit);
+      } else {
+        copyAndCommit();
+      }
+    } catch(error) {
+      copyAndCommit();
     }
   });
 })();
@@ -430,34 +458,70 @@ small{color:#666;}
 </body></html>"""
 
 
+@app.after_request
+def prevent_portal_caching(response):
+    # Confirmation forms contain Wi-Fi credentials.
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
 def _monitor_connection():
     while True:
         time.sleep(15)
-        if wifi_is_real() or uplink_is_real():
-            stop_ap()
-            os._exit(0)
+        if not connection_lock.acquire(blocking=False):
+            continue
+        try:
+            if wifi_is_real() or uplink_is_real():
+                stop_ap()
+                os._exit(0)
+        finally:
+            connection_lock.release()
 
 
-def _do_connect(ssid, pw):
-    """Background task: tear down AP, try to join the user's Wi-Fi.
+def _do_connect(ssid, password):
+    """Switch the radio once; restore the portal when association fails.
 
-    Runs from /commit. By that point the user has already seen the
-    confirmation page and copied the POS URL to their clipboard, so there's
-    no race with Android's captive-portal sheet closing — the AP can drop
-    immediately. On successful association systemd's ExecStopPost restarts
-    Caddy as soon as Flask releases port 80. On failure we bring the AP back
-    up and stay running so the user can re-associate with the setup AP and
-    try again.
+    The caller holds connection_lock so requests and the uplink monitor
+    cannot change the interface while NetworkManager is connecting.
     """
-    # Small delay so the /commit HTTP response reaches the phone before the
-    # radio flips mode.
-    time.sleep(1)
-    stop_ap()
-    r = sh(["nmcli", "device", "wifi", "connect", ssid,
-            "password", pw, "ifname", WLAN], timeout=60)
-    if r.returncode == 0:
-        os._exit(0)
-    start_ap()
+    try:
+        # Give the HTTP response time to reach the phone before dropping AP.
+        time.sleep(1)
+        try:
+            stop_ap()
+            result = sh(
+                [
+                    "nmcli",
+                    "device",
+                    "wifi",
+                    "connect",
+                    ssid,
+                    "password",
+                    password,
+                    "ifname",
+                    WLAN,
+                ],
+                timeout=60,
+            )
+            if result.returncode == 0:
+                os._exit(0)
+            print("Wi-Fi connection failed; restoring setup portal.", flush=True)
+        except (OSError, subprocess.SubprocessError) as error:
+            # Exception text can include the nmcli command and password.
+            print(
+                f"Wi-Fi connection interrupted ({type(error).__name__}); restoring setup portal.",
+                flush=True,
+            )
+        try:
+            restored = start_ap()
+        except (OSError, subprocess.SubprocessError):
+            restored = False
+        if not restored:
+            print("Could not restore setup portal; restarting service.", flush=True)
+            os._exit(1)
+    finally:
+        connection_lock.release()
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -485,7 +549,8 @@ def index():
         TEMPLATE,
         hostname=get_hostname(),
         ap_ssid=f"{get_hostname()}-setup",
-        msg=msg, last_ssid=last_ssid,
+        msg=msg,
+        last_ssid=last_ssid,
         ssids=scanned_ssids,
     )
 
@@ -498,18 +563,25 @@ def commit():
     pw = request.form.get("password", "")
     if not ssid:
         return "missing ssid", 400
-    threading.Thread(target=_do_connect, args=(ssid, pw), daemon=True).start()
+    if not connection_lock.acquire(blocking=False):
+        return "connection already in progress", 409
+    try:
+        threading.Thread(target=_do_connect, args=(ssid, pw), daemon=True).start()
+    except RuntimeError:
+        connection_lock.release()
+        app.logger.error("Could not start Wi-Fi connection worker")
+        return "could not start connection", 503
     # Response body is rarely seen — the phone is about to lose the AP.
     return "ok", 200
 
 
 # Captive-portal detection endpoints — phones probe these to detect a portal.
-@app.route("/generate_204")              # Android
-@app.route("/gen_204")                   # Android variant
-@app.route("/hotspot-detect.html")       # iOS/macOS
+@app.route("/generate_204")  # Android
+@app.route("/gen_204")  # Android variant
+@app.route("/hotspot-detect.html")  # iOS/macOS
 @app.route("/library/test/success.html")  # iOS/macOS
-@app.route("/ncsi.txt")                  # Windows
-@app.route("/connecttest.txt")           # Windows
+@app.route("/ncsi.txt")  # Windows
+@app.route("/connecttest.txt")  # Windows
 def captive_probe():
     return redirect("/", code=302)
 

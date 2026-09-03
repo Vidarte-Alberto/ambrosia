@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""Export one public Caddy root; never read keys or change the PKI.
+
+Uses only Python's standard library and OpenSSL (Debian Bookworm or later).
+The CLI intentionally accepts no paths or user-controlled configuration.
+"""
+
+import base64
+import datetime as dt
+import fcntl
+import hashlib
+import html
+import json
+import os
+import plistlib
+import pwd
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+import uuid
+from pathlib import Path
+
+ROOT_CERT = Path("/var/lib/caddy/.local/share/caddy/pki/authorities/local/root.crt")
+STATE = Path("/var/lib/ambrosia")
+ASSETS = Path("/usr/local/share/ambrosia/trust")
+CERT_PATTERN = rb"\s*-----BEGIN CERTIFICATE-----\r?\n([A-Za-z0-9+/=\r\n]+)-----END CERTIFICATE-----\s*"
+PUBLIC_FILES = {
+    "index.html",
+    "check.html",
+    "metadata.json",
+    "ambrosia-ca.crt",
+    "ambrosia-ca.pem",
+    "ambrosia-ca.mobileconfig",
+}
+
+
+def openssl(*args, data=None):
+    result = subprocess.run(
+        ["openssl", *args],
+        input=data,
+        capture_output=True,
+        check=True,
+        timeout=10,
+        env={**os.environ, "LC_ALL": "C"},
+    )
+    return result.stdout
+
+
+def secure_path(path, directory=False, owners=(0,)):
+    """Reject symlinks and writable/untrusted ancestors, including the target."""
+    for part in [path, *path.parents]:
+        info = part.lstat()
+        if (
+            stat.S_ISLNK(info.st_mode)
+            or info.st_uid not in owners
+            or info.st_mode & 0o022
+        ):
+            raise ValueError(f"Unsafe ownership or permissions: {part}")
+    if directory and not path.is_dir():
+        raise ValueError(f"Not a directory: {path}")
+
+
+def hostname_label(value):
+    value = value.strip().lower()
+    if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", value):
+        raise ValueError("Hostname must be a single DNS label (1–63 characters)")
+    return value
+
+
+def read_certificate(source):
+    descriptor = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    with os.fdopen(descriptor, "rb") as stream:
+        if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+            raise ValueError("Root certificate must be a regular file")
+        raw = stream.read(65537)
+    match = re.fullmatch(CERT_PATTERN, raw)
+    if not match or len(raw) > 65536:
+        raise ValueError("Expected exactly one PEM certificate and no other material")
+    encoded = re.sub(rb"\s", b"", match[1])
+    decoded = base64.b64decode(encoded, validate=True)
+    der = openssl("x509", "-inform", "DER", "-outform", "DER", data=decoded)
+    if der != decoded:
+        raise ValueError("Certificate has trailing data")
+    pem = openssl("x509", "-inform", "DER", "-outform", "PEM", data=der)
+    constraints = openssl(
+        "x509", "-noout", "-ext", "basicConstraints,keyUsage", data=pem
+    ).decode()
+    if "CA:TRUE" not in constraints or "Certificate Sign" not in constraints:
+        raise ValueError("Certificate is not a signing CA")
+    with tempfile.TemporaryDirectory(prefix="ambrosia-verify-") as temp:
+        cert = Path(temp) / "root.pem"
+        cert.write_bytes(pem)
+        # Checks dates and the root signature; no network or private keys.
+        openssl("verify", "-check_ss_sig", "-CAfile", str(cert), str(cert))
+    fields = (
+        openssl(
+            "x509",
+            "-noout",
+            "-subject",
+            "-issuer",
+            "-startdate",
+            "-enddate",
+            "-nameopt",
+            "RFC2253",
+            data=pem,
+        )
+        .decode()
+        .splitlines()
+    )
+    parsed = dict(line.split("=", 1) for line in fields)
+    if parsed["subject"] != parsed["issuer"]:
+        raise ValueError("Expected a self-signed root")
+    for key in ("notBefore", "notAfter"):
+        parsed[key] = (
+            dt.datetime.strptime(parsed[key], "%b %d %H:%M:%S %Y %Z")
+            .replace(
+                tzinfo=dt.timezone.utc,
+            )
+            .isoformat()
+        )
+    return der, pem, parsed
+
+
+def make_artifacts(source, hostname, assets):
+    host = hostname_label(hostname) + ".local"
+    der, pem, fields = read_certificate(source)
+    digest = hashlib.sha256(der).hexdigest().upper()
+    fingerprint = ":".join(digest[i : i + 2] for i in range(0, len(digest), 2))
+    identifier = f"com.ambrosiapay.trust.ca.{digest.lower()}"
+    name = f"Ambrosia {host} ({digest[:12]})"
+    profile = {
+        "PayloadType": "Configuration",
+        "PayloadVersion": 1,
+        "PayloadIdentifier": identifier,
+        "PayloadUUID": str(uuid.uuid5(uuid.NAMESPACE_URL, identifier)),
+        "PayloadDisplayName": name,
+        "PayloadDescription": f"TLS certificate authority for {host}. SHA-256: {fingerprint}",
+        "PayloadRemovalDisallowed": False,
+        "PayloadContent": [
+            {
+                "PayloadType": "com.apple.security.root",
+                "PayloadVersion": 1,
+                "PayloadIdentifier": identifier + ".root",
+                "PayloadUUID": str(
+                    uuid.uuid5(uuid.NAMESPACE_URL, identifier + ".root")
+                ),
+                "PayloadDisplayName": name,
+                "PayloadCertificateFileName": "ambrosia-ca.crt",
+                "PayloadContent": der,
+            }
+        ],
+    }
+    metadata = {
+        "schemaVersion": 1,
+        "hostname": host,
+        "displayName": name,
+        "subject": fields["subject"],
+        "sha256": fingerprint,
+        "notBefore": fields["notBefore"],
+        "notAfter": fields["notAfter"],
+        "trustUrl": f"http://{host}/trust/",
+        "httpsUrl": f"https://{host}/",
+    }
+    replacements = {
+        "__HOSTNAME__": host,
+        "__FINGERPRINT__": fingerprint,
+        "__SUBJECT__": fields["subject"],
+        "__NOT_AFTER__": fields["notAfter"],
+    }
+    outputs = {
+        "ambrosia-ca.crt": der,
+        "ambrosia-ca.pem": pem,
+        "ambrosia-ca.mobileconfig": plistlib.dumps(profile),
+        "metadata.json": (
+            json.dumps(metadata, ensure_ascii=False, indent=2) + "\n"
+        ).encode(),
+    }
+    for filename in ("index.html", "check.html"):
+        page = (assets / filename).read_text()
+        for key, value in replacements.items():
+            page = page.replace(key, html.escape(value, quote=True))
+        outputs[filename] = page.encode()
+    if outputs.keys() != PUBLIC_FILES or any(
+        b"PRIVATE KEY" in value for value in outputs.values()
+    ):
+        raise ValueError("Unexpected public content")
+    return outputs
+
+
+def unpublish(state):
+    current = state / "trust"
+    if current.is_symlink():
+        current.unlink()
+    elif current.exists():
+        raise ValueError("Refusing to replace an unmanaged trust directory")
+
+
+def sync_directory(directory):
+    descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def publish(source, hostname, assets, state):
+    """Caller owns the state lock. Immutable generations make retries idempotent."""
+    outputs = make_artifacts(source, hostname, assets)
+    generation = hashlib.sha256(
+        b"".join(key.encode() + b"\0" + outputs[key] for key in sorted(outputs))
+    ).hexdigest()
+    generations = state / "trust-generations"
+    generations.mkdir(mode=0o755, exist_ok=True)
+    if generations.is_symlink():
+        raise ValueError("Refusing a symlink for generation storage")
+    target = generations / generation
+    if target.exists() or target.is_symlink():
+        if (
+            target.is_symlink()
+            or not target.is_dir()
+            or {p.name for p in target.iterdir()} != PUBLIC_FILES
+        ):
+            raise ValueError("Invalid existing generation")
+        for filename, expected in outputs.items():
+            existing = target / filename
+            if existing.is_symlink() or not existing.is_file():
+                raise ValueError("Invalid existing public file")
+            actual = existing.read_bytes()
+            if filename == "metadata.json":
+                metadata = json.loads(actual)
+                metadata.pop("exportedAt", None)
+                if metadata != json.loads(expected):
+                    raise ValueError("Existing metadata does not match the active CA")
+            elif actual != expected:
+                raise ValueError("Existing public file does not match the active CA")
+    else:
+        staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=generations))
+        try:
+            metadata = json.loads(outputs["metadata.json"])
+            metadata["exportedAt"] = dt.datetime.now(dt.timezone.utc).isoformat()
+            outputs["metadata.json"] = (
+                json.dumps(metadata, ensure_ascii=False, indent=2) + "\n"
+            ).encode()
+            for key, content in outputs.items():
+                with (staging / key).open("wb") as stream:
+                    stream.write(content)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                (staging / key).chmod(0o644)
+            staging.chmod(0o755)
+            sync_directory(staging)
+            staging.rename(target)
+            sync_directory(generations)
+        finally:
+            if staging.exists():
+                shutil.rmtree(staging)
+    current = state / "trust"
+    previous = current.resolve() if current.is_symlink() else None
+    if current.exists() and not current.is_symlink():
+        raise ValueError("Refusing to replace an unmanaged trust directory")
+    temporary = state / "trust.next"
+    if temporary.is_symlink():
+        temporary.unlink()
+    temporary.symlink_to(target.relative_to(state), target_is_directory=True)
+    os.replace(temporary, current)
+    sync_directory(state)
+    # Retain the previous generation for requests already in flight.
+    for old in generations.iterdir():
+        if old not in (target, previous) and old.is_dir() and not old.is_symlink():
+            shutil.rmtree(old)
+    return json.loads((current / "metadata.json").read_text())
+
+
+def main():
+    if len(sys.argv) != 1 or os.geteuid() != 0:
+        raise ValueError("Run as root without arguments")
+    secure_path(STATE, directory=True)
+    secure_path(ASSETS, directory=True)
+    for filename in ("index.html", "check.html"):
+        secure_path(ASSETS / filename)
+    lock = os.open(STATE / "trust.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(lock, "w") as stream:
+        fcntl.flock(stream, fcntl.LOCK_EX)
+        try:
+            secure_path(ROOT_CERT, owners=(0, pwd.getpwnam("caddy").pw_uid))
+            if (STATE / "trust-generations").exists():
+                secure_path(STATE / "trust-generations", directory=True)
+            result = publish(
+                ROOT_CERT, Path("/etc/hostname").read_text(), ASSETS, STATE
+            )
+            print(f"Published {result['hostname']} CA SHA-256 {result['sha256']}")
+        except Exception:
+            unpublish(STATE)
+            raise
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        print(f"ambrosia-export-ca: {error}", file=sys.stderr)
+        sys.exit(1)
