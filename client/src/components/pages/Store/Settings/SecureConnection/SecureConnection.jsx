@@ -11,15 +11,18 @@ import { isElectron } from "@lib/isElectron";
 const METADATA_TIMEOUT_MS = 8000;
 const SHA256_FINGERPRINT_PATTERN = /^(?:[0-9A-F]{2}:){31}[0-9A-F]{2}$/;
 
-function validMetadata(metadata, expectedHostname) {
-  if (metadata?.schemaVersion !== 1 || metadata.hostname !== expectedHostname) return false;
+function validMetadata(trustMetadata, expectedHostname) {
+  if (trustMetadata?.schemaVersion !== 1 || trustMetadata.hostname !== expectedHostname) return false;
 
   const requiredFields = ["subject", "displayName", "sha256", "notBefore", "notAfter"];
-  if (!requiredFields.every((field) => typeof metadata[field] === "string" && metadata[field].trim())) return false;
+  function isPopulatedString(fieldName) {
+    return typeof trustMetadata[fieldName] === "string" && trustMetadata[fieldName].trim();
+  }
+  if (!requiredFields.every(isPopulatedString)) return false;
 
-  const issuedAt = Date.parse(metadata.notBefore);
-  const expiresAt = Date.parse(metadata.notAfter);
-  return SHA256_FINGERPRINT_PATTERN.test(metadata.sha256) &&
+  const issuedAt = Date.parse(trustMetadata.notBefore);
+  const expiresAt = Date.parse(trustMetadata.notAfter);
+  return SHA256_FINGERPRINT_PATTERN.test(trustMetadata.sha256) &&
     Number.isFinite(issuedAt) && Number.isFinite(expiresAt) && issuedAt < expiresAt;
 }
 
@@ -43,11 +46,11 @@ export function SecureConnection() {
         });
         if (metadataResponse.status === 404) return;
         if (!metadataResponse.ok) throw new Error("Trust metadata unavailable");
-        const metadata = await metadataResponse.json();
-        if (!validMetadata(metadata, currentHostname)) throw new Error("Invalid trust metadata");
+        const trustMetadata = await metadataResponse.json();
+        if (!validMetadata(trustMetadata, currentHostname)) throw new Error("Invalid trust metadata");
         if (isMounted) {
           setTrustState({
-            metadata,
+            metadata: trustMetadata,
             hostname: currentHostname,
             isHttps: window.location.protocol === "https:",
           });

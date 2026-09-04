@@ -1,10 +1,10 @@
-export function isTrustPath(pathname) {
-  return pathname === "/trust" || pathname.startsWith("/trust/");
+export function isTrustPath(requestPath) {
+  return requestPath === "/trust" || requestPath.startsWith("/trust/");
 }
 
-export async function fetchTrustRequest({ request }) {
+export async function fetchTrustRequest({ request: trustRequest }) {
   try {
-    return await fetch(request, { cache: "no-store" });
+    return await fetch(trustRequest, { cache: "no-store" });
   } catch {
     return Response.error();
   }

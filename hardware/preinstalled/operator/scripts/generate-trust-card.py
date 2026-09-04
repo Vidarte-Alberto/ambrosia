@@ -13,9 +13,9 @@ import sys
 from pathlib import Path
 
 
-def card(metadata):
-    hostname = metadata["hostname"]
-    fingerprint = metadata["sha256"]
+def create_identity_card(trust_metadata):
+    hostname = trust_metadata["hostname"]
+    fingerprint = trust_metadata["sha256"]
     if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.local", hostname):
         raise ValueError("Invalid hostname")
     if not re.fullmatch(r"(?:[0-9A-F]{2}:){31}[0-9A-F]{2}", fingerprint):
@@ -31,4 +31,4 @@ def card(metadata):
 
 
 if __name__ == "__main__":
-    print(card(json.loads(Path(sys.argv[1]).read_text())))
+    print(create_identity_card(json.loads(Path(sys.argv[1]).read_text())))

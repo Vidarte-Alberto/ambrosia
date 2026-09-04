@@ -9,34 +9,53 @@ import tempfile
 from pathlib import Path
 
 
-def validate(template, binary="caddy"):
-    with tempfile.TemporaryDirectory(prefix="ambrosia-caddy-validation-") as directory:
-        temp = Path(directory)
-        source = temp / "Caddyfile"
-        source.write_text(template.replace("__HOSTNAME__", "ambrosia-validation"))
-        adapted = subprocess.run(
-            [binary, "adapt", "--adapter", "caddyfile", "--config", str(source)],
+def validate(caddyfile_template, caddy_binary="caddy"):
+    with tempfile.TemporaryDirectory(
+        prefix="ambrosia-caddy-validation-"
+    ) as temporary_directory_name:
+        temporary_directory = Path(temporary_directory_name)
+        rendered_caddyfile = temporary_directory / "Caddyfile"
+        rendered_caddyfile.write_text(
+            caddyfile_template.replace("__HOSTNAME__", "ambrosia-validation")
+        )
+        adapted_configuration_process = subprocess.run(
+            [
+                caddy_binary,
+                "adapt",
+                "--adapter",
+                "caddyfile",
+                "--config",
+                str(rendered_caddyfile),
+            ],
             check=True,
             capture_output=True,
         )
-        config = json.loads(adapted.stdout)
-        config["storage"] = {"module": "file_system", "root": str(temp / "data")}
-        for ca in (
-            config.get("apps", {})
+        caddy_configuration = json.loads(adapted_configuration_process.stdout)
+        caddy_configuration["storage"] = {
+            "module": "file_system",
+            "root": str(temporary_directory / "data"),
+        }
+        for certificate_authority in (
+            caddy_configuration.get("apps", {})
             .get("pki", {})
             .get("certificate_authorities", {})
             .values()
         ):
-            ca["install_trust"] = False
-        target = temp / "config.json"
-        target.write_text(json.dumps(config))
+            certificate_authority["install_trust"] = False
+        validation_configuration_path = temporary_directory / "config.json"
+        validation_configuration_path.write_text(json.dumps(caddy_configuration))
         subprocess.run(
-            [binary, "validate", "--config", str(target)],
+            [
+                caddy_binary,
+                "validate",
+                "--config",
+                str(validation_configuration_path),
+            ],
             check=True,
             env={
                 **os.environ,
-                "XDG_DATA_HOME": str(temp / "data"),
-                "XDG_CONFIG_HOME": str(temp / "config"),
+                "XDG_DATA_HOME": str(temporary_directory / "data"),
+                "XDG_CONFIG_HOME": str(temporary_directory / "config"),
             },
         )
 

@@ -1,17 +1,16 @@
-/**
- * @jest-environment jsdom
- * @jest-environment-options {"url": "https://ambrosia-test.local/store/settings"}
- */
+/** @jest-environment-options {"url": "https://ambrosia-test.local/store/settings"} */
 import { render, screen, waitFor } from "@testing-library/react";
 
 import { SecureConnection } from "../SecureConnection";
 
 jest.mock("react-qr-code", () => ({
   __esModule: true,
-  default: ({ value, "aria-label": label }) => <div data-testid="trust-qr" data-value={value} aria-label={label} />,
+  default: ({ value: qrValue, "aria-label": ariaLabel }) => (
+    <div data-testid="trust-qr" data-value={qrValue} aria-label={ariaLabel} />
+  ),
 }));
 
-const metadata = {
+const trustMetadata = {
   schemaVersion: 1,
   hostname: "ambrosia-test.local",
   displayName: "Ambrosia test",
@@ -23,7 +22,7 @@ const metadata = {
 };
 
 beforeEach(() => {
-  jest.spyOn(global, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => metadata });
+  jest.spyOn(global, "fetch").mockResolvedValue({ ok: true, status: 200, json: async () => trustMetadata });
 });
 
 afterEach(() => jest.restoreAllMocks());
@@ -31,7 +30,7 @@ afterEach(() => jest.restoreAllMocks());
 it("uses same-origin HTTPS metadata and derives the enrollment QR from this unit", async () => {
   render(<SecureConnection />);
   expect(await screen.findByText("httpsSession")).toBeInTheDocument();
-  expect(screen.getByText(metadata.sha256)).toBeInTheDocument();
+  expect(screen.getByText(trustMetadata.sha256)).toBeInTheDocument();
   expect(screen.getByTestId("trust-qr")).toHaveAttribute("data-value", "http://ambrosia-test.local/trust/");
   expect(fetch).toHaveBeenCalledWith("/trust/metadata.json", expect.objectContaining({ cache: "no-store", credentials: "omit" }));
   expect(screen.getByRole("link", { name: "instructions" })).toHaveAttribute("href", "/trust/");
@@ -45,15 +44,15 @@ it("does not show a card when this deployment does not provide trust metadata", 
 });
 
 it.each([
-  { ...metadata, hostname: "another-unit.local" },
-  { ...metadata, sha256: "invalid" },
-  { ...metadata, notAfter: "invalid" },
-  { ...metadata, schemaVersion: 99 },
-  { ...metadata, displayName: " " },
-  { ...metadata, notBefore: ["2026-01-01"] },
-  { ...metadata, notBefore: metadata.notAfter, notAfter: metadata.notBefore },
-])("does not advertise invalid or foreign-unit metadata", async (invalid) => {
-  fetch.mockResolvedValue({ ok: true, status: 200, json: async () => invalid });
+  { ...trustMetadata, hostname: "another-unit.local" },
+  { ...trustMetadata, sha256: "invalid" },
+  { ...trustMetadata, notAfter: "invalid" },
+  { ...trustMetadata, schemaVersion: 99 },
+  { ...trustMetadata, displayName: " " },
+  { ...trustMetadata, notBefore: ["2026-01-01"] },
+  { ...trustMetadata, notBefore: trustMetadata.notAfter, notAfter: trustMetadata.notBefore },
+])("does not advertise invalid or foreign-unit metadata", async (invalidTrustMetadata) => {
+  fetch.mockResolvedValue({ ok: true, status: 200, json: async () => invalidTrustMetadata });
   render(<SecureConnection />);
   expect(await screen.findByRole("status")).toHaveTextContent("unavailable");
   expect(screen.queryByTestId("trust-qr")).not.toBeInTheDocument();
@@ -68,7 +67,7 @@ it("shows an unavailable state on network failure", async () => {
 it("cancels the pending request on unmount", () => {
   fetch.mockImplementation(() => new Promise(() => {}));
   const { unmount } = render(<SecureConnection />);
-  const options = fetch.mock.calls[0][1];
+  const requestOptions = fetch.mock.calls[0][1];
   unmount();
-  expect(options.signal.aborted).toBe(true);
+  expect(requestOptions.signal.aborted).toBe(true);
 });

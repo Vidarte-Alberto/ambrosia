@@ -24,17 +24,17 @@ describe("fetchTrustRequest", () => {
   });
 
   it("always requests a fresh network response", async () => {
-    const response = { status: 200 };
-    jest.spyOn(global, "fetch").mockResolvedValue(response);
-    const request = { url: "https://unit.local/trust/metadata.json" };
-    expect(await fetchTrustRequest({ request })).toBe(response);
-    expect(fetch).toHaveBeenCalledWith(request, { cache: "no-store" });
+    const networkResponse = { status: 200 };
+    jest.spyOn(global, "fetch").mockResolvedValue(networkResponse);
+    const trustRequest = { url: "https://unit.local/trust/metadata.json" };
+    expect(await fetchTrustRequest({ request: trustRequest })).toBe(networkResponse);
+    expect(fetch).toHaveBeenCalledWith(trustRequest, { cache: "no-store" });
   });
 
   it("returns a network error instead of a cached success when TLS or connectivity fails", async () => {
     jest.spyOn(global, "fetch").mockRejectedValue(new TypeError("TLS failed"));
-    const response = await fetchTrustRequest({ request: {} });
-    expect(response.type).toBe("error");
+    const networkErrorResponse = await fetchTrustRequest({ request: {} });
+    expect(networkErrorResponse.type).toBe("error");
     expect(Response.error).toHaveBeenCalledTimes(1);
   });
 });

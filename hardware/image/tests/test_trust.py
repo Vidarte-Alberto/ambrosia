@@ -15,25 +15,33 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-COMMON = Path(__file__).resolve().parents[1] / "common"
-ASSETS = COMMON / "certificates"
-loader = importlib.machinery.SourceFileLoader(
-    "export_ca", str(ASSETS / "ambrosia-export-ca")
+COMMON_DIRECTORY = Path(__file__).resolve().parents[1] / "common"
+CERTIFICATE_ASSETS_DIRECTORY = COMMON_DIRECTORY / "certificates"
+exporter_module_loader = importlib.machinery.SourceFileLoader(
+    "export_ca", str(CERTIFICATE_ASSETS_DIRECTORY / "ambrosia-export-ca")
 )
-spec = importlib.util.spec_from_loader(loader.name, loader)
-export_ca = importlib.util.module_from_spec(spec)
-loader.exec_module(export_ca)
+exporter_module_specification = importlib.util.spec_from_loader(
+    exporter_module_loader.name, exporter_module_loader
+)
+certificate_exporter = importlib.util.module_from_spec(exporter_module_specification)
+exporter_module_loader.exec_module(certificate_exporter)
 
 
-def load_module(name, path):
-    specification = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(specification)
-    specification.loader.exec_module(module)
-    return module
+def load_module(module_name, module_path):
+    module_specification = importlib.util.spec_from_file_location(
+        module_name, module_path
+    )
+    loaded_module = importlib.util.module_from_spec(module_specification)
+    module_specification.loader.exec_module(loaded_module)
+    return loaded_module
 
 
-installer = load_module("install_trust", ASSETS / "install-trust.py")
-validator = load_module("validate_trust", ASSETS / "validate-trust.py")
+installer = load_module(
+    "install_trust", CERTIFICATE_ASSETS_DIRECTORY / "install-trust.py"
+)
+validator = load_module(
+    "validate_trust", CERTIFICATE_ASSETS_DIRECTORY / "validate-trust.py"
+)
 
 
 class InstallerTests(unittest.TestCase):
@@ -42,20 +50,25 @@ class InstallerTests(unittest.TestCase):
             tempfile.TemporaryDirectory() as directory,
             patch.object(installer.os, "chown"),
         ):
-            root = Path(directory)
-            existing = root / "existing.conf"
-            added = root / "new.conf"
-            existing.write_bytes(b"original configuration")
-            existing.chmod(0o640)
-            files = {existing: (b"replacement", 0o644), added: (b"new asset", 0o644)}
-            backup, original = installer.backup_files(files, root)
-            for destination, (content, mode) in files.items():
-                installer.install_file(destination, content, mode)
-            installer.restore_files(files, original)
-            self.assertEqual(existing.read_bytes(), b"original configuration")
-            self.assertEqual(existing.stat().st_mode & 0o777, 0o640)
-            self.assertFalse(added.exists())
-            self.assertEqual(backup.stat().st_mode & 0o777, 0o700)
+            image_root = Path(directory)
+            existing_file = image_root / "existing.conf"
+            added_file = image_root / "new.conf"
+            existing_file.write_bytes(b"original configuration")
+            existing_file.chmod(0o640)
+            managed_files = {
+                existing_file: (b"replacement", 0o644),
+                added_file: (b"new asset", 0o644),
+            }
+            backup_directory, original_files = installer.backup_files(
+                managed_files, image_root
+            )
+            for destination_path, (file_content, file_mode) in managed_files.items():
+                installer.install_file(destination_path, file_content, file_mode)
+            installer.restore_files(managed_files, original_files)
+            self.assertEqual(existing_file.read_bytes(), b"original configuration")
+            self.assertEqual(existing_file.stat().st_mode & 0o777, 0o640)
+            self.assertFalse(added_file.exists())
+            self.assertEqual(backup_directory.stat().st_mode & 0o777, 0o700)
 
     def test_recognizes_image_and_bootstrap_but_refuses_custom_config(self):
         image = "{ local_certs } https://unit.local { tls internal reverse_proxy /ws/* 127.0.0.1:9154 reverse_proxy 127.0.0.1:3000 }"
@@ -69,7 +82,11 @@ class InstallerTests(unittest.TestCase):
         )
         self.assertFalse(installer.known_configuration(image, "wrong-unit"))
         self.assertTrue(
-            installer.known_configuration(image, "renamed-unit", managed=image)
+            installer.known_configuration(
+                image,
+                "renamed-unit",
+                managed_configuration=image,
+            )
         )
 
     def test_installing_assets_preserves_pki_and_other_application_state(self):
@@ -77,37 +94,41 @@ class InstallerTests(unittest.TestCase):
             tempfile.TemporaryDirectory() as directory,
             patch.object(installer.os, "chown"),
         ):
-            root = Path(directory)
-            pki = root / "var/lib/caddy/.local/share/caddy/pki"
-            pki.mkdir(parents=True)
-            (pki / "root.key").write_bytes(b"sentinel-key")
-            installer.install_assets(root)
-            first = (
-                root / "usr/local/libexec/ambrosia/ambrosia-export-ca"
+            image_root = Path(directory)
+            pki_directory = image_root / "var/lib/caddy/.local/share/caddy/pki"
+            pki_directory.mkdir(parents=True)
+            (pki_directory / "root.key").write_bytes(b"sentinel-key")
+            installer.install_assets(image_root)
+            first_exporter_copy = (
+                image_root / "usr/local/libexec/ambrosia/ambrosia-export-ca"
             ).read_bytes()
-            installer.install_assets(root)
-            self.assertEqual((pki / "root.key").read_bytes(), b"sentinel-key")
+            installer.install_assets(image_root)
+            self.assertEqual((pki_directory / "root.key").read_bytes(), b"sentinel-key")
             self.assertEqual(
-                (root / "usr/local/libexec/ambrosia/ambrosia-export-ca").read_bytes(),
-                first,
+                (
+                    image_root / "usr/local/libexec/ambrosia/ambrosia-export-ca"
+                ).read_bytes(),
+                first_exporter_copy,
             )
-            self.assertFalse((root / "var/lib/ambrosia/trust").exists())
-            self.assertEqual((root / "var/lib/ambrosia").stat().st_mode & 0o777, 0o755)
+            self.assertFalse((image_root / "var/lib/ambrosia/trust").exists())
+            self.assertEqual(
+                (image_root / "var/lib/ambrosia").stat().st_mode & 0o777, 0o755
+            )
 
     def test_installer_rejects_symlinked_destination(self):
         with (
             tempfile.TemporaryDirectory() as directory,
             patch.object(installer.os, "chown"),
         ):
-            root = Path(directory)
-            (root / "etc").mkdir()
-            (root / "etc/ambrosia").symlink_to(root)
+            image_root = Path(directory)
+            (image_root / "etc").mkdir()
+            (image_root / "etc/ambrosia").symlink_to(image_root)
             with self.assertRaises(ValueError):
-                installer.install_assets(root)
+                installer.install_assets(image_root)
 
 
-def create_ca(directory, name="unit-a", ca=True):
-    certificate = directory / f"{name}.crt"
+def create_ca(output_directory, common_name="unit-a", is_certificate_authority=True):
+    certificate = output_directory / f"{common_name}.crt"
     subprocess.run(
         [
             "openssl",
@@ -119,15 +140,15 @@ def create_ca(directory, name="unit-a", ca=True):
             "ec_paramgen_curve:P-256",
             "-nodes",
             "-keyout",
-            str(directory / f"{name}.key"),
+            str(output_directory / f"{common_name}.key"),
             "-out",
             str(certificate),
             "-days",
             "2",
             "-subj",
-            f"/CN={name}",
+            f"/CN={common_name}",
             "-addext",
-            f"basicConstraints=critical,CA:{str(ca).upper()}",
+            f"basicConstraints=critical,CA:{str(is_certificate_authority).upper()}",
             "-addext",
             "keyUsage=critical,keyCertSign,cRLSign",
         ],
@@ -139,27 +160,35 @@ def create_ca(directory, name="unit-a", ca=True):
 
 class ExportTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
-        self.state = self.root / "state"
-        self.state.mkdir()
-        self.cert = create_ca(self.root)
+        self.temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary_directory.cleanup)
+        self.root_directory = Path(self.temporary_directory.name)
+        self.state_directory = self.root_directory / "state"
+        self.state_directory.mkdir()
+        self.root_certificate = create_ca(self.root_directory)
 
-    def publish(self, cert=None, host="ambrosia-test"):
-        return export_ca.publish(cert or self.cert, host, ASSETS, self.state)
+    def publish(self, certificate=None, hostname="ambrosia-test"):
+        return certificate_exporter.publish(
+            certificate or self.root_certificate,
+            hostname,
+            CERTIFICATE_ASSETS_DIRECTORY,
+            self.state_directory,
+        )
 
     def test_certificate_profile_and_metadata_have_identical_fingerprint(self):
-        meta = self.publish()
-        public = self.state / "trust"
-        self.assertEqual({p.name for p in public.iterdir()}, export_ca.PUBLIC_FILES)
+        trust_metadata = self.publish()
+        public_directory = self.state_directory / "trust"
+        self.assertEqual(
+            {artifact_path.name for artifact_path in public_directory.iterdir()},
+            certificate_exporter.PUBLIC_FILES,
+        )
         fingerprint = (
-            export_ca.openssl(
+            certificate_exporter.run_openssl(
                 "x509",
                 "-inform",
                 "DER",
                 "-in",
-                str(public / "ambrosia-ca.crt"),
+                str(public_directory / "ambrosia-ca.crt"),
                 "-noout",
                 "-fingerprint",
                 "-sha256",
@@ -168,120 +197,157 @@ class ExportTests(unittest.TestCase):
             .strip()
             .split("=", 1)[1]
         )
-        self.assertEqual(meta["sha256"], fingerprint)
-        profile = plistlib.loads((public / "ambrosia-ca.mobileconfig").read_bytes())
-        self.assertEqual(len(profile["PayloadContent"]), 1)
+        self.assertEqual(trust_metadata["sha256"], fingerprint)
+        apple_profile = plistlib.loads(
+            (public_directory / "ambrosia-ca.mobileconfig").read_bytes()
+        )
+        self.assertEqual(len(apple_profile["PayloadContent"]), 1)
         self.assertEqual(
-            profile["PayloadContent"][0]["PayloadType"], "com.apple.security.root"
+            apple_profile["PayloadContent"][0]["PayloadType"],
+            "com.apple.security.root",
         )
         self.assertEqual(
-            profile["PayloadContent"][0]["PayloadContent"],
-            (public / "ambrosia-ca.crt").read_bytes(),
+            apple_profile["PayloadContent"][0]["PayloadContent"],
+            (public_directory / "ambrosia-ca.crt").read_bytes(),
         )
-        for path in public.iterdir():
-            content = path.read_bytes()
-            self.assertEqual(path.stat().st_mode & 0o777, 0o644)
-            self.assertNotIn(b"PRIVATE KEY", content)
-            if path.suffix == ".html":
-                self.assertNotIn(b"__HOSTNAME__", content)
-                self.assertNotIn(b"__FINGERPRINT__", content)
-        guide = (public / "index.html").read_text()
-        self.assertIn('<html lang="en">', guide)
-        self.assertLess(guide.index('id="es"'), guide.index('id="en"'))
-        self.assertEqual(guide.count('name="platform-en"'), 6)
-        self.assertEqual(guide.count('name="platform-es"'), 6)
-        self.assertEqual(guide.count('<summary>'), 14)
-        for instruction in (
+        for artifact_path in public_directory.iterdir():
+            artifact_content = artifact_path.read_bytes()
+            self.assertEqual(artifact_path.stat().st_mode & 0o777, 0o644)
+            self.assertNotIn(b"PRIVATE KEY", artifact_content)
+            if artifact_path.suffix == ".html":
+                self.assertNotIn(b"__HOSTNAME__", artifact_content)
+                self.assertNotIn(b"__FINGERPRINT__", artifact_content)
+        installation_guide = (public_directory / "index.html").read_text()
+        self.assertIn('<html lang="en">', installation_guide)
+        self.assertLess(
+            installation_guide.index('id="es"'), installation_guide.index('id="en"')
+        )
+        self.assertEqual(installation_guide.count('name="platform-en"'), 6)
+        self.assertEqual(installation_guide.count('name="platform-es"'), 6)
+        self.assertEqual(installation_guide.count("<summary>"), 14)
+        for expected_instruction in (
             "VPN y gestión de dispositivos",
             "VPN &amp; Device Management",
             "Trusted Root Certification Authorities",
             "Entidades de certificación raíz de confianza",
             "security.enterprise_roots.enabled",
         ):
-            self.assertIn(instruction, guide)
-        self.assertEqual(public.stat().st_mode & 0o777, 0o755)
+            self.assertIn(expected_instruction, installation_guide)
+        self.assertEqual(public_directory.stat().st_mode & 0o777, 0o755)
 
     def test_reexport_is_identical_and_never_changes_private_key(self):
-        private = self.cert.with_suffix(".key").read_bytes()
-        first = self.publish()
-        target = (self.state / "trust").readlink()
-        files = {p.name: p.read_bytes() for p in (self.state / "trust").iterdir()}
-        self.assertEqual(first, self.publish())
-        self.assertEqual(target, (self.state / "trust").readlink())
+        private_key_content = self.root_certificate.with_suffix(".key").read_bytes()
+        initial_metadata = self.publish()
+        published_generation = (self.state_directory / "trust").readlink()
+        published_files = {
+            artifact_path.name: artifact_path.read_bytes()
+            for artifact_path in (self.state_directory / "trust").iterdir()
+        }
+        self.assertEqual(initial_metadata, self.publish())
         self.assertEqual(
-            files, {p.name: p.read_bytes() for p in (self.state / "trust").iterdir()}
+            published_generation, (self.state_directory / "trust").readlink()
         )
-        self.assertEqual(private, self.cert.with_suffix(".key").read_bytes())
+        self.assertEqual(
+            published_files,
+            {
+                artifact_path.name: artifact_path.read_bytes()
+                for artifact_path in (self.state_directory / "trust").iterdir()
+            },
+        )
+        self.assertEqual(
+            private_key_content,
+            self.root_certificate.with_suffix(".key").read_bytes(),
+        )
 
     def test_independent_ca_and_hostname_change(self):
-        first = self.publish()
-        renamed = self.publish(host="ambrosia-renamed")
-        self.assertEqual(first["sha256"], renamed["sha256"])
-        self.assertEqual(renamed["trustUrl"], "http://ambrosia-renamed.local/trust/")
-        second = self.publish(create_ca(self.root, "unit-b"))
-        self.assertNotEqual(first["sha256"], second["sha256"])
-        self.assertEqual(len(list((self.state / "trust-generations").iterdir())), 2)
+        initial_metadata = self.publish()
+        renamed_metadata = self.publish(hostname="ambrosia-renamed")
+        self.assertEqual(initial_metadata["sha256"], renamed_metadata["sha256"])
+        self.assertEqual(
+            renamed_metadata["trustUrl"], "http://ambrosia-renamed.local/trust/"
+        )
+        replacement_metadata = self.publish(create_ca(self.root_directory, "unit-b"))
+        self.assertNotEqual(initial_metadata["sha256"], replacement_metadata["sha256"])
+        self.assertEqual(
+            len(list((self.state_directory / "trust-generations").iterdir())), 2
+        )
 
     def test_rejects_private_material_bundle_and_truncated_certificate(self):
-        good = self.cert.read_bytes()
-        for bad in (
-            good + self.cert.with_suffix(".key").read_bytes(),
-            good + good,
-            good[:50],
+        valid_certificate_content = self.root_certificate.read_bytes()
+        for invalid_certificate_content in (
+            valid_certificate_content
+            + self.root_certificate.with_suffix(".key").read_bytes(),
+            valid_certificate_content + valid_certificate_content,
+            valid_certificate_content[:50],
             b"invalid",
         ):
-            with self.subTest(bad=bad[:20]):
-                self.cert.write_bytes(bad)
+            with self.subTest(invalid_content=invalid_certificate_content[:20]):
+                self.root_certificate.write_bytes(invalid_certificate_content)
                 with self.assertRaises((ValueError, subprocess.SubprocessError)):
                     self.publish()
-                self.assertFalse((self.state / "trust").exists())
+                self.assertFalse((self.state_directory / "trust").exists())
 
     def test_rejects_leaf_certificate_and_invalid_hostname(self):
         with self.assertRaises(ValueError):
-            self.publish(create_ca(self.root, "leaf", ca=False))
-        for host in ("../evil", "-bad", "two.local", "x\nroot", "a" * 64):
-            with self.subTest(host=host), self.assertRaises(ValueError):
-                self.publish(host=host)
+            self.publish(
+                create_ca(
+                    self.root_directory,
+                    "leaf",
+                    is_certificate_authority=False,
+                )
+            )
+        for invalid_hostname in (
+            "../evil",
+            "-bad",
+            "two.local",
+            "x\nroot",
+            "a" * 64,
+        ):
+            with self.subTest(hostname=invalid_hostname), self.assertRaises(ValueError):
+                self.publish(hostname=invalid_hostname)
 
     def test_rejects_symlink_source_and_generation_directory(self):
-        link = self.root / "link.crt"
-        link.symlink_to(self.cert)
+        certificate_symlink = self.root_directory / "link.crt"
+        certificate_symlink.symlink_to(self.root_certificate)
         with self.assertRaises(OSError):
-            self.publish(link)
-        (self.state / "trust-generations").symlink_to(self.root)
+            self.publish(certificate_symlink)
+        (self.state_directory / "trust-generations").symlink_to(self.root_directory)
         with self.assertRaises(ValueError):
             self.publish()
 
     def test_failure_does_not_partially_replace_generation(self):
         self.publish()
-        target = (self.state / "trust").readlink()
-        self.cert.write_text("broken")
+        published_generation = (self.state_directory / "trust").readlink()
+        self.root_certificate.write_text("broken")
         with self.assertRaises(ValueError):
             self.publish()
-        self.assertEqual(target, (self.state / "trust").readlink())
-        # Production error handling withdraws the public pointer.
-        export_ca.unpublish(self.state)
-        self.assertFalse((self.state / "trust").exists())
+        self.assertEqual(
+            published_generation, (self.state_directory / "trust").readlink()
+        )
+        certificate_exporter.unpublish(self.state_directory)
+        self.assertFalse((self.state_directory / "trust").exists())
 
     def test_does_not_replace_unmanaged_directory(self):
-        public = self.state / "trust"
-        public.mkdir()
-        (public / "keep").write_text("unmanaged")
+        public_directory = self.state_directory / "trust"
+        public_directory.mkdir()
+        (public_directory / "keep").write_text("unmanaged")
         with self.assertRaises(ValueError):
             self.publish()
-        self.assertEqual((public / "keep").read_text(), "unmanaged")
+        self.assertEqual((public_directory / "keep").read_text(), "unmanaged")
 
     def test_detects_tampered_existing_generation(self):
         self.publish()
-        (self.state / "trust/ambrosia-ca.crt").write_bytes(b"wrong certificate")
+        (self.state_directory / "trust/ambrosia-ca.crt").write_bytes(
+            b"wrong certificate"
+        )
         with self.assertRaises(ValueError):
             self.publish()
 
 
 def free_port():
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
+    with socket.socket() as listener_socket:
+        listener_socket.bind(("127.0.0.1", 0))
+        return listener_socket.getsockname()[1]
 
 
 @unittest.skipUnless(
@@ -289,61 +355,72 @@ def free_port():
 )
 class CaddyTests(unittest.TestCase):
     @classmethod
-    def setUpClass(cls):
-        cls.temp = tempfile.TemporaryDirectory()
-        cls.addClassCleanup(cls.temp.cleanup)
-        cls.root = Path(cls.temp.name)
-        cls.state = cls.root / "state"
-        cls.state.mkdir()
-        cls.http_port, cls.https_port = free_port(), free_port()
-        config = (COMMON / "templates/Caddyfile.template").read_text()
-        config = config.replace(
+    def setUpClass(test_class):
+        test_class.temporary_directory = tempfile.TemporaryDirectory()
+        test_class.addClassCleanup(test_class.temporary_directory.cleanup)
+        test_class.root_directory = Path(test_class.temporary_directory.name)
+        test_class.state_directory = test_class.root_directory / "state"
+        test_class.state_directory.mkdir()
+        test_class.http_port, test_class.https_port = free_port(), free_port()
+        caddyfile_content = (
+            COMMON_DIRECTORY / "templates/Caddyfile.template"
+        ).read_text()
+        caddyfile_content = caddyfile_content.replace(
             "http://__HOSTNAME__.local {",
-            f"http://ambrosia-test.local:{cls.http_port} {{",
+            f"http://ambrosia-test.local:{test_class.http_port} {{",
         )
-        config = config.replace(
+        caddyfile_content = caddyfile_content.replace(
             "https://__HOSTNAME__.local {",
-            f"https://ambrosia-test.local:{cls.https_port} {{",
+            f"https://ambrosia-test.local:{test_class.https_port} {{",
         )
-        config = config.replace("__HOSTNAME__", "ambrosia-test")
-        config = config.replace("/var/lib/ambrosia/trust", str(cls.state / "trust"))
-        config = config.replace(
-            "/run/caddy-admin/admin.sock", str(cls.root / "admin.sock")
+        caddyfile_content = caddyfile_content.replace("__HOSTNAME__", "ambrosia-test")
+        caddyfile_content = caddyfile_content.replace(
+            "/var/lib/ambrosia/trust", str(test_class.state_directory / "trust")
         )
-        config = config.replace(
+        caddyfile_content = caddyfile_content.replace(
+            "/run/caddy-admin/admin.sock", str(test_class.root_directory / "admin.sock")
+        )
+        caddyfile_content = caddyfile_content.replace(
             "  local_certs",
-            f"  http_port {cls.http_port}\n  https_port {cls.https_port}\n  storage file_system {cls.root / 'data'}\n  local_certs",
+            f"  http_port {test_class.http_port}\n  https_port {test_class.https_port}\n  storage file_system {test_class.root_directory / 'data'}\n  local_certs",
             1,
         )
-        cls.config_path = cls.root / "Caddyfile"
-        cls.config_path.write_text(config)
-        cls.log = (cls.root / "caddy.log").open("w+")
-        cls.addClassCleanup(cls.log.close)
-        cls.process = subprocess.Popen(
+        test_class.caddyfile_path = test_class.root_directory / "Caddyfile"
+        test_class.caddyfile_path.write_text(caddyfile_content)
+        test_class.caddy_log = (test_class.root_directory / "caddy.log").open("w+")
+        test_class.addClassCleanup(test_class.caddy_log.close)
+        test_class.caddy_process = subprocess.Popen(
             [
                 os.environ["CADDY_BIN"],
                 "run",
                 "--config",
-                str(cls.config_path),
+                str(test_class.caddyfile_path),
                 "--adapter",
                 "caddyfile",
             ],
-            stdout=cls.log,
-            stderr=cls.log,
+            stdout=test_class.caddy_log,
+            stderr=test_class.caddy_log,
         )
-        cls.addClassCleanup(cls.stop)
-        cls.cert = cls.root / "data/pki/authorities/local/root.crt"
+        test_class.addClassCleanup(test_class.stop)
+        test_class.root_certificate = (
+            test_class.root_directory / "data/pki/authorities/local/root.crt"
+        )
         for _ in range(100):
-            if cls.process.poll() is not None:
-                cls.log.seek(0)
-                raise RuntimeError(cls.log.read())
-            if cls.cert.exists():
+            if test_class.caddy_process.poll() is not None:
+                test_class.caddy_log.seek(0)
+                raise RuntimeError(test_class.caddy_log.read())
+            if test_class.root_certificate.exists():
                 try:
                     with socket.create_connection(
-                        ("127.0.0.1", cls.https_port), timeout=0.2
+                        ("127.0.0.1", test_class.https_port), timeout=0.2
                     ):
                         pass
-                    export_ca.publish(cls.cert, "ambrosia-test", ASSETS, cls.state)
+                    certificate_exporter.publish(
+                        test_class.root_certificate,
+                        "ambrosia-test",
+                        CERTIFICATE_ASSETS_DIRECTORY,
+                        test_class.state_directory,
+                    )
                     break
                 except OSError:
                     pass
@@ -352,94 +429,110 @@ class CaddyTests(unittest.TestCase):
             raise RuntimeError("Caddy did not create a CA")
 
     @classmethod
-    def stop(cls):
-        cls.process.terminate()
-        cls.process.wait(timeout=10)
+    def stop(test_class):
+        test_class.caddy_process.terminate()
+        test_class.caddy_process.wait(timeout=10)
 
-    def request(self, path, https=False, method="GET", trusted=True):
-        port = self.https_port if https else self.http_port
-        connection = http.client.HTTPConnection("127.0.0.1", port, timeout=5)
-        if https:
-            context = ssl.create_default_context(
-                cafile=str(self.cert) if trusted else None
+    def request(
+        self, request_path, use_https=False, http_method="GET", trust_root=True
+    ):
+        server_port = self.https_port if use_https else self.http_port
+        connection = http.client.HTTPConnection("127.0.0.1", server_port, timeout=5)
+        if use_https:
+            tls_context = ssl.create_default_context(
+                cafile=str(self.root_certificate) if trust_root else None
             )
-            connection.sock = context.wrap_socket(
-                socket.create_connection(("127.0.0.1", port)),
+            connection.sock = tls_context.wrap_socket(
+                socket.create_connection(("127.0.0.1", server_port)),
                 server_hostname="ambrosia-test.local",
             )
         try:
             connection.request(
-                method, path, headers={"Host": f"ambrosia-test.local:{port}"}
+                http_method,
+                request_path,
+                headers={"Host": f"ambrosia-test.local:{server_port}"},
             )
-            response = connection.getresponse()
-            return response.status, dict(response.getheaders()), response.read()
+            http_response = connection.getresponse()
+            return (
+                http_response.status,
+                dict(http_response.getheaders()),
+                http_response.read(),
+            )
         finally:
             connection.close()
 
     def test_http_serves_allowlist_and_preserves_other_redirects(self):
-        for path in (
+        for request_path in (
             "/trust/",
             "/trust/metadata.json",
             "/trust/ambrosia-ca.crt",
             "/trust/ambrosia-ca.mobileconfig",
         ):
-            self.assertEqual(self.request(path)[0], 200, path)
+            self.assertEqual(self.request(request_path)[0], 200, request_path)
         self.assertEqual(self.request("/trust")[1]["Location"], "/trust/")
         self.assertEqual(
             self.request("/store/settings")[1]["Location"],
             "https://ambrosia-test.local/store/settings",
         )
-        for path in (
+        for request_path in (
             "/trust/root.key",
             "/trust/.staging/secret",
             "/trust/backup",
             "/trust/trust.lock",
         ):
-            self.assertEqual(self.request(path)[0], 404, path)
-        self.assertEqual(self.request("/trust/metadata.json", method="POST")[0], 405)
+            self.assertEqual(self.request(request_path)[0], 404, request_path)
+        self.assertEqual(
+            self.request("/trust/metadata.json", http_method="POST")[0], 405
+        )
 
     def test_mime_cache_headers_and_https_without_app(self):
-        for path, mime in (
+        for artifact_name, expected_content_type in (
             ("ambrosia-ca.crt", "application/x-x509-ca-cert"),
             ("ambrosia-ca.mobileconfig", "application/x-apple-aspen-config"),
         ):
-            status, headers, _ = self.request("/trust/" + path)
-            self.assertEqual(status, 200)
-            self.assertEqual(headers["Content-Type"], mime)
-            self.assertEqual(headers["Cache-Control"], "no-store")
-        self.assertEqual(self.request("/trust/check.html", https=True)[0], 200)
-        _, _, body = self.request("/trust/metadata.json", https=True)
-        self.assertEqual(json.loads(body)["hostname"], "ambrosia-test.local")
+            response_status, response_headers, _response_body = self.request(
+                "/trust/" + artifact_name
+            )
+            self.assertEqual(response_status, 200)
+            self.assertEqual(response_headers["Content-Type"], expected_content_type)
+            self.assertEqual(response_headers["Cache-Control"], "no-store")
+        self.assertEqual(self.request("/trust/check.html", use_https=True)[0], 200)
+        _, _, metadata_body = self.request("/trust/metadata.json", use_https=True)
+        self.assertEqual(json.loads(metadata_body)["hostname"], "ambrosia-test.local")
         with self.assertRaises(ssl.SSLCertVerificationError):
-            self.request("/trust/check.html", https=True, trusted=False)
+            self.request("/trust/check.html", use_https=True, trust_root=False)
 
     def test_reload_keeps_the_same_root(self):
-        before = self.cert.read_bytes()
+        root_certificate_before_reload = self.root_certificate.read_bytes()
         subprocess.run(
             [
                 os.environ["CADDY_BIN"],
                 "reload",
                 "--config",
-                str(self.config_path),
+                str(self.caddyfile_path),
                 "--adapter",
                 "caddyfile",
                 "--address",
-                f"unix/{self.root}/admin.sock",
+                f"unix/{self.root_directory}/admin.sock",
                 "--force",
             ],
             check=True,
             capture_output=True,
         )
-        self.assertEqual(self.cert.read_bytes(), before)
-        self.assertEqual(self.request("/trust/metadata.json", https=True)[0], 200)
+        self.assertEqual(
+            self.root_certificate.read_bytes(), root_certificate_before_reload
+        )
+        self.assertEqual(self.request("/trust/metadata.json", use_https=True)[0], 200)
 
     def test_validation_does_not_change_existing_pki(self):
-        before = self.cert.read_bytes()
+        root_certificate_before_validation = self.root_certificate.read_bytes()
         validator.validate(
-            (COMMON / "templates/Caddyfile.template").read_text(),
-            binary=os.environ["CADDY_BIN"],
+            (COMMON_DIRECTORY / "templates/Caddyfile.template").read_text(),
+            caddy_binary=os.environ["CADDY_BIN"],
         )
-        self.assertEqual(self.cert.read_bytes(), before)
+        self.assertEqual(
+            self.root_certificate.read_bytes(), root_certificate_before_validation
+        )
 
 
 if __name__ == "__main__":
