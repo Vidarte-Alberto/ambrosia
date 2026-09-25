@@ -11,13 +11,9 @@ import { useSeedTour } from "@/hooks/tour/useSeedTour";
 import { useWalletTour } from "@/hooks/tour/useWalletTour";
 import { useSecretsLockSignal } from "@/hooks/useSecretsLockSignal";
 import { ADMIN_NOTIFICATIONS_ROUTE } from "@/lib/adminNotifications";
-import { BottomNav } from "@components/shared/BusinessLayout/BottomNav";
-import { MobileDrawer } from "@components/shared/BusinessLayout/MobileDrawer";
-import { SidebarContent } from "@components/shared/BusinessLayout/Sidebar";
+import { BusinessLayout } from "@components/shared/BusinessLayout";
 import { SecretsUnlockModal } from "@components/shared/SecretsUnlockModal";
-import { storedAssetUrl } from "@components/utils/storedAssetUrl";
 import { useNavigation } from "@hooks/useNavigation";
-import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
 import { useAdminNotificationSignals } from "./hooks/useAdminNotificationSignals";
 
@@ -28,10 +24,7 @@ export function StoreLayout({ children }) {
   const locale = useLocale();
   const navbarTranslations = useTranslations("navbar");
   const notificationsTranslations = useTranslations("notifications");
-  const { config } = useConfigurations();
-  const { availableNavigation, isAuth, isAdmin, logout } = useNavigation();
-  const logoSrc = storedAssetUrl(config?.businessLogoUrl);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { isAuth, isAdmin } = useNavigation();
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);
   const { notificationUnreadCount } = useAdminNotificationSignals({
     enabled: isAuth && isAdmin,
@@ -44,57 +37,21 @@ export function StoreLayout({ children }) {
   useSeedTour(isAuth);
   useWalletTour(isAuth);
 
-  const bottomNavItems = availableNavigation
-    .filter((item) => item.showInBottomNav)
-    .sort((a, b) => a.bottomNavOrder - b.bottomNavOrder);
-
-  const badgeCountsByPath = { [ADMIN_NOTIFICATIONS_ROUTE]: notificationUnreadCount };
-
-  const sidebarProps = {
-    availableNavigation,
-    isAuth,
-    pathname,
-    navbarTranslations,
-    logout,
-    config,
-    logoSrc,
-    badgeCountsByPath,
-    lockedPaths: secretsLocked ? [WALLET_ROUTE] : [],
-    onLockedClick: () => setUnlockModalOpen(true),
-  };
-
   return (
-    <div className="flex h-screen overflow-hidden">
-      <aside data-testid="desktop-sidebar" className="hidden md:flex md:w-48 lg:w-64 bg-primary-500 flex-col">
-        <SidebarContent {...sidebarProps} withTourIds />
-      </aside>
-
-      <div className="md:hidden">
-        <MobileDrawer
-          isOpen={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          sidebarProps={sidebarProps}
-        />
-      </div>
-
-      <main className="flex-1 gradient-fresh overflow-y-auto pb-32 md:pb-0">
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
-
-      <BottomNav
-        isAuth={isAuth}
-        items={bottomNavItems}
-        pathname={pathname}
+    <>
+      <BusinessLayout
         navbarTranslations={navbarTranslations}
-        badgeCountsByPath={badgeCountsByPath}
-        onMenuClick={() => setDrawerOpen(true)}
-      />
+        badgeCountsByPath={{ [ADMIN_NOTIFICATIONS_ROUTE]: notificationUnreadCount }}
+        lockedPaths={secretsLocked ? [WALLET_ROUTE] : []}
+        onLockedClick={() => setUnlockModalOpen(true)}
+        withTourIds
+      >
+        {children}
+      </BusinessLayout>
 
       <ShiftWidget />
 
       {unlockModalOpen && <SecretsUnlockModal onClose={() => setUnlockModalOpen(false)} />}
-    </div>
+    </>
   );
 }
