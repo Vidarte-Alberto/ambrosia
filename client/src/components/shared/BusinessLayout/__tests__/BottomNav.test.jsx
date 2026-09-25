@@ -88,4 +88,11 @@ describe("BottomNav", () => {
     expect(links[0]).toHaveAttribute("href", "/store/cart");
     expect(links[1]).toHaveAttribute("href", "/store/products");
   });
+
+  it("shows the badge count only on the item whose path has one", () => {
+    renderBottomNav({ badgeCountsByPath: { "/store/products": 5 } });
+    const links = within(screen.getByTestId("bottom-nav")).getAllByRole("link");
+    expect(links[1]).toHaveTextContent("5");
+    expect(links[0]).not.toHaveTextContent("5");
+  });
 });

@@ -88,71 +88,85 @@ describe("SidebarContent", () => {
     expect(screen.getByText("wallet").closest("a")).toHaveAttribute("id", "nav-wallet");
   });
 
-  describe("Secrets locked badge", () => {
+  describe("Locked paths", () => {
     const navWithWallet = [
       { path: "/store/wallet", label: "wallet", icon: "users", showInNavbar: true },
       { path: "/store/products", label: "products", icon: "box", showInNavbar: true },
     ];
 
-    it("shows the locked badge on the wallet item when secretsLocked is true", () => {
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: true });
+    it("shows the locked badge on the wallet item when its path is locked", () => {
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"] });
 
       expect(screen.getByLabelText("Secrets locked")).toBeInTheDocument();
     });
 
     it("does not show the locked badge on other items", () => {
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: true });
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"] });
 
       expect(screen.getByText("products").closest("a")).not.toContainElement(
         screen.queryByLabelText("Secrets locked"),
       );
     });
 
-    it("does not show the locked badge when secretsLocked is false", () => {
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: false });
+    it("does not show the locked badge when no path is locked", () => {
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: [] });
 
       expect(screen.queryByLabelText("Secrets locked")).not.toBeInTheDocument();
     });
 
-    it("calls onSecretsLockClick when the locked badge is clicked", () => {
-      const onSecretsLockClick = jest.fn();
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: true, onSecretsLockClick });
+    it("calls onLockedClick when the locked badge is clicked", () => {
+      const onLockedClick = jest.fn();
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"], onLockedClick });
 
       fireEvent.click(screen.getByLabelText("Secrets locked"));
 
-      expect(onSecretsLockClick).toHaveBeenCalledTimes(1);
+      expect(onLockedClick).toHaveBeenCalledTimes(1);
     });
 
-    it("puts a red background on the wallet item when secretsLocked is true", () => {
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: true });
+    it("puts a red background on the wallet item when its path is locked", () => {
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"] });
 
       expect(screen.getByText("wallet").closest("a")).toHaveClass("bg-red-800");
     });
 
-    it("does not put a red background on the wallet item when secretsLocked is false", () => {
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: false });
+    it("does not put a red background on the wallet item when no path is locked", () => {
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: [] });
 
       expect(screen.getByText("wallet").closest("a")).not.toHaveClass("bg-red-800");
     });
 
-    it("opens the unlock flow instead of navigating when clicking anywhere on the wallet item and secretsLocked is true", () => {
-      const onSecretsLockClick = jest.fn();
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: true, onSecretsLockClick });
+    it("calls onLockedClick instead of navigating when clicking anywhere on a locked item", () => {
+      const onLockedClick = jest.fn();
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: ["/store/wallet"], onLockedClick });
 
       const navigationAllowed = fireEvent.click(screen.getByText("wallet"));
 
-      expect(onSecretsLockClick).toHaveBeenCalledTimes(1);
+      expect(onLockedClick).toHaveBeenCalledTimes(1);
       expect(navigationAllowed).toBe(false);
     });
 
-    it("navigates normally when clicking anywhere on the wallet item and secretsLocked is false", () => {
-      const onSecretsLockClick = jest.fn();
-      renderSidebar({ availableNavigation: navWithWallet, secretsLocked: false, onSecretsLockClick });
+    it("navigates normally when clicking anywhere on the item and no path is locked", () => {
+      const onLockedClick = jest.fn();
+      renderSidebar({ availableNavigation: navWithWallet, lockedPaths: [], onLockedClick });
 
       const navigationAllowed = fireEvent.click(screen.getByText("wallet"));
 
-      expect(onSecretsLockClick).not.toHaveBeenCalled();
+      expect(onLockedClick).not.toHaveBeenCalled();
       expect(navigationAllowed).toBe(true);
+    });
+  });
+
+  describe("Badge counts", () => {
+    it("shows the badge count on the item whose path has one", () => {
+      renderSidebar({ badgeCountsByPath: { "/store/products": 3 } });
+
+      expect(screen.getByText("products").closest("a")).toHaveTextContent("3");
+    });
+
+    it("does not show a badge on items without a count", () => {
+      renderSidebar({ badgeCountsByPath: { "/store/products": 3 } });
+
+      expect(screen.getByText("users").closest("a")).not.toHaveTextContent("3");
     });
   });
 });

@@ -5,13 +5,9 @@ import Link from "next/link";
 
 import { LogOut } from "lucide-react";
 
-import { ADMIN_NOTIFICATIONS_ROUTE } from "@/lib/adminNotifications";
-
 import { LockedBadge } from "./LockedBadge";
 import { NavIcon } from "./NavIcon";
 import { NotificationBadge } from "./NotificationBadge";
-
-const WALLET_ROUTE = "/store/wallet";
 
 function NavBarButton({ text, icon, href, isActive, id, onClick, badgeCount, isLocked, onLockClick }) {
   const handleClick = (event) => {
@@ -61,9 +57,9 @@ export function SidebarContent({
   logoSrc,
   withTourIds,
   onNavClick,
-  notificationUnreadCount,
-  secretsLocked,
-  onSecretsLockClick,
+  badgeCountsByPath = {},
+  lockedPaths = [],
+  onLockedClick,
 }) {
   return (
     <>
@@ -95,9 +91,9 @@ export function SidebarContent({
                 icon={item.icon}
                 href={item.path}
                 isActive={pathname === item.path || pathname.startsWith(item.path)}
-                badgeCount={item.path === ADMIN_NOTIFICATIONS_ROUTE ? notificationUnreadCount : 0}
-                isLocked={item.path === WALLET_ROUTE && secretsLocked}
-                onLockClick={onSecretsLockClick}
+                badgeCount={badgeCountsByPath[item.path] ?? 0}
+                isLocked={lockedPaths.includes(item.path)}
+                onLockClick={onLockedClick}
                 onClick={onNavClick}
               />
             ))}

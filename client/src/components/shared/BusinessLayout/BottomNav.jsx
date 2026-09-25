@@ -4,8 +4,6 @@ import Link from "next/link";
 
 import { Menu } from "lucide-react";
 
-import { ADMIN_NOTIFICATIONS_ROUTE } from "@/lib/adminNotifications";
-
 import { NavIcon } from "./NavIcon";
 import { NotificationBadge } from "./NotificationBadge";
 
@@ -14,7 +12,7 @@ export function BottomNav({
   items,
   pathname,
   navbarTranslations,
-  notificationUnreadCount,
+  badgeCountsByPath = {},
   onMenuClick,
 }) {
   return (
@@ -45,7 +43,7 @@ export function BottomNav({
           >
             <NavIcon name={item.icon} className="w-5 h-5" />
             <NotificationBadge
-              count={item.path === ADMIN_NOTIFICATIONS_ROUTE ? notificationUnreadCount : 0}
+              count={badgeCountsByPath[item.path] ?? 0}
               className="absolute right-4 top-1 min-w-4 rounded-full bg-red-500 px-1 text-center text-[10px] font-semibold text-white"
             />
             <span className={`text-[10px] leading-none ${isActive ? "font-semibold" : ""}`}>

@@ -10,6 +10,7 @@ import { ShiftWidget } from "@/components/turn/ShiftWidget";
 import { useSeedTour } from "@/hooks/tour/useSeedTour";
 import { useWalletTour } from "@/hooks/tour/useWalletTour";
 import { useSecretsLockSignal } from "@/hooks/useSecretsLockSignal";
+import { ADMIN_NOTIFICATIONS_ROUTE } from "@/lib/adminNotifications";
 import { BottomNav } from "@components/shared/BusinessLayout/BottomNav";
 import { MobileDrawer } from "@components/shared/BusinessLayout/MobileDrawer";
 import { SidebarContent } from "@components/shared/BusinessLayout/Sidebar";
@@ -19,6 +20,8 @@ import { useNavigation } from "@hooks/useNavigation";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
 import { useAdminNotificationSignals } from "./hooks/useAdminNotificationSignals";
+
+const WALLET_ROUTE = "/store/wallet";
 
 export function StoreLayout({ children }) {
   const pathname = usePathname();
@@ -45,6 +48,8 @@ export function StoreLayout({ children }) {
     .filter((item) => item.showInBottomNav)
     .sort((a, b) => a.bottomNavOrder - b.bottomNavOrder);
 
+  const badgeCountsByPath = { [ADMIN_NOTIFICATIONS_ROUTE]: notificationUnreadCount };
+
   const sidebarProps = {
     availableNavigation,
     isAuth,
@@ -53,9 +58,9 @@ export function StoreLayout({ children }) {
     logout,
     config,
     logoSrc,
-    notificationUnreadCount,
-    secretsLocked,
-    onSecretsLockClick: () => setUnlockModalOpen(true),
+    badgeCountsByPath,
+    lockedPaths: secretsLocked ? [WALLET_ROUTE] : [],
+    onLockedClick: () => setUnlockModalOpen(true),
   };
 
   return (
@@ -83,7 +88,7 @@ export function StoreLayout({ children }) {
         items={bottomNavItems}
         pathname={pathname}
         navbarTranslations={navbarTranslations}
-        notificationUnreadCount={notificationUnreadCount}
+        badgeCountsByPath={badgeCountsByPath}
         onMenuClick={() => setDrawerOpen(true)}
       />
 
