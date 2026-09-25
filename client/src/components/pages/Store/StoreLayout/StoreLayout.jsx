@@ -10,15 +10,15 @@ import { ShiftWidget } from "@/components/turn/ShiftWidget";
 import { useSeedTour } from "@/hooks/tour/useSeedTour";
 import { useWalletTour } from "@/hooks/tour/useWalletTour";
 import { useSecretsLockSignal } from "@/hooks/useSecretsLockSignal";
+import { BottomNav } from "@components/shared/BusinessLayout/BottomNav";
+import { MobileDrawer } from "@components/shared/BusinessLayout/MobileDrawer";
+import { SidebarContent } from "@components/shared/BusinessLayout/Sidebar";
 import { SecretsUnlockModal } from "@components/shared/SecretsUnlockModal";
 import { storedAssetUrl } from "@components/utils/storedAssetUrl";
 import { useNavigation } from "@hooks/useNavigation";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
-import { BottomNav } from "./BottomNav";
 import { useAdminNotificationSignals } from "./hooks/useAdminNotificationSignals";
-import { MobileDrawer } from "./MobileDrawer";
-import { SidebarContent } from "./Sidebar";
 
 export function StoreLayout({ children }) {
   const pathname = usePathname();
