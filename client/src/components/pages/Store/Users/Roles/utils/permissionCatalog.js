@@ -63,6 +63,7 @@ export const permissionCatalog = [
   { key: "shifts_read", group: "shifts", business: "both" },
   { key: "shifts_create", group: "shifts", business: "both" },
   { key: "shifts_update", group: "shifts", business: "both" },
+  { key: "shifts_report_read", group: "shifts", business: "both" },
 
   { key: "tickets_read", group: "tickets", business: "both" },
   { key: "tickets_create", group: "tickets", business: "both" },

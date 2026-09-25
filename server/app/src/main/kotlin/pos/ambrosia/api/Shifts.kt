@@ -13,9 +13,24 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.logger
 import pos.ambrosia.models.CloseShiftRequest
+import pos.ambrosia.models.Message
 import pos.ambrosia.models.Shift
 import pos.ambrosia.services.ShiftService
+import pos.ambrosia.utils.authorizeAdminPermission
 import pos.ambrosia.utils.authorizePermission
+import java.time.LocalDate
+
+private fun parseShiftsReportDateQueryParam(
+    value: String?,
+    name: String,
+): String? {
+    if (value.isNullOrBlank()) return null
+    return try {
+        LocalDate.parse(value).toString()
+    } catch (_: Exception) {
+        throw IllegalArgumentException("Invalid $name: $value. Expected format YYYY-MM-DD")
+    }
+}
 
 fun Application.configureShifts() {
     val shiftService = ShiftService()
@@ -57,6 +72,56 @@ fun Route.shifts(shiftService: ShiftService) {
             }
 
             call.respond(HttpStatusCode.OK, shift)
+        }
+    }
+    authorizeAdminPermission("shifts_report_read") {
+        get("/report") {
+            val requestedPeriod = call.request.queryParameters["period"]?.takeIf { it.isNotBlank() }
+
+            val requestedStartDate: String?
+            val requestedEndDate: String?
+            try {
+                requestedStartDate = parseShiftsReportDateQueryParam(call.request.queryParameters["startDate"], "startDate")
+                requestedEndDate = parseShiftsReportDateQueryParam(call.request.queryParameters["endDate"], "endDate")
+                if (requestedStartDate != null && requestedEndDate == null) {
+                    throw IllegalArgumentException("endDate is required when startDate is provided")
+                }
+                if (requestedEndDate != null && requestedStartDate == null) {
+                    throw IllegalArgumentException("startDate is required when endDate is provided")
+                }
+                if (requestedStartDate != null && requestedEndDate != null && requestedStartDate > requestedEndDate) {
+                    throw IllegalArgumentException("startDate cannot be after endDate")
+                }
+            } catch (invalidQueryParameters: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, Message(invalidQueryParameters.message ?: "Invalid query parameters"))
+                return@get
+            }
+
+            val shiftsReport =
+                try {
+                    shiftService.getShiftsReport(requestedPeriod, requestedStartDate, requestedEndDate)
+                } catch (invalidQueryParameters: IllegalArgumentException) {
+                    call.respond(HttpStatusCode.BadRequest, Message(invalidQueryParameters.message ?: "Invalid query parameters"))
+                    return@get
+                }
+
+            call.respond(HttpStatusCode.OK, shiftsReport)
+        }
+
+        get("/{id}/breakdown") {
+            val id = call.parameters["id"]
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing or malformed ID")
+                return@get
+            }
+
+            val breakdown = shiftService.getShiftBreakdown(id)
+            if (breakdown == null) {
+                call.respond(HttpStatusCode.NotFound, "Shift not found")
+                return@get
+            }
+
+            call.respond(HttpStatusCode.OK, breakdown)
         }
     }
     authorizePermission("shifts_create") {

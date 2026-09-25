@@ -41,12 +41,37 @@ export async function openTurn(userId, initialAmount = 0) {
   return await parseJsonResponse(openShiftResponse, null);
 }
 
+export async function getShiftsReport(filters = {}) {
+  const shiftsReportQueryParams = new URLSearchParams();
+  if (filters.period) shiftsReportQueryParams.set("period", filters.period);
+  if (filters.startDate) shiftsReportQueryParams.set("startDate", filters.startDate);
+  if (filters.endDate) shiftsReportQueryParams.set("endDate", filters.endDate);
+
+  const shiftsReportResponse = await httpClient(`/shifts/report?${shiftsReportQueryParams.toString()}`, {
+    skipForbiddenRedirect: true,
+  });
+  if (!shiftsReportResponse.ok) {
+    throw await buildParsedHttpError(shiftsReportResponse, "Failed to get shifts report");
+  }
+  return await parseJsonResponse(shiftsReportResponse, null);
+}
+
+export async function getShiftBreakdown(shiftId) {
+  const shiftBreakdownResponse = await httpClient(`/shifts/${shiftId}/breakdown`, {
+    skipForbiddenRedirect: true,
+  });
+  if (!shiftBreakdownResponse.ok) {
+    throw await buildParsedHttpError(shiftBreakdownResponse, "Failed to get shift breakdown");
+  }
+  return await parseJsonResponse(shiftBreakdownResponse, null);
+}
+
 export async function closeTurn(openTurnId, finalAmount = null, difference = null) {
-  const body = JSON.stringify({ finalAmount, difference });
+  const closeShiftRequestBody = JSON.stringify({ finalAmount, difference });
   const closeShiftResponse = await httpClient(`/shifts/${openTurnId}/close`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body,
+    body: closeShiftRequestBody,
     skipForbiddenRedirect: true,
   });
   if (!closeShiftResponse.ok) {
