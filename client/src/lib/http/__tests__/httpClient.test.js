@@ -72,10 +72,10 @@ describe("httpClient", () => {
         .mockResolvedValueOnce(mockResponse(200))
         .mockResolvedValueOnce(mockResponse(200));
 
-      const response = await httpClient("/products");
+      const retriedProductsResponse = await httpClient("/products");
 
       expect(httpWrapper).toHaveBeenNthCalledWith(2, "/auth/refresh", { method: "POST" });
-      expect(response.status).toBe(200);
+      expect(retriedProductsResponse.status).toBe(200);
       expect(expiredListener).not.toHaveBeenCalled();
     });
 
