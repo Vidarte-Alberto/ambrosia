@@ -10,6 +10,7 @@ import pos.ambrosia.db.tables.PayoutAccountsTable
 import pos.ambrosia.logger
 import pos.ambrosia.models.PayoutAccount
 import pos.ambrosia.models.PayoutAccountUpsert
+import pos.ambrosia.utils.LightningBackendUnavailableException
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -50,9 +51,13 @@ class PayoutAccountService {
             ) &&
             payoutAccountRequest.lightningAddress.isNullOrBlank()
 
-    private fun isValidLightningAccount(payoutAccountRequest: PayoutAccountUpsert): Boolean =
-        hasNoBankFields(payoutAccountRequest) &&
-            (!payoutAccountRequest.lightningAddress.isNullOrBlank() || ActiveLightningBackend.isAvailable())
+    private fun isValidLightningAccount(payoutAccountRequest: PayoutAccountUpsert): Boolean {
+        if (!hasNoBankFields(payoutAccountRequest)) return false
+        if (payoutAccountRequest.lightningAddress.isNullOrBlank() && !ActiveLightningBackend.isAvailable()) {
+            throw LightningBackendUnavailableException()
+        }
+        return true
+    }
 
     private fun isValidPayoutAccountRequest(payoutAccountRequest: PayoutAccountUpsert): Boolean =
         when (payoutAccountRequest.type) {

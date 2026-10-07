@@ -23,6 +23,7 @@ import pos.ambrosia.utils.InvalidTimeEntryException
 import pos.ambrosia.utils.InvalidTokenException
 import pos.ambrosia.utils.LastAdminRemovalException
 import pos.ambrosia.utils.LastUserDeletionException
+import pos.ambrosia.utils.LightningBackendUnavailableException
 import pos.ambrosia.utils.MissingRoleException
 import pos.ambrosia.utils.NwcConnectionException
 import pos.ambrosia.utils.NwcServiceException
@@ -68,6 +69,10 @@ fun Application.handler() {
         exception<TimeEntryLockedException> { call, cause ->
             logger.warn("Locked time entry mutation rejected: ${cause.message}")
             call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Time entry is locked"))
+        }
+        exception<LightningBackendUnavailableException> { call, cause ->
+            logger.warn("Payout account rejected without a Lightning backend: ${cause.message}")
+            call.respond(HttpStatusCode.Conflict, Message(cause.message ?: "Lightning backend is not available"))
         }
         exception<PayloadTooLargeException> { call, cause ->
             logger.warn("Rejected an oversized request body: ${cause.message}")

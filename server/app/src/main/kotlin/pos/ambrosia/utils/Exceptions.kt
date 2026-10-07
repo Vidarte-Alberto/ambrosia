@@ -102,6 +102,10 @@ class TimeEntryLockedException(
     message: String = "Time entry is locked because it belongs to an invoice",
 ) : IllegalStateException(message)
 
+class LightningBackendUnavailableException(
+    message: String = "A Lightning address is required when no Lightning backend is active",
+) : IllegalStateException(message)
+
 class SecretsLockedException(
     message: String = "Secrets are locked — unlock the server before using this feature",
 ) : IllegalStateException(message)
