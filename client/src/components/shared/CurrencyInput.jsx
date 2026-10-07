@@ -17,6 +17,8 @@ export function CurrencyInput({
   isInvalid,
   errorMessage,
   isDisabled,
+  isRequired,
+  placeholder,
 }) {
   return (
     <Autocomplete
@@ -29,6 +31,8 @@ export function CurrencyInput({
       isInvalid={isInvalid}
       errorMessage={errorMessage}
       isDisabled={isDisabled}
+      isRequired={isRequired}
+      placeholder={placeholder}
       isClearable
       allowsCustomValue={false}
       menuTrigger="focus"
