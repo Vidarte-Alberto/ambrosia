@@ -18,6 +18,8 @@ import { useNavigation } from "@hooks/useNavigation";
 import { useAdminNotificationSignals } from "./hooks/useAdminNotificationSignals";
 
 const WALLET_ROUTE = "/store/wallet";
+const STORE_HOME_ROUTE = "/store";
+const STORE_SETTINGS_ROUTE = "/store/settings";
 
 export function StoreLayout({ children }) {
   const pathname = usePathname();
@@ -34,7 +36,7 @@ export function StoreLayout({ children }) {
   });
   const { secretsLocked } = useSecretsLockSignal({ enabled: isAuth });
 
-  useSeedTour(isAuth);
+  useSeedTour({ isAuth, homeRoute: STORE_HOME_ROUTE, settingsRoute: STORE_SETTINGS_ROUTE });
   useWalletTour(isAuth);
 
   return (
