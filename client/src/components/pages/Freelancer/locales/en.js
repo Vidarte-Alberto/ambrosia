@@ -1,3 +1,5 @@
+import freelancerSettingsEn from "../Settings/locales/en";
+
 const freelancerEn = {
   freelancerNavbar: {
     timesheet: "Timesheet",
@@ -76,6 +78,7 @@ const freelancerEn = {
       createTaskError: "The task could not be created. Please try again.",
     },
   },
+  ...freelancerSettingsEn,
 };
 
 export default freelancerEn;

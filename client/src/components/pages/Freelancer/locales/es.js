@@ -1,3 +1,5 @@
+import freelancerSettingsEs from "../Settings/locales/es";
+
 const freelancerEs = {
   freelancerNavbar: {
     timesheet: "Horas",
@@ -76,6 +78,7 @@ const freelancerEs = {
       createTaskError: "No se pudo crear la tarea. Inténtalo de nuevo.",
     },
   },
+  ...freelancerSettingsEs,
 };
 
 export default freelancerEs;
