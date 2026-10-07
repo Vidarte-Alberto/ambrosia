@@ -61,7 +61,7 @@ export const features = {
       { path: "/freelancer/projects", label: "projects", icon: "folder-kanban", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 2 },
       { path: "/freelancer/invoices", label: "invoices", icon: "file-text", showInNavbar: true, showInBottomNav: true, bottomNavOrder: 3 },
       { path: "/freelancer/reports", label: "reports", icon: "chart-line", showInNavbar: true },
-      { path: "/freelancer/settings", label: "settings", icon: "settings", showInNavbar: true },
+      { path: "/freelancer/settings", label: "settings", icon: "settings", showInNavbar: true, tourId: "nav-settings" },
     ],
   },
 };

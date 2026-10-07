@@ -1,5 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 
+import { useSeedTour } from "@/hooks/tour/useSeedTour";
 import * as useNavigationHook from "@hooks/useNavigation";
 import * as configurationsProvider from "@providers/configurations/configurationsProvider";
 
@@ -7,6 +8,10 @@ import { FreelancerLayout } from "../FreelancerLayout";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(() => "/freelancer/timesheet"),
+}));
+
+jest.mock("@/hooks/tour/useSeedTour", () => ({
+  useSeedTour: jest.fn(),
 }));
 
 const freelancerNavigation = [
@@ -41,5 +46,19 @@ describe("FreelancerLayout", () => {
     expect(sidebar.getByText("timesheet")).toBeInTheDocument();
     expect(sidebar.getByText("clients")).toBeInTheDocument();
     expect(container.querySelector("main")).toHaveTextContent("Timesheet Content");
+  });
+
+  it("starts the seed tour from the timesheet and points it to the freelancer settings", () => {
+    render(
+      <FreelancerLayout>
+        <div>Timesheet Content</div>
+      </FreelancerLayout>,
+    );
+
+    expect(useSeedTour).toHaveBeenCalledWith({
+      isAuth: true,
+      homeRoute: "/freelancer/timesheet",
+      settingsRoute: "/freelancer/settings",
+    });
   });
 });
