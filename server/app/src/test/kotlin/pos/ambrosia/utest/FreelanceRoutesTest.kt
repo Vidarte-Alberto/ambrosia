@@ -31,6 +31,7 @@ import pos.ambrosia.utils.withAuthCookies
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class FreelanceRoutesTest {
     private lateinit var databaseFile: File
@@ -281,6 +282,28 @@ class FreelanceRoutesTest {
 
             assertEquals(HttpStatusCode.BadRequest, invalidBankResponse.status)
             assertEquals(HttpStatusCode.BadRequest, invalidLightningResponse.status)
+        }
+
+    @Test
+    fun `payout account routes reject a blank lightning address with conflict when no lightning backend is active`() =
+        testApplication {
+            val authCookies = installAdminAuth()
+            grantFreelancePermissions("admin-test-role", payoutAccountPermissions)
+            application {
+                install(ContentNegotiation) { json() }
+                handler()
+                configurePayoutAccounts()
+            }
+
+            val nodeLightningResponse =
+                client.post("/freelance/payout-accounts") {
+                    withAuthCookies(authCookies)
+                    header(HttpHeaders.ContentType, "application/json")
+                    setBody("""{"type":"lightning","lightningAddress":null}""")
+                }
+
+            assertEquals(HttpStatusCode.Conflict, nodeLightningResponse.status)
+            assertTrue(nodeLightningResponse.bodyAsText().contains("Lightning address is required"))
         }
 
     @Test
