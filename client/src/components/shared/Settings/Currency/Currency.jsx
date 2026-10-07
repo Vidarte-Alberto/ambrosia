@@ -12,7 +12,7 @@ import { CURRENCIES_ES } from "@components/pages/Onboarding/utils/currencies_es"
 
 import { CurrencyCard } from "./CurrencyCard";
 
-export function Currency() {
+export function Currency({ withPriceStep = true }) {
   const locale = useLocale();
   const settingsTranslations = useTranslations("settings");
   const { currency, updateCurrency } = useCurrency();
@@ -67,6 +67,7 @@ export function Currency() {
       onCurrencyChange={handleCurrencyChange}
       priceStep={businessConfig?.priceStep ?? 0.01}
       onPriceStepSave={handlePriceStepSave}
+      withPriceStep={withPriceStep}
       isLoading={isLoading}
     />
   );

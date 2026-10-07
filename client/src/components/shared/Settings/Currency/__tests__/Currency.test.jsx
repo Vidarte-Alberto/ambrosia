@@ -99,10 +99,10 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-function renderCurrency() {
+function renderCurrency(currencyProps = {}) {
   return render(
     <I18nProvider>
-      <Currency />
+      <Currency {...currencyProps} />
     </I18nProvider>,
   );
 }
@@ -112,6 +112,11 @@ describe("Currency", () => {
     it("renders the currency card", async () => {
       await act(async () => { renderCurrency(); });
       expect(screen.getByText("cardCurrency.title")).toBeInTheDocument();
+    });
+
+    it("omits the price step field when rendered without price step", async () => {
+      await act(async () => { renderCurrency({ withPriceStep: false }); });
+      expect(screen.queryByLabelText("cardCurrency.priceStepLabel")).not.toBeInTheDocument();
     });
 
     it("pre-selects the current currency from useCurrency hook", async () => {

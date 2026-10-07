@@ -14,6 +14,7 @@ export function CurrencyCard({
   onCurrencyChange,
   priceStep = 0.01,
   onPriceStepSave,
+  withPriceStep = true,
   isLoading = false,
 }) {
   const settingsTranslations = useTranslations("settings");
@@ -57,34 +58,36 @@ export function CurrencyCard({
           isDisabled={!canUpdateSettings}
         />
 
-        <div className="space-y-2 max-w-xs">
-          <NumberInput
-            hideStepper
-            size="sm"
-            label={settingsTranslations("cardCurrency.priceStepLabel")}
-            classNames={{ inputWrapper: "shadow-none" }}
-            minValue={0.01}
-            value={draftPriceStep}
-            onValueChange={(priceStepValue) => setDraftPriceStep(priceStepValue ?? 0)}
-            isDisabled={!canUpdateSettings || isLoading || isSavingPriceStep}
-          />
-          <p className="text-xs text-gray-500">
-            {settingsTranslations("cardCurrency.priceStepHelp")}
-          </p>
-          {canUpdateSettings && (
-            <div className="flex justify-end">
-              <Button
-                color="primary"
-                size="sm"
-                isLoading={isSavingPriceStep}
-                isDisabled={!hasUnsavedPriceStepChanges || !isPriceStepValid || isLoading || isSavingPriceStep}
-                onPress={handlePriceStepSave}
-              >
-                {settingsTranslations("cardCurrency.priceStepSaveButton")}
-              </Button>
-            </div>
-          )}
-        </div>
+        {withPriceStep && (
+          <div className="space-y-2 max-w-xs">
+            <NumberInput
+              hideStepper
+              size="sm"
+              label={settingsTranslations("cardCurrency.priceStepLabel")}
+              classNames={{ inputWrapper: "shadow-none" }}
+              minValue={0.01}
+              value={draftPriceStep}
+              onValueChange={(priceStepValue) => setDraftPriceStep(priceStepValue ?? 0)}
+              isDisabled={!canUpdateSettings || isLoading || isSavingPriceStep}
+            />
+            <p className="text-xs text-gray-500">
+              {settingsTranslations("cardCurrency.priceStepHelp")}
+            </p>
+            {canUpdateSettings && (
+              <div className="flex justify-end">
+                <Button
+                  color="primary"
+                  size="sm"
+                  isLoading={isSavingPriceStep}
+                  isDisabled={!hasUnsavedPriceStepChanges || !isPriceStepValid || isLoading || isSavingPriceStep}
+                  onPress={handlePriceStepSave}
+                >
+                  {settingsTranslations("cardCurrency.priceStepSaveButton")}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
       </CardBody>
     </Card>
   );

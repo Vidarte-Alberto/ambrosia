@@ -197,6 +197,12 @@ describe("CurrencyCard", () => {
       });
     });
 
+    it("hides the price step field when the card is rendered without price step", async () => {
+      await act(async () => { renderCard({ withPriceStep: false }); });
+      expect(screen.queryByLabelText("cardCurrency.priceStepLabel")).not.toBeInTheDocument();
+      expect(screen.queryByText("cardCurrency.priceStepSaveButton")).not.toBeInTheDocument();
+    });
+
     it("hides the save button for a role without settings_update", async () => {
       usePermission.mockReturnValue(false);
       await act(async () => { renderCard({ priceStep: 0.5 }); });
