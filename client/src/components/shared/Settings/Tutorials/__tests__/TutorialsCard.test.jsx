@@ -12,16 +12,17 @@ jest.mock("@heroui/react", () => ({
   Chip: ({ children, className }) => <span className={className}>{children}</span>,
 }));
 
-const t = (key) => key;
+const tutorialsTranslations = (translationKey) => translationKey;
 
 function renderCard(props = {}) {
   return render(
     <TutorialsCard
+      tours={["wallet", "seed"]}
       walletTourSeen={false}
       seedTourSeen={false}
       onReplayWallet={jest.fn()}
       onReplaySeed={jest.fn()}
-      t={t}
+      tutorialsTranslations={tutorialsTranslations}
       {...props}
     />,
   );
@@ -32,6 +33,12 @@ describe("TutorialsCard", () => {
     it("renders the card title", () => {
       renderCard();
       expect(screen.getByText("cardTours.title")).toBeInTheDocument();
+    });
+
+    it("renders only the seed tour row when only the seed tour is requested", () => {
+      renderCard({ tours: ["seed"] });
+      expect(screen.getByText("cardTours.seedTour.name")).toBeInTheDocument();
+      expect(screen.queryByText("cardTours.walletTour.name")).not.toBeInTheDocument();
     });
 
     it("renders the subtitle", () => {

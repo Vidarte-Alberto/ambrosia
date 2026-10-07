@@ -27,6 +27,8 @@ import { StoreInfo } from "./StoreInfo";
 import { TicketTemplates } from "./TicketTemplates";
 import { Tips } from "./Tips";
 
+const STORE_HOME_ROUTE = "/store";
+
 export function StoreSettings() {
   const settingsTranslations = useTranslations("settings");
   const { isAdmin } = useNavigation();
@@ -110,7 +112,7 @@ export function StoreSettings() {
     isAdmin && {
       key: "help",
       label: settingsTranslations("categories.help"),
-      content: <Tutorials />,
+      content: <Tutorials homeRoute={STORE_HOME_ROUTE} tours={["wallet", "seed"]} />,
     },
   ].filter(Boolean);
 

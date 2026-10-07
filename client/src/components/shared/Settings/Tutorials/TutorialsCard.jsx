@@ -2,7 +2,7 @@
 
 import { Button, Card, CardBody, CardHeader, Chip } from "@heroui/react";
 
-function TourRow({ name, description, seen, onReplay, t }) {
+function TourRow({ name, description, seen, onReplay, tutorialsTranslations }) {
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -15,47 +15,51 @@ function TourRow({ name, description, seen, onReplay, t }) {
           size="sm"
           variant="flat"
         >
-          {seen ? t("cardTours.seen") : t("cardTours.pending")}
+          {seen ? tutorialsTranslations("cardTours.seen") : tutorialsTranslations("cardTours.pending")}
         </Chip>
         <Button
           color="primary"
           className="bg-green-800 h-8 min-w-16 px-3 rounded-small sm:h-10 sm:min-w-20 sm:px-4 sm:rounded-medium"
           onPress={onReplay}
         >
-          {t("cardTours.replayButton")}
+          {tutorialsTranslations("cardTours.replayButton")}
         </Button>
       </div>
     </div>
   );
 }
 
-export function TutorialsCard({ walletTourSeen, seedTourSeen, onReplayWallet, onReplaySeed, t }) {
+export function TutorialsCard({ tours, walletTourSeen, seedTourSeen, onReplayWallet, onReplaySeed, tutorialsTranslations }) {
   return (
     <Card shadow="none" className="rounded-lg p-6 shadow-lg">
       <CardHeader className="flex flex-col items-start pb-0">
         <h2 className="text-lg sm:text-xl xl:text-2xl font-semibold text-green-900">
-          {t("cardTours.title")}
+          {tutorialsTranslations("cardTours.title")}
         </h2>
       </CardHeader>
 
       <CardBody>
         <div className="flex flex-col max-w-2xl space-y-2">
-          <p className="text-sm text-gray-500 mb-2">{t("cardTours.subtitle")}</p>
+          <p className="text-sm text-gray-500 mb-2">{tutorialsTranslations("cardTours.subtitle")}</p>
           <div className="flex flex-col gap-6">
-            <TourRow
-              name={t("cardTours.walletTour.name")}
-              description={t("cardTours.walletTour.description")}
-              seen={walletTourSeen}
-              onReplay={onReplayWallet}
-              t={t}
-            />
-            <TourRow
-              name={t("cardTours.seedTour.name")}
-              description={t("cardTours.seedTour.description")}
-              seen={seedTourSeen}
-              onReplay={onReplaySeed}
-              t={t}
-            />
+            {tours.includes("wallet") && (
+              <TourRow
+                name={tutorialsTranslations("cardTours.walletTour.name")}
+                description={tutorialsTranslations("cardTours.walletTour.description")}
+                seen={walletTourSeen}
+                onReplay={onReplayWallet}
+                tutorialsTranslations={tutorialsTranslations}
+              />
+            )}
+            {tours.includes("seed") && (
+              <TourRow
+                name={tutorialsTranslations("cardTours.seedTour.name")}
+                description={tutorialsTranslations("cardTours.seedTour.description")}
+                seen={seedTourSeen}
+                onReplay={onReplaySeed}
+                tutorialsTranslations={tutorialsTranslations}
+              />
+            )}
           </div>
         </div>
       </CardBody>

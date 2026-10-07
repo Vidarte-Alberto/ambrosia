@@ -13,8 +13,8 @@ const SEED_TOUR_KEY = "ambrosia:tour:seed";
 const SEED_SETTINGS_TOUR_KEY = "ambrosia:tour:seed-settings";
 const SEED_SEEN_KEY = "ambrosia:tour:seed-seen";
 
-export function Tutorials({ onNavigate = (url) => window.location.assign(url) }) {
-  const t = useTranslations("settings");
+export function Tutorials({ homeRoute, tours, onNavigate = (url) => window.location.assign(url) }) {
+  const tutorialsTranslations = useTranslations("settings");
   const [walletTourSeen, setWalletTourSeen] = useState(false);
   const [seedTourSeen, setSeedTourSeen] = useState(false);
 
@@ -32,13 +32,13 @@ export function Tutorials({ onNavigate = (url) => window.location.assign(url) })
     localStorage.removeItem(WALLET_RECEIVE_TOUR_KEY);
     localStorage.setItem(WALLET_TOUR_KEY, "true");
     localStorage.setItem(SEED_TOUR_KEY, "true");
-    onNavigate("/store");
+    onNavigate(homeRoute);
   };
 
   const handleResetSeedTour = () => {
     localStorage.removeItem(SEED_TOUR_KEY);
     localStorage.removeItem(SEED_SETTINGS_TOUR_KEY);
-    onNavigate("/store");
+    onNavigate(homeRoute);
   };
 
   return (
@@ -46,8 +46,9 @@ export function Tutorials({ onNavigate = (url) => window.location.assign(url) })
       walletTourSeen={walletTourSeen}
       seedTourSeen={seedTourSeen}
       onReplayWallet={handleResetWalletTour}
+      tours={tours}
       onReplaySeed={handleResetSeedTour}
-      t={t}
+      tutorialsTranslations={tutorialsTranslations}
     />
   );
 }
