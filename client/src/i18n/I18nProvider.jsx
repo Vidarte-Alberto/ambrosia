@@ -50,7 +50,12 @@ const translations = {
 function mergeLocales(locale) {
   const groups = translations[locale] || {};
   return Object.values(groups).reduce(
-    (acc, mod) => ({ ...acc, ...mod }),
+    (mergedMessages, groupMessages) => {
+      Object.entries(groupMessages).forEach(([namespace, namespaceMessages]) => {
+        mergedMessages[namespace] = { ...mergedMessages[namespace], ...namespaceMessages };
+      });
+      return mergedMessages;
+    },
     {},
   );
 }
