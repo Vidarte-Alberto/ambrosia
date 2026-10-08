@@ -39,9 +39,9 @@ const sharedSettingsEs = {
       title: "Moneda",
       currencyLabel: "Cambiar moneda",
       successTitle: "Moneda Actualizada",
-      successDescription: "La moneda de la tienda se ha cambiado correctamente.",
+      successDescription: "La moneda del negocio se ha cambiado correctamente.",
       errorTitle: "Error al actualizar moneda",
-      errorDescription: "No se pudo actualizar la moneda de la tienda.",
+      errorDescription: "No se pudo actualizar la moneda del negocio.",
     },
     cardQRUrl: {
       title: "Abrir en otro dispositivo",

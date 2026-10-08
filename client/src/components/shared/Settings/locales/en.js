@@ -39,9 +39,9 @@ const sharedSettingsEn = {
       title: "Currency",
       currencyLabel: "Change currency",
       successTitle: "Currency Updated",
-      successDescription: "The store currency has been changed successfully.",
+      successDescription: "The business currency has been changed successfully.",
       errorTitle: "Currency update failed",
-      errorDescription: "Could not update the store currency.",
+      errorDescription: "Could not update the business currency.",
     },
     cardQRUrl: {
       title: "Open on another device",
