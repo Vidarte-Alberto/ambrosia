@@ -3,9 +3,30 @@ import {
   isConflict,
   isCurrentUserPinIncorrect,
   isLastAdminConflict,
+  isLightningBackendUnavailable,
   resolveMutationErrorToast,
   translateToast,
 } from "../mutationErrorToast";
+
+describe("isLightningBackendUnavailable", () => {
+  it("matches a 409 whose message asks for a Lightning address", () => {
+    expect(isLightningBackendUnavailable({
+      status: 409,
+      responseMessage: "A Lightning address is required when no Lightning backend is active",
+    })).toBe(true);
+  });
+
+  it("does not match a 409 with an unrelated message", () => {
+    expect(isLightningBackendUnavailable({ status: 409, responseMessage: "Secrets are locked" })).toBe(false);
+  });
+
+  it("does not match the right message on a different status", () => {
+    expect(isLightningBackendUnavailable({
+      status: 400,
+      responseMessage: "A Lightning address is required when no Lightning backend is active",
+    })).toBe(false);
+  });
+});
 
 describe("isAdminPrivilegesRequired", () => {
   it("matches a 403 with the exact admin-required message", () => {

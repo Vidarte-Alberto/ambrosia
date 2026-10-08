@@ -96,7 +96,10 @@ describe("PayoutAccounts", () => {
 
   it("asks for a Lightning address when the node has no active Lightning backend", async () => {
     const user = userEvent.setup();
-    mockCreatePayoutAccount.mockRejectedValue({ status: 409 });
+    mockCreatePayoutAccount.mockRejectedValue({
+      status: 409,
+      responseMessage: "A Lightning address is required when no Lightning backend is active",
+    });
     render(<PayoutAccounts />);
 
     await user.click(screen.getByText("addButton"));
@@ -109,6 +112,41 @@ describe("PayoutAccounts", () => {
         color: "danger",
       });
     });
+  });
+
+  it("shows the generic save error for a conflict unrelated to the Lightning backend", async () => {
+    const user = userEvent.setup();
+    mockCreatePayoutAccount.mockRejectedValue({ status: 409, responseMessage: "Secrets are locked" });
+    render(<PayoutAccounts />);
+
+    await user.click(screen.getByText("addButton"));
+    await user.click(screen.getByText("save payout account"));
+
+    await waitFor(() => {
+      expect(addToast).toHaveBeenCalledWith({
+        title: "toasts.saveErrorTitle",
+        description: "toasts.saveErrorDescription",
+        color: "danger",
+      });
+    });
+  });
+
+  it("sends a single deletion when the confirm button is pressed twice", async () => {
+    const user = userEvent.setup();
+    let resolvePendingDeletion;
+    mockDeletePayoutAccount.mockReturnValue(new Promise((resolveDeletion) => {
+      resolvePendingDeletion = resolveDeletion;
+    }));
+    render(<PayoutAccounts />);
+
+    await user.click(screen.getByLabelText("delete"));
+    const confirmDeleteButton = await screen.findByText("deleteModal.deleteButton");
+    await user.click(confirmDeleteButton);
+    await user.click(confirmDeleteButton);
+    resolvePendingDeletion({});
+
+    await waitFor(() => expect(addToast).toHaveBeenCalledWith({ title: "toasts.deleteSuccess", color: "success" }));
+    expect(mockDeletePayoutAccount).toHaveBeenCalledTimes(1);
   });
 
   it("deletes the payout account after confirming", async () => {

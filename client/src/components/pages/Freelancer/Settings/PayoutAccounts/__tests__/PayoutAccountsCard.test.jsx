@@ -24,7 +24,7 @@ function renderCard(cardProps = {}) {
   return render(
     <PayoutAccountsCard
       payoutAccounts={[aliceBankAccount, bobLightningAccount, nodeLightningAccount]}
-      loading={false}
+      isLoading={false}
       hasLoadError={false}
       onAdd={jest.fn()}
       onEdit={jest.fn()}
