@@ -1,18 +1,20 @@
+import { PAYOUT_ACCOUNT_TYPE } from "./payoutAccountForm";
+
 function toNullableTrimmedValue(fieldValue) {
   const trimmedValue = fieldValue?.trim();
   return trimmedValue ? trimmedValue : null;
 }
 
 export function buildPayoutAccountPayload(payoutAccountForm) {
-  if (payoutAccountForm.type === "lightning") {
+  if (payoutAccountForm.type === PAYOUT_ACCOUNT_TYPE.LIGHTNING) {
     return {
-      type: "lightning",
+      type: PAYOUT_ACCOUNT_TYPE.LIGHTNING,
       lightningAddress: toNullableTrimmedValue(payoutAccountForm.lightningAddress),
     };
   }
 
   return {
-    type: "bank",
+    type: PAYOUT_ACCOUNT_TYPE.BANK,
     accountHolder: toNullableTrimmedValue(payoutAccountForm.accountHolder),
     bankName: toNullableTrimmedValue(payoutAccountForm.bankName),
     accountNumber: toNullableTrimmedValue(payoutAccountForm.accountNumber),

@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from "react";
 
-import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem } from "@heroui/react";
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { CurrencyInput } from "@components/shared/CurrencyInput";
-
-import { isPayoutAccountFormComplete, toPayoutAccountForm } from "./utils/payoutAccountForm";
-
-const PAYOUT_ACCOUNT_TYPES = ["bank", "lightning"];
-const BANK_IDENTIFIER_FIELD_NAMES = ["clabe", "iban", "swift"];
+import { BankAccountFields } from "./BankAccountFields";
+import { PayoutAccountTextField } from "./PayoutAccountTextField";
+import {
+  isPayoutAccountFormComplete,
+  PAYOUT_ACCOUNT_TYPE,
+  PAYOUT_ACCOUNT_TYPES,
+  toPayoutAccountForm,
+} from "./utils/payoutAccountForm";
 
 export function PayoutAccountModal({ payoutAccount, currencies, isOpen, onClose, onSave }) {
   const payoutAccountsTranslations = useTranslations("freelancerSettings.payoutAccounts");
@@ -22,17 +24,10 @@ export function PayoutAccountModal({ payoutAccount, currencies, isOpen, onClose,
   }, [isOpen, payoutAccount]);
 
   const isEditing = Boolean(payoutAccount?.id);
-  const isBankAccount = payoutAccountForm.type === "bank";
-  const currencyOptions = currencies.map((currency) => ({ code: currency.acronym, name: currency.name ?? currency.acronym }));
-  const selectedCurrencyAcronym = currencies.find((currency) => currency.id === payoutAccountForm.currencyId)?.acronym ?? null;
+  const isBankAccount = payoutAccountForm.type === PAYOUT_ACCOUNT_TYPE.BANK;
 
   const changePayoutAccountField = (fieldName, fieldValue) => {
     setPayoutAccountForm((previousForm) => ({ ...previousForm, [fieldName]: fieldValue }));
-  };
-
-  const changeSelectedCurrency = (currencyAcronym) => {
-    const selectedCurrency = currencies.find((currency) => currency.acronym === currencyAcronym);
-    changePayoutAccountField("currencyId", selectedCurrency?.id ?? "");
   };
 
   const handleSubmit = async (submitEvent) => {
@@ -81,58 +76,17 @@ export function PayoutAccountModal({ payoutAccount, currencies, isOpen, onClose,
             </Select>
 
             {isBankAccount ? (
-              <>
-                <Input
-                  label={payoutAccountsTranslations("fields.accountHolder")}
-                  type="text"
-                  placeholder={payoutAccountsTranslations("placeholders.accountHolder")}
-                  isRequired
-                  value={payoutAccountForm.accountHolder}
-                  onChange={(changeEvent) => changePayoutAccountField("accountHolder", changeEvent.target.value)}
-                />
-                <Input
-                  label={payoutAccountsTranslations("fields.bankName")}
-                  type="text"
-                  placeholder={payoutAccountsTranslations("placeholders.bankName")}
-                  isRequired
-                  value={payoutAccountForm.bankName}
-                  onChange={(changeEvent) => changePayoutAccountField("bankName", changeEvent.target.value)}
-                />
-                <CurrencyInput
-                  currencies={currencyOptions}
-                  label={payoutAccountsTranslations("fields.currency")}
-                  placeholder={payoutAccountsTranslations("placeholders.currency")}
-                  isRequired
-                  selectedKey={selectedCurrencyAcronym}
-                  onSelectionChange={changeSelectedCurrency}
-                />
-                <Input
-                  label={payoutAccountsTranslations("fields.accountNumber")}
-                  type="text"
-                  placeholder={payoutAccountsTranslations("placeholders.accountNumber")}
-                  description={payoutAccountsTranslations("bankIdentifierHelp")}
-                  value={payoutAccountForm.accountNumber}
-                  onChange={(changeEvent) => changePayoutAccountField("accountNumber", changeEvent.target.value)}
-                />
-                {BANK_IDENTIFIER_FIELD_NAMES.map((bankIdentifierFieldName) => (
-                  <Input
-                    key={bankIdentifierFieldName}
-                    label={payoutAccountsTranslations(`fields.${bankIdentifierFieldName}`)}
-                    type="text"
-                    placeholder={payoutAccountsTranslations(`placeholders.${bankIdentifierFieldName}`)}
-                    value={payoutAccountForm[bankIdentifierFieldName]}
-                    onChange={(changeEvent) => changePayoutAccountField(bankIdentifierFieldName, changeEvent.target.value)}
-                  />
-                ))}
-              </>
+              <BankAccountFields
+                payoutAccountForm={payoutAccountForm}
+                currencies={currencies}
+                onFieldChange={changePayoutAccountField}
+              />
             ) : (
-              <Input
-                label={payoutAccountsTranslations("fields.lightningAddress")}
-                type="text"
-                placeholder={payoutAccountsTranslations("placeholders.lightningAddress")}
+              <PayoutAccountTextField
+                fieldName="lightningAddress"
+                payoutAccountForm={payoutAccountForm}
+                onFieldChange={changePayoutAccountField}
                 description={payoutAccountsTranslations("lightningAddressHelp")}
-                value={payoutAccountForm.lightningAddress}
-                onChange={(changeEvent) => changePayoutAccountField("lightningAddress", changeEvent.target.value)}
               />
             )}
 

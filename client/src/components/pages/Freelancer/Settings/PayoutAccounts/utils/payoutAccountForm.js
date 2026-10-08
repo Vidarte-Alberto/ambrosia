@@ -1,6 +1,15 @@
+export const PAYOUT_ACCOUNT_TYPE = {
+  BANK: "bank",
+  LIGHTNING: "lightning",
+};
+
+export const PAYOUT_ACCOUNT_TYPES = [PAYOUT_ACCOUNT_TYPE.BANK, PAYOUT_ACCOUNT_TYPE.LIGHTNING];
+
+export const BANK_IDENTIFIER_FIELD_NAMES = ["accountNumber", "clabe", "iban"];
+
 export const EMPTY_PAYOUT_ACCOUNT_FORM = {
   id: null,
-  type: "bank",
+  type: PAYOUT_ACCOUNT_TYPE.BANK,
   accountHolder: "",
   bankName: "",
   accountNumber: "",
@@ -32,8 +41,8 @@ function hasText(fieldValue) {
 }
 
 export function isPayoutAccountFormComplete(payoutAccountForm) {
-  if (payoutAccountForm.type === "lightning") return true;
-  const hasBankIdentifier = [payoutAccountForm.accountNumber, payoutAccountForm.iban, payoutAccountForm.clabe].some(hasText);
+  if (payoutAccountForm.type === PAYOUT_ACCOUNT_TYPE.LIGHTNING) return true;
+  const hasBankIdentifier = BANK_IDENTIFIER_FIELD_NAMES.some((bankIdentifierFieldName) => hasText(payoutAccountForm[bankIdentifierFieldName]));
   return hasText(payoutAccountForm.accountHolder)
     && hasText(payoutAccountForm.bankName)
     && hasText(payoutAccountForm.currencyId)
