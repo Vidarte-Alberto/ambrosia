@@ -51,12 +51,14 @@ class PayoutAccountService {
             ) &&
             payoutAccountRequest.lightningAddress.isNullOrBlank()
 
-    private fun isValidLightningAccount(payoutAccountRequest: PayoutAccountUpsert): Boolean {
-        if (!hasNoBankFields(payoutAccountRequest)) return false
-        if (payoutAccountRequest.lightningAddress.isNullOrBlank() && !ActiveLightningBackend.isAvailable()) {
+    private fun isValidLightningAccount(payoutAccountRequest: PayoutAccountUpsert): Boolean = hasNoBankFields(payoutAccountRequest)
+
+    private fun requireLightningAddressOrActiveBackend(payoutAccountRequest: PayoutAccountUpsert) {
+        val usesNodeLightningWallet =
+            payoutAccountRequest.type == "lightning" && payoutAccountRequest.lightningAddress.isNullOrBlank()
+        if (usesNodeLightningWallet && !ActiveLightningBackend.isAvailable()) {
             throw LightningBackendUnavailableException()
         }
-        return true
     }
 
     private fun isValidPayoutAccountRequest(payoutAccountRequest: PayoutAccountUpsert): Boolean =
@@ -100,6 +102,7 @@ class PayoutAccountService {
     fun addPayoutAccount(payoutAccountRequest: PayoutAccountUpsert): String? =
         transaction {
             if (!isValidPayoutAccountRequest(payoutAccountRequest)) return@transaction null
+            requireLightningAddressOrActiveBackend(payoutAccountRequest)
 
             val payoutAccountId =
                 PayoutAccountEntity
@@ -132,6 +135,7 @@ class PayoutAccountService {
 
             val payoutAccountEntity = PayoutAccountEntity.findById(payoutAccountUuid) ?: return@transaction false
             if (payoutAccountEntity.isDeleted) return@transaction false
+            requireLightningAddressOrActiveBackend(payoutAccountRequest)
 
             payoutAccountEntity.type = payoutAccountRequest.type
             payoutAccountEntity.accountHolder = payoutAccountRequest.accountHolder
