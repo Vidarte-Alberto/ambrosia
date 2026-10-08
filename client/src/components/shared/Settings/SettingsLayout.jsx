@@ -42,7 +42,7 @@ export function SettingsLayout({ subtitle, settingsTabs }) {
         }}
       >
         {settingsTabs.map((settingsTab) => (
-          <Tab key={settingsTab.key} title={settingsTab.label} />
+          <Tab key={settingsTab.key} title={settingsTab.title} />
         ))}
       </Tabs>
 
