@@ -15,23 +15,40 @@ export function usePayoutAccounts({ skipForbiddenRedirect = false } = {}) {
   const [loadError, setLoadError] = useState(null);
   const [forbidden, setForbidden] = useState(false);
 
+  const requestPayoutAccounts = useCallback(async () => {
+    const payoutAccountsResponse = await httpClient(PAYOUT_ACCOUNTS_ENDPOINT, { skipForbiddenRedirect });
+    const isForbidden = payoutAccountsResponse.status === 403;
+    setForbidden(isForbidden);
+    if (isForbidden) return;
+    if (!payoutAccountsResponse.ok) {
+      throw await buildParsedHttpError(payoutAccountsResponse, "Error loading payout accounts");
+    }
+
+    const payoutAccountsData = await parseJsonResponse(payoutAccountsResponse, []);
+    setPayoutAccounts(toArray(payoutAccountsData));
+  }, [skipForbiddenRedirect]);
+
+  const refreshPayoutAccounts = useCallback(async () => {
+    try {
+      await requestPayoutAccounts();
+      setLoadError(null);
+    } catch (refreshPayoutAccountsError) {
+      setLoadError(refreshPayoutAccountsError);
+    }
+  }, [requestPayoutAccounts]);
+
   const fetchPayoutAccounts = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
 
     try {
-      const payoutAccountsResponse = await httpClient(PAYOUT_ACCOUNTS_ENDPOINT, { skipForbiddenRedirect });
-      setForbidden(payoutAccountsResponse.status === 403);
-      if (!payoutAccountsResponse.ok) return;
-
-      const payoutAccountsData = await parseJsonResponse(payoutAccountsResponse, []);
-      setPayoutAccounts(toArray(payoutAccountsData));
+      await requestPayoutAccounts();
     } catch (loadPayoutAccountsError) {
       setLoadError(loadPayoutAccountsError);
     } finally {
       setLoading(false);
     }
-  }, [skipForbiddenRedirect]);
+  }, [requestPayoutAccounts]);
 
   const createPayoutAccount = useCallback(
     async (payoutAccountRequest) => {
@@ -49,10 +66,10 @@ export function usePayoutAccounts({ skipForbiddenRedirect = false } = {}) {
       }
 
       const createdPayoutAccountData = await parseJsonResponse(createPayoutAccountResponse, {});
-      await fetchPayoutAccounts();
+      await refreshPayoutAccounts();
       return createdPayoutAccountData;
     },
-    [fetchPayoutAccounts],
+    [refreshPayoutAccounts],
   );
 
   const updatePayoutAccount = useCallback(
@@ -71,10 +88,10 @@ export function usePayoutAccounts({ skipForbiddenRedirect = false } = {}) {
       }
 
       const updatedPayoutAccountData = await parseJsonResponse(updatePayoutAccountResponse, {});
-      await fetchPayoutAccounts();
+      await refreshPayoutAccounts();
       return updatedPayoutAccountData;
     },
-    [fetchPayoutAccounts],
+    [refreshPayoutAccounts],
   );
 
   const deletePayoutAccount = useCallback(
@@ -88,10 +105,10 @@ export function usePayoutAccounts({ skipForbiddenRedirect = false } = {}) {
         throw await buildParsedHttpError(deletePayoutAccountResponse, "Error deleting payout account");
       }
 
-      await fetchPayoutAccounts();
+      await refreshPayoutAccounts();
       return deletePayoutAccountResponse;
     },
-    [fetchPayoutAccounts],
+    [refreshPayoutAccounts],
   );
 
   useEffect(() => {
