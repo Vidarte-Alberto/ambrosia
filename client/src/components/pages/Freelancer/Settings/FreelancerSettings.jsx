@@ -42,7 +42,7 @@ export function FreelancerSettings() {
       content: (
         <>
           <FreelancerInfo />
-          <Currency withPriceStep={false} />
+          <Currency />
         </>
       ),
     },

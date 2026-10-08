@@ -5,6 +5,15 @@ import ticketTemplatesEs from "../TicketTemplates/locales/es";
 const settingsEs = {
   settings: {
     subtitle: "Administra tu tienda",
+    cardPriceStep: {
+      label: "Ajuste de precio",
+      help: "Cuántos centavos se suman o restan al ajustar el precio de un producto",
+      saveButton: "Guardar",
+      successTitle: "Ajuste de precio actualizado",
+      successDescription: "El ajuste de precio se actualizó correctamente.",
+      errorTitle: "Error al actualizar el ajuste de precio",
+      errorDescription: "No se pudo actualizar el ajuste de precio.",
+    },
     cardTips: {
       title: "Propinas",
       subtitle: "Configuración del sistema de propinas",

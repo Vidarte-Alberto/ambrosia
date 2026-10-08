@@ -5,18 +5,16 @@ import { useMemo } from "react";
 import { addToast } from "@heroui/react";
 import { useLocale, useTranslations } from "next-intl";
 
-import { useConfigurations } from "@/providers/configurations/configurationsProvider";
 import { useCurrency } from "@components/hooks/useCurrency";
 import { CURRENCIES_EN } from "@components/pages/Onboarding/utils/currencies_en";
 import { CURRENCIES_ES } from "@components/pages/Onboarding/utils/currencies_es";
 
 import { CurrencyCard } from "./CurrencyCard";
 
-export function Currency({ withPriceStep = true }) {
+export function Currency({ extraCurrencySettings }) {
   const locale = useLocale();
   const settingsTranslations = useTranslations("settings");
   const { currency, updateCurrency } = useCurrency();
-  const { config: businessConfig, updateConfig, isLoading } = useConfigurations();
 
   const currencies = useMemo(
     () => (locale === "en" ? CURRENCIES_EN : CURRENCIES_ES),
@@ -42,33 +40,12 @@ export function Currency({ withPriceStep = true }) {
     }
   };
 
-  const handlePriceStepSave = async (priceStep) => {
-    try {
-      await updateConfig({ ...(businessConfig || {}), priceStep });
-      addToast({
-        title: settingsTranslations("cardCurrency.priceStepSuccessTitle"),
-        description: settingsTranslations("cardCurrency.priceStepSuccessDescription"),
-        color: "success",
-      });
-    } catch (updateConfigError) {
-      console.error("Failed to update price step:", updateConfigError);
-      addToast({
-        title: settingsTranslations("cardCurrency.priceStepErrorTitle"),
-        description: settingsTranslations("cardCurrency.priceStepErrorDescription"),
-        color: "danger",
-      });
-    }
-  };
-
   return (
     <CurrencyCard
       selectedCurrency={currency.acronym}
       currencies={currencies}
       onCurrencyChange={handleCurrencyChange}
-      priceStep={businessConfig?.priceStep ?? 0.01}
-      onPriceStepSave={handlePriceStepSave}
-      withPriceStep={withPriceStep}
-      isLoading={isLoading}
+      extraCurrencySettings={extraCurrencySettings}
     />
   );
 }

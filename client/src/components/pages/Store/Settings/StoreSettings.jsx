@@ -22,6 +22,7 @@ import { Tutorials } from "@components/shared/Settings/Tutorials";
 import { useNavigation } from "@hooks/useNavigation";
 import { isElectron } from "@lib/isElectron";
 
+import { PriceStep } from "./PriceStep";
 import { Printers } from "./Printers";
 import { StoreInfo } from "./StoreInfo";
 import { TicketTemplates } from "./TicketTemplates";
@@ -41,7 +42,7 @@ export function StoreSettings() {
       content: (
         <>
           <StoreInfo />
-          <Currency />
+          <Currency extraCurrencySettings={<PriceStep />} />
           <Tips />
         </>
       ),

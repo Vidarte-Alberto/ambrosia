@@ -42,13 +42,6 @@ const sharedSettingsEn = {
       successDescription: "The store currency has been changed successfully.",
       errorTitle: "Currency update failed",
       errorDescription: "Could not update the store currency.",
-      priceStepLabel: "Price step",
-      priceStepHelp: "How many cents get added or subtracted when adjusting a product's price",
-      priceStepSaveButton: "Save",
-      priceStepSuccessTitle: "Price step updated",
-      priceStepSuccessDescription: "The price step has been changed successfully.",
-      priceStepErrorTitle: "Price step update failed",
-      priceStepErrorDescription: "Could not update the price step.",
     },
     cardQRUrl: {
       title: "Open on another device",

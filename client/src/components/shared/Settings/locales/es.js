@@ -42,13 +42,6 @@ const sharedSettingsEs = {
       successDescription: "La moneda de la tienda se ha cambiado correctamente.",
       errorTitle: "Error al actualizar moneda",
       errorDescription: "No se pudo actualizar la moneda de la tienda.",
-      priceStepLabel: "Ajuste de precio",
-      priceStepHelp: "Cuántos centavos se suman o restan al ajustar el precio de un producto",
-      priceStepSaveButton: "Guardar",
-      priceStepSuccessTitle: "Ajuste de precio actualizado",
-      priceStepSuccessDescription: "El ajuste de precio se actualizó correctamente.",
-      priceStepErrorTitle: "Error al actualizar el ajuste de precio",
-      priceStepErrorDescription: "No se pudo actualizar el ajuste de precio.",
     },
     cardQRUrl: {
       title: "Abrir en otro dispositivo",

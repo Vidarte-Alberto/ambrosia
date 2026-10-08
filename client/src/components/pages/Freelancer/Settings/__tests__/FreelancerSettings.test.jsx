@@ -99,7 +99,7 @@ describe("FreelancerSettings", () => {
     render(<FreelancerSettings />);
 
     expect(screen.getByTestId("FreelancerInfo")).toBeInTheDocument();
-    expect(renderedCardProps("Currency")).toEqual({ withPriceStep: false });
+    expect(renderedCardProps("Currency")).toEqual({});
     expect(screen.getByTestId("QRUrl")).toBeInTheDocument();
   });
 

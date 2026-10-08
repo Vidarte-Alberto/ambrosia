@@ -5,6 +5,15 @@ import ticketTemplatesEn from "../TicketTemplates/locales/en";
 const settingsEn = {
   settings: {
     subtitle: "Manage your store",
+    cardPriceStep: {
+      label: "Price step",
+      help: "How many cents get added or subtracted when adjusting a product's price",
+      saveButton: "Save",
+      successTitle: "Price step updated",
+      successDescription: "The price step has been changed successfully.",
+      errorTitle: "Price step update failed",
+      errorDescription: "Could not update the price step.",
+    },
     cardTips: {
       title: "Tips",
       subtitle: "Configure tipping system",
