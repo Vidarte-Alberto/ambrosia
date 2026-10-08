@@ -15,11 +15,11 @@ import { BusinessLayout } from "@components/shared/BusinessLayout";
 import { SecretsUnlockModal } from "@components/shared/SecretsUnlockModal";
 import { useNavigation } from "@hooks/useNavigation";
 
+import { STORE_HOME_ROUTE, STORE_SETTINGS_ROUTE } from "../routes";
+
 import { useAdminNotificationSignals } from "./hooks/useAdminNotificationSignals";
 
 const WALLET_ROUTE = "/store/wallet";
-const STORE_HOME_ROUTE = "/store";
-const STORE_SETTINGS_ROUTE = "/store/settings";
 
 export function StoreLayout({ children, navbarNamespace = "navbar" }) {
   const pathname = usePathname();

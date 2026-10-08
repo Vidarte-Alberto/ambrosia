@@ -6,8 +6,7 @@ import { useSeedTour } from "@/hooks/tour/useSeedTour";
 import { BusinessLayout } from "@components/shared/BusinessLayout";
 import { useNavigation } from "@hooks/useNavigation";
 
-const FREELANCER_HOME_ROUTE = "/freelancer/timesheet";
-const FREELANCER_SETTINGS_ROUTE = "/freelancer/settings";
+import { FREELANCER_HOME_ROUTE, FREELANCER_SETTINGS_ROUTE } from "../routes";
 
 export function FreelancerLayout({ children }) {
   const navbarTranslations = useTranslations("freelancerNavbar");
