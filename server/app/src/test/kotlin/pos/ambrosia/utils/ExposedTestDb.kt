@@ -413,6 +413,7 @@ object ExposedTestDb {
         clientId: String,
         currencyId: String,
         invoiceNumber: String = "2026-${UUID.randomUUID().toString().take(8)}",
+        payoutSnapshot: String? = null,
     ): String =
         transaction {
             InvoiceEntity
@@ -427,6 +428,7 @@ object ExposedTestDb {
                     totalCents = 10_000
                     paymentMethod = "bank"
                     createdAt = "2026-08-24 12:00:00"
+                    this.payoutSnapshot = payoutSnapshot
                 }.id.value
                 .toString()
         }
@@ -613,6 +615,13 @@ object ExposedTestDb {
         type: String = "bank",
         currencyId: String? = seedCurrency("USD"),
         isDeleted: Boolean = false,
+        accountHolder: String? = null,
+        bankName: String? = null,
+        accountNumber: String? = null,
+        swift: String? = null,
+        iban: String? = null,
+        clabe: String? = null,
+        lightningAddress: String? = null,
     ): String =
         transaction {
             PayoutAccountEntity
@@ -621,6 +630,13 @@ object ExposedTestDb {
                     this.currencyId = currencyId?.let { EntityID(UUID.fromString(it), CurrencyTable) }
                     this.isDeleted = isDeleted
                     this.createdAt = "2024-01-01T00:00:00"
+                    this.accountHolder = accountHolder
+                    this.bankName = bankName
+                    this.accountNumber = accountNumber
+                    this.swift = swift
+                    this.iban = iban
+                    this.clabe = clabe
+                    this.lightningAddress = lightningAddress
                 }.id.value
                 .toString()
         }
