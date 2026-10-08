@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 
-import { addToast } from "@heroui/react";
-
 import { useUpload } from "@components/hooks/useUpload";
 import { useConfigurations } from "@providers/configurations/configurationsProvider";
 
-export function useBusinessInfoEditor({ successTitle, errorTitle }) {
+export function useBusinessInfoEditor() {
   const { config, updateConfig } = useConfigurations();
   const { upload } = useUpload();
   const [draftBusinessInfo, setDraftBusinessInfo] = useState(null);
@@ -16,6 +14,10 @@ export function useBusinessInfoEditor({ successTitle, errorTitle }) {
   const openEditor = () => {
     setDraftBusinessInfo(config);
     setIsEditorOpen(true);
+  };
+
+  const closeEditor = () => {
+    setIsEditorOpen(false);
   };
 
   const handleDraftChange = (changedFields) => {
@@ -31,30 +33,17 @@ export function useBusinessInfoEditor({ successTitle, errorTitle }) {
     return draftBusinessInfo.businessLogoUrl;
   };
 
-  const handleSubmit = async (submitEvent) => {
-    submitEvent.preventDefault();
-    try {
-      const savedBusinessInfo = {
-        ...draftBusinessInfo,
-        businessLogoUrl: await resolveLogoUrl(),
-        businessLogo: undefined,
-        businessLogoRemoved: undefined,
-      };
+  const saveBusinessInfo = async () => {
+    const savedBusinessInfo = {
+      ...draftBusinessInfo,
+      businessLogoUrl: await resolveLogoUrl(),
+      businessLogo: undefined,
+      businessLogoRemoved: undefined,
+    };
 
-      await updateConfig(savedBusinessInfo);
-      setDraftBusinessInfo(savedBusinessInfo);
-      setIsEditorOpen(false);
-      addToast({
-        title: successTitle,
-        color: "success",
-      });
-    } catch (error) {
-      addToast({
-        title: errorTitle,
-        description: error.message,
-        color: "danger",
-      });
-    }
+    await updateConfig(savedBusinessInfo);
+    setDraftBusinessInfo(savedBusinessInfo);
+    closeEditor();
   };
 
   return {
@@ -62,9 +51,9 @@ export function useBusinessInfoEditor({ successTitle, errorTitle }) {
     draftBusinessInfo,
     setDraftBusinessInfo,
     isEditorOpen,
-    setIsEditorOpen,
     openEditor,
+    closeEditor,
     handleDraftChange,
-    handleSubmit,
+    saveBusinessInfo,
   };
 }

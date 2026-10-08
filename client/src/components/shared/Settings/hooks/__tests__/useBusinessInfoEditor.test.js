@@ -5,19 +5,12 @@ import * as configurationsProvider from "@providers/configurations/configuration
 
 import { useBusinessInfoEditor } from "../useBusinessInfoEditor";
 
-jest.mock("@heroui/react", () => ({
-  addToast: jest.fn(),
-}));
-
-const { addToast } = jest.requireMock("@heroui/react");
-
 const mockUpdateConfig = jest.fn();
 const mockUpload = jest.fn();
 const aliceConfig = { businessName: "Alice Studio", businessLogoUrl: "/assets/alice-logo.png" };
-const submitEvent = { preventDefault: jest.fn() };
 
 function renderBusinessInfoEditor() {
-  return renderHook(() => useBusinessInfoEditor({ successTitle: "Saved", errorTitle: "Failed" }));
+  return renderHook(() => useBusinessInfoEditor());
 }
 
 describe("useBusinessInfoEditor", () => {
@@ -41,19 +34,28 @@ describe("useBusinessInfoEditor", () => {
     expect(businessInfoEditor.current.draftBusinessInfo).toEqual(aliceConfig);
   });
 
-  it("uploads a new logo and saves its url", async () => {
+  it("closes the editor without saving", () => {
+    const { result: businessInfoEditor } = renderBusinessInfoEditor();
+
+    act(() => businessInfoEditor.current.openEditor());
+    act(() => businessInfoEditor.current.closeEditor());
+
+    expect(businessInfoEditor.current.isEditorOpen).toBe(false);
+    expect(mockUpdateConfig).not.toHaveBeenCalled();
+  });
+
+  it("uploads a new logo, saves its url and closes the editor", async () => {
     mockUpload.mockResolvedValue([{ url: "/assets/bob-logo.png" }]);
     const bobLogo = new File(["logo"], "bob-logo.png", { type: "image/png" });
     const { result: businessInfoEditor } = renderBusinessInfoEditor();
 
     act(() => businessInfoEditor.current.openEditor());
     act(() => businessInfoEditor.current.handleDraftChange({ businessLogo: bobLogo }));
-    await act(() => businessInfoEditor.current.handleSubmit(submitEvent));
+    await act(() => businessInfoEditor.current.saveBusinessInfo());
 
     expect(mockUpload).toHaveBeenCalledWith([bobLogo]);
     expect(mockUpdateConfig).toHaveBeenCalledWith(expect.objectContaining({ businessLogoUrl: "/assets/bob-logo.png" }));
     expect(businessInfoEditor.current.isEditorOpen).toBe(false);
-    expect(addToast).toHaveBeenCalledWith({ title: "Saved", color: "success" });
   });
 
   it("saves a null logo url when the logo was removed", async () => {
@@ -61,20 +63,21 @@ describe("useBusinessInfoEditor", () => {
 
     act(() => businessInfoEditor.current.openEditor());
     act(() => businessInfoEditor.current.handleDraftChange({ businessLogo: null, businessLogoRemoved: true }));
-    await act(() => businessInfoEditor.current.handleSubmit(submitEvent));
+    await act(() => businessInfoEditor.current.saveBusinessInfo());
 
     expect(mockUpload).not.toHaveBeenCalled();
     expect(mockUpdateConfig).toHaveBeenCalledWith(expect.objectContaining({ businessLogoUrl: null }));
   });
 
-  it("keeps the editor open and reports the error when saving fails", async () => {
+  it("keeps the editor open and rethrows the error when saving fails", async () => {
     mockUpdateConfig.mockRejectedValue(new Error("Server down"));
     const { result: businessInfoEditor } = renderBusinessInfoEditor();
 
     act(() => businessInfoEditor.current.openEditor());
-    await act(() => businessInfoEditor.current.handleSubmit(submitEvent));
+    await act(async () => {
+      await expect(businessInfoEditor.current.saveBusinessInfo()).rejects.toThrow("Server down");
+    });
 
     expect(businessInfoEditor.current.isEditorOpen).toBe(true);
-    expect(addToast).toHaveBeenCalledWith({ title: "Failed", description: "Server down", color: "danger" });
   });
 });

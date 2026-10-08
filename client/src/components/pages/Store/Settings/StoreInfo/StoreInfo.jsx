@@ -1,5 +1,6 @@
 "use client";
 
+import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useBusinessInfoEditor } from "@components/shared/Settings/hooks/useBusinessInfoEditor";
@@ -8,20 +9,34 @@ import { EditStoreInfoModal } from "./EditStoreInfoModal";
 import { StoreInfoCard } from "./StoreInfoCard";
 
 export function StoreInfo() {
-  const t = useTranslations("settings");
+  const settingsTranslations = useTranslations("settings");
   const {
     config,
     draftBusinessInfo,
     setDraftBusinessInfo,
     isEditorOpen,
-    setIsEditorOpen,
     openEditor,
+    closeEditor,
     handleDraftChange,
-    handleSubmit,
-  } = useBusinessInfoEditor({
-    successTitle: t("modal.updateSuccess"),
-    errorTitle: t("modal.errorTitle"),
-  });
+    saveBusinessInfo,
+  } = useBusinessInfoEditor();
+
+  const handleSubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    try {
+      await saveBusinessInfo();
+      addToast({
+        title: settingsTranslations("modal.updateSuccess"),
+        color: "success",
+      });
+    } catch (saveStoreInfoError) {
+      addToast({
+        title: settingsTranslations("modal.errorTitle"),
+        description: saveStoreInfoError.message,
+        color: "danger",
+      });
+    }
+  };
 
   if (!config) return null;
 
@@ -34,7 +49,7 @@ export function StoreInfo() {
         onChange={handleDraftChange}
         onSubmit={handleSubmit}
         isOpen={isEditorOpen}
-        setIsOpen={setIsEditorOpen}
+        setIsOpen={closeEditor}
       />
     </>
   );

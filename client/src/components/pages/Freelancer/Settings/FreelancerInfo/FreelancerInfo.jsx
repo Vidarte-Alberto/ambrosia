@@ -1,5 +1,6 @@
 "use client";
 
+import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
 import { useBusinessInfoEditor } from "@components/shared/Settings/hooks/useBusinessInfoEditor";
@@ -13,14 +14,28 @@ export function FreelancerInfo() {
     config,
     draftBusinessInfo,
     isEditorOpen,
-    setIsEditorOpen,
     openEditor,
+    closeEditor,
     handleDraftChange,
-    handleSubmit,
-  } = useBusinessInfoEditor({
-    successTitle: freelancerSettingsTranslations("infoModal.updateSuccess"),
-    errorTitle: freelancerSettingsTranslations("infoModal.errorTitle"),
-  });
+    saveBusinessInfo,
+  } = useBusinessInfoEditor();
+
+  const handleSubmit = async (submitEvent) => {
+    submitEvent.preventDefault();
+    try {
+      await saveBusinessInfo();
+      addToast({
+        title: freelancerSettingsTranslations("infoModal.updateSuccess"),
+        color: "success",
+      });
+    } catch (saveFreelancerInfoError) {
+      addToast({
+        title: freelancerSettingsTranslations("infoModal.errorTitle"),
+        description: saveFreelancerInfoError.message,
+        color: "danger",
+      });
+    }
+  };
 
   if (!config) return null;
 
@@ -32,7 +47,7 @@ export function FreelancerInfo() {
         onDraftChange={handleDraftChange}
         onSubmit={handleSubmit}
         isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
+        onClose={closeEditor}
       />
     </>
   );
