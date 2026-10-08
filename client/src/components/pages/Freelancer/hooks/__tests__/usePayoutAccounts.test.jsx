@@ -66,6 +66,36 @@ describe("usePayoutAccounts", () => {
 
     expect(payoutAccountsHook.current.forbidden).toBe(true);
     expect(payoutAccountsHook.current.payoutAccounts).toEqual([]);
+    expect(payoutAccountsHook.current.error).toBeNull();
+  });
+
+  it("exposes the error when the server fails to list the payout accounts", async () => {
+    httpClient.mockResolvedValue({ ok: false, status: 500 });
+    parseJsonResponse.mockResolvedValue(null);
+
+    const payoutAccountsHook = await renderLoadedPayoutAccounts();
+
+    expect(payoutAccountsHook.current.error).toMatchObject({ message: "Error loading payout accounts", status: 500 });
+    expect(payoutAccountsHook.current.forbidden).toBe(false);
+  });
+
+  it("keeps the list visible without the loading state while reloading after a change", async () => {
+    mockPayoutAccountsResponse([aliceBankAccount]);
+    const renderedLoadingStates = [];
+    const { result: payoutAccountsHook } = renderHook(() => {
+      const payoutAccountsState = usePayoutAccounts({ skipForbiddenRedirect: true });
+      renderedLoadingStates.push(payoutAccountsState.loading);
+      return payoutAccountsState;
+    });
+    await waitFor(() => expect(payoutAccountsHook.current.loading).toBe(false));
+    renderedLoadingStates.length = 0;
+
+    await act(async () => {
+      await payoutAccountsHook.current.deletePayoutAccount("alice-bank-account");
+    });
+
+    expect(renderedLoadingStates).not.toContain(true);
+    expect(payoutAccountsHook.current.payoutAccounts).toEqual([aliceBankAccount]);
   });
 
   it("exposes the error when loading fails", async () => {
