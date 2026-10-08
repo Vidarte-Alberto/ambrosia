@@ -21,10 +21,10 @@ const WALLET_ROUTE = "/store/wallet";
 const STORE_HOME_ROUTE = "/store";
 const STORE_SETTINGS_ROUTE = "/store/settings";
 
-export function StoreLayout({ children }) {
+export function StoreLayout({ children, navbarNamespace = "navbar" }) {
   const pathname = usePathname();
   const locale = useLocale();
-  const navbarTranslations = useTranslations("navbar");
+  const navbarTranslations = useTranslations(navbarNamespace);
   const notificationsTranslations = useTranslations("notifications");
   const { isAuth, isAdmin } = useNavigation();
   const [unlockModalOpen, setUnlockModalOpen] = useState(false);

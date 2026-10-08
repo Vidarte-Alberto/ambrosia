@@ -1,3 +1,5 @@
+import freelanceClientsEs from "../Clients/locales/es";
+import freelanceProjectsEs from "../Projects/locales/es";
 import freelancerSettingsEs from "../Settings/locales/es";
 
 const freelancerEs = {
@@ -78,6 +80,8 @@ const freelancerEs = {
       createTaskError: "No se pudo crear la tarea. Inténtalo de nuevo.",
     },
   },
+  ...freelanceClientsEs,
+  ...freelanceProjectsEs,
   ...freelancerSettingsEs,
 };
 
