@@ -10,6 +10,10 @@ export function isLastAdminConflict(requestError) {
   return requestError?.status === 409 && requestError?.responseMessage?.includes("last admin");
 }
 
+export function isLightningBackendUnavailable(requestError) {
+  return requestError?.status === 409 && requestError?.responseMessage?.includes("Lightning address is required");
+}
+
 export function isConflict(requestError) {
   return requestError?.status === 409;
 }

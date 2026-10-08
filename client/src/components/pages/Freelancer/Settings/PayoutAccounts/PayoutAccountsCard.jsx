@@ -7,14 +7,18 @@ import { RequirePermission } from "@/hooks/usePermission";
 import { DeleteButton } from "@components/shared/DeleteButton";
 import { EditButton } from "@components/shared/EditButton";
 
+import { BANK_IDENTIFIER_FIELD_NAMES, PAYOUT_ACCOUNT_TYPE } from "./utils/payoutAccountForm";
+
 function describeBankAccount(payoutAccount) {
-  const bankIdentifier = payoutAccount.clabe || payoutAccount.iban || payoutAccount.accountNumber;
+  const bankIdentifier = BANK_IDENTIFIER_FIELD_NAMES
+    .map((bankIdentifierFieldName) => payoutAccount[bankIdentifierFieldName])
+    .find(Boolean);
   return [payoutAccount.bankName, bankIdentifier].filter(Boolean).join(" · ");
 }
 
 function PayoutAccountRow({ payoutAccount, onEdit, onDelete }) {
   const payoutAccountsTranslations = useTranslations("freelancerSettings.payoutAccounts");
-  const isBankAccount = payoutAccount.type === "bank";
+  const isBankAccount = payoutAccount.type === PAYOUT_ACCOUNT_TYPE.BANK;
   const payoutAccountTitle = isBankAccount
     ? payoutAccount.accountHolder
     : payoutAccount.lightningAddress || payoutAccountsTranslations("nodeLightningAddress");
@@ -44,11 +48,11 @@ function PayoutAccountRow({ payoutAccount, onEdit, onDelete }) {
   );
 }
 
-export function PayoutAccountsCard({ payoutAccounts, loading, hasLoadError, onAdd, onEdit, onDelete }) {
+export function PayoutAccountsCard({ payoutAccounts, isLoading, hasLoadError, onAdd, onEdit, onDelete }) {
   const payoutAccountsTranslations = useTranslations("freelancerSettings.payoutAccounts");
 
   const renderPayoutAccounts = () => {
-    if (loading) return <Spinner size="sm" color="success" />;
+    if (isLoading) return <Spinner size="sm" color="success" />;
     if (hasLoadError) return <p className="text-sm text-red-600">{payoutAccountsTranslations("loadError")}</p>;
     if (payoutAccounts.length === 0) {
       return <p className="text-sm text-gray-400 italic">{payoutAccountsTranslations("empty")}</p>;

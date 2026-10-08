@@ -5,7 +5,7 @@ import { useState } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { isConflict, resolveMutationErrorToast, translateToast } from "@/components/pages/Store/utils/mutationErrorToast";
+import { isLightningBackendUnavailable, resolveMutationErrorToast, translateToast } from "@/components/pages/Store/utils/mutationErrorToast";
 
 import { useCurrencies, usePayoutAccounts } from "../../hooks";
 
@@ -18,8 +18,8 @@ export function PayoutAccounts() {
   const payoutAccountsTranslations = useTranslations("freelancerSettings.payoutAccounts");
   const {
     payoutAccounts,
-    loading,
-    error,
+    loading: payoutAccountsLoading,
+    error: payoutAccountsLoadError,
     createPayoutAccount,
     updatePayoutAccount,
     deletePayoutAccount,
@@ -31,7 +31,7 @@ export function PayoutAccounts() {
 
   const savePayoutAccountErrorRules = [
     {
-      when: isConflict,
+      when: isLightningBackendUnavailable,
       toast: translateToast(payoutAccountsTranslations, "toasts.lightningBackendUnavailableTitle", "toasts.lightningBackendUnavailableDescription", "danger"),
     },
   ];
@@ -80,8 +80,8 @@ export function PayoutAccounts() {
     <>
       <PayoutAccountsCard
         payoutAccounts={payoutAccounts}
-        loading={loading}
-        hasLoadError={Boolean(error)}
+        isLoading={payoutAccountsLoading}
+        hasLoadError={Boolean(payoutAccountsLoadError)}
         onAdd={() => openPayoutAccountModal()}
         onEdit={openPayoutAccountModal}
         onDelete={setPayoutAccountPendingDeletion}
