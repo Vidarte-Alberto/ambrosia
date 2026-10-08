@@ -5,18 +5,36 @@ import { useState } from "react";
 import { addToast } from "@heroui/react";
 import { useTranslations } from "next-intl";
 
-import { usePayoutAccounts } from "../../hooks/usePayoutAccounts";
+import { isConflict, resolveMutationErrorToast, translateToast } from "@/components/pages/Store/utils/mutationErrorToast";
+
+import { useCurrencies, usePayoutAccounts } from "../../hooks";
 
 import { DeletePayoutAccountModal } from "./DeletePayoutAccountModal";
 import { PayoutAccountModal } from "./PayoutAccountModal";
 import { PayoutAccountsCard } from "./PayoutAccountsCard";
+import { buildPayoutAccountPayload } from "./utils/buildPayoutAccountPayload";
 
 export function PayoutAccounts() {
   const payoutAccountsTranslations = useTranslations("freelancerSettings.payoutAccounts");
-  const { payoutAccounts, currencies, loading, error, savePayoutAccount, deletePayoutAccount } = usePayoutAccounts();
+  const {
+    payoutAccounts,
+    loading,
+    error,
+    createPayoutAccount,
+    updatePayoutAccount,
+    deletePayoutAccount,
+  } = usePayoutAccounts({ skipForbiddenRedirect: true });
+  const { currencies } = useCurrencies({ skipForbiddenRedirect: true });
   const [isPayoutAccountModalOpen, setIsPayoutAccountModalOpen] = useState(false);
   const [editedPayoutAccount, setEditedPayoutAccount] = useState(null);
   const [payoutAccountPendingDeletion, setPayoutAccountPendingDeletion] = useState(null);
+
+  const savePayoutAccountErrorRules = [
+    {
+      when: isConflict,
+      toast: translateToast(payoutAccountsTranslations, "toasts.lightningBackendUnavailableTitle", "toasts.lightningBackendUnavailableDescription", "danger"),
+    },
+  ];
 
   const openPayoutAccountModal = (payoutAccount = null) => {
     setEditedPayoutAccount(payoutAccount);
@@ -29,12 +47,21 @@ export function PayoutAccounts() {
   };
 
   const handleSavePayoutAccount = async (payoutAccountForm) => {
+    const payoutAccountRequest = buildPayoutAccountPayload(payoutAccountForm);
     try {
-      await savePayoutAccount(payoutAccountForm);
+      if (payoutAccountForm.id) {
+        await updatePayoutAccount(payoutAccountForm.id, payoutAccountRequest);
+      } else {
+        await createPayoutAccount(payoutAccountRequest);
+      }
       closePayoutAccountModal();
       addToast({ title: payoutAccountsTranslations("toasts.saveSuccess"), color: "success" });
-    } catch {
-      return;
+    } catch (savePayoutAccountError) {
+      addToast(resolveMutationErrorToast(
+        savePayoutAccountError,
+        savePayoutAccountErrorRules,
+        translateToast(payoutAccountsTranslations, "toasts.saveErrorTitle", "toasts.saveErrorDescription", "danger"),
+      ));
     }
   };
 
@@ -43,7 +70,7 @@ export function PayoutAccounts() {
       await deletePayoutAccount(payoutAccountPendingDeletion.id);
       addToast({ title: payoutAccountsTranslations("toasts.deleteSuccess"), color: "success" });
     } catch {
-      return;
+      addToast(translateToast(payoutAccountsTranslations, "toasts.deleteErrorTitle", "toasts.deleteErrorDescription", "danger"));
     } finally {
       setPayoutAccountPendingDeletion(null);
     }

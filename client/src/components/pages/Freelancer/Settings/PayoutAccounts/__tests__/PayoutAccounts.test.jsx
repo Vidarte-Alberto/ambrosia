@@ -1,13 +1,14 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { usePayoutAccounts } from "../../../hooks/usePayoutAccounts";
+import { useCurrencies, usePayoutAccounts } from "../../../hooks";
 import { PayoutAccounts } from "../PayoutAccounts";
 
 jest.mock("@/hooks/usePermission");
 
-jest.mock("../../../hooks/usePayoutAccounts", () => ({
+jest.mock("../../../hooks", () => ({
   usePayoutAccounts: jest.fn(),
+  useCurrencies: jest.fn(),
 }));
 
 jest.mock("@heroui/react", () => ({
@@ -28,25 +29,27 @@ jest.mock("../PayoutAccountModal", () => ({
 const { addToast } = jest.requireMock("@heroui/react");
 
 const aliceBankAccount = { id: "alice-bank-account", type: "bank", accountHolder: "Alice", bankName: "BBVA", clabe: "012180001234567890" };
-const mockSavePayoutAccount = jest.fn();
+const mockCreatePayoutAccount = jest.fn();
+const mockUpdatePayoutAccount = jest.fn();
 const mockDeletePayoutAccount = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
+  useCurrencies.mockReturnValue({ currencies: [] });
   usePayoutAccounts.mockReturnValue({
     payoutAccounts: [aliceBankAccount],
-    currencies: [],
     loading: false,
     error: null,
-    savePayoutAccount: mockSavePayoutAccount,
+    createPayoutAccount: mockCreatePayoutAccount,
+    updatePayoutAccount: mockUpdatePayoutAccount,
     deletePayoutAccount: mockDeletePayoutAccount,
   });
 });
 
 describe("PayoutAccounts", () => {
-  it("opens the modal empty to create a payout account and confirms the save", async () => {
+  it("creates a payout account from the empty modal and confirms the save", async () => {
     const user = userEvent.setup();
-    mockSavePayoutAccount.mockResolvedValue(undefined);
+    mockCreatePayoutAccount.mockResolvedValue({});
     render(<PayoutAccounts />);
 
     await user.click(screen.getByText("addButton"));
@@ -54,34 +57,63 @@ describe("PayoutAccounts", () => {
     await user.click(screen.getByText("save payout account"));
 
     await waitFor(() => expect(screen.queryByText("creating")).not.toBeInTheDocument());
-    expect(mockSavePayoutAccount).toHaveBeenCalledWith({ id: null, type: "lightning" });
+    expect(mockCreatePayoutAccount).toHaveBeenCalledWith({ type: "lightning", lightningAddress: null });
     expect(addToast).toHaveBeenCalledWith({ title: "toasts.saveSuccess", color: "success" });
   });
 
-  it("opens the modal with the selected payout account to edit it", async () => {
+  it("updates the selected payout account from the edit modal", async () => {
+    const user = userEvent.setup();
+    mockUpdatePayoutAccount.mockResolvedValue({});
     render(<PayoutAccounts />);
 
-    await userEvent.click(screen.getByLabelText("edit"));
-
+    await user.click(screen.getByLabelText("edit"));
     expect(screen.getByText("editing alice-bank-account")).toBeInTheDocument();
+    await user.click(screen.getByText("save payout account"));
+
+    await waitFor(() => {
+      expect(mockUpdatePayoutAccount).toHaveBeenCalledWith("alice-bank-account", { type: "lightning", lightningAddress: null });
+    });
+    expect(mockCreatePayoutAccount).not.toHaveBeenCalled();
   });
 
-  it("keeps the modal open without a success toast when saving fails", async () => {
+  it("keeps the modal open and shows the generic save error", async () => {
     const user = userEvent.setup();
-    mockSavePayoutAccount.mockRejectedValue(new Error("Invalid payout account data"));
+    mockCreatePayoutAccount.mockRejectedValue({ status: 400 });
     render(<PayoutAccounts />);
 
     await user.click(screen.getByText("addButton"));
     await user.click(screen.getByText("save payout account"));
 
-    await waitFor(() => expect(mockSavePayoutAccount).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(addToast).toHaveBeenCalledWith({
+        title: "toasts.saveErrorTitle",
+        description: "toasts.saveErrorDescription",
+        color: "danger",
+      });
+    });
     expect(screen.getByText("creating")).toBeInTheDocument();
-    expect(addToast).not.toHaveBeenCalled();
+  });
+
+  it("asks for a Lightning address when the node has no active Lightning backend", async () => {
+    const user = userEvent.setup();
+    mockCreatePayoutAccount.mockRejectedValue({ status: 409 });
+    render(<PayoutAccounts />);
+
+    await user.click(screen.getByText("addButton"));
+    await user.click(screen.getByText("save payout account"));
+
+    await waitFor(() => {
+      expect(addToast).toHaveBeenCalledWith({
+        title: "toasts.lightningBackendUnavailableTitle",
+        description: "toasts.lightningBackendUnavailableDescription",
+        color: "danger",
+      });
+    });
   });
 
   it("deletes the payout account after confirming", async () => {
     const user = userEvent.setup();
-    mockDeletePayoutAccount.mockResolvedValue(undefined);
+    mockDeletePayoutAccount.mockResolvedValue({});
     render(<PayoutAccounts />);
 
     await user.click(screen.getByLabelText("delete"));
@@ -91,25 +123,30 @@ describe("PayoutAccounts", () => {
     expect(addToast).toHaveBeenCalledWith({ title: "toasts.deleteSuccess", color: "success" });
   });
 
-  it("closes the delete confirmation without a success toast when deleting fails", async () => {
+  it("shows the delete error when deleting fails", async () => {
     const user = userEvent.setup();
-    mockDeletePayoutAccount.mockRejectedValue(new Error("Payout account not found"));
+    mockDeletePayoutAccount.mockRejectedValue({ status: 404 });
     render(<PayoutAccounts />);
 
     await user.click(screen.getByLabelText("delete"));
     await user.click(await screen.findByText("deleteModal.deleteButton"));
 
-    await waitFor(() => expect(screen.queryByText("deleteModal.deleteButton")).not.toBeInTheDocument());
-    expect(addToast).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(addToast).toHaveBeenCalledWith({
+        title: "toasts.deleteErrorTitle",
+        description: "toasts.deleteErrorDescription",
+        color: "danger",
+      });
+    });
   });
 
   it("shows the load error from the hook", () => {
     usePayoutAccounts.mockReturnValue({
       payoutAccounts: [],
-      currencies: [],
       loading: false,
       error: new Error("Network down"),
-      savePayoutAccount: mockSavePayoutAccount,
+      createPayoutAccount: mockCreatePayoutAccount,
+      updatePayoutAccount: mockUpdatePayoutAccount,
       deletePayoutAccount: mockDeletePayoutAccount,
     });
     render(<PayoutAccounts />);
