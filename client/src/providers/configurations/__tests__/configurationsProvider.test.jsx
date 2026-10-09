@@ -1,52 +1,110 @@
 import { render, screen, waitFor } from "@testing-library/react";
 
+jest.mock("@/hooks/auth/useAuth", () => ({ useAuth: jest.fn() }));
+jest.mock("@/lib/http", () => ({ httpClient: jest.fn(), parseJsonResponse: jest.fn() }));
+jest.mock("@/components/hooks/useUpload", () => ({ useUpload: () => ({ upload: jest.fn() }) }));
+
+import { useAuth } from "@/hooks/auth/useAuth";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 import { ConfigurationsProvider, useConfigurations } from "../configurationsProvider";
 
-jest.mock("@/lib/http", () => ({
-  httpClient: jest.fn(),
-  parseJsonResponse: jest.fn(),
-}));
+const PUBLIC_CONFIG = { businessType: "store", businessName: "Public Name", businessLogoUrl: null };
+const FULL_CONFIG = { id: 1, businessType: "store", businessName: "Full Name", businessAddress: "123 Main St" };
 
-jest.mock("@/components/hooks/useUpload", () => ({
-  useUpload: () => ({ upload: jest.fn() }),
-}));
+function TestComponent() {
+  const { config, isLoading } = useConfigurations();
 
-function BusinessTypeProbe() {
-  const { businessType, isLoading } = useConfigurations();
-  if (isLoading) return null;
-  return <span data-testid="businessType">{businessType ?? "null"}</span>;
+  return (
+    <div>
+      <span data-testid="isLoading">{String(isLoading)}</span>
+      <span data-testid="businessName">{config?.businessName ?? "none"}</span>
+      <span data-testid="businessAddress">{config?.businessAddress ?? "none"}</span>
+    </div>
+  );
 }
 
-function renderWithConfig(config) {
-  httpClient.mockResolvedValue({});
-  parseJsonResponse.mockResolvedValue(config);
-  render(
+function buildProviderTree() {
+  return (
     <ConfigurationsProvider>
-      <BusinessTypeProbe />
-    </ConfigurationsProvider>,
+      <TestComponent />
+    </ConfigurationsProvider>
   );
+}
+
+function renderProvider() {
+  return render(buildProviderTree());
 }
 
 beforeEach(() => {
   jest.clearAllMocks();
-  document.cookie = "businessType=; max-age=0";
+  httpClient.mockResolvedValue({});
 });
 
-describe("ConfigurationsProvider businessType", () => {
-  it.each(["store", "restaurant", "freelance"])(
-    "exposes %s from the config",
-    async (businessType) => {
-      renderWithConfig({ businessType });
+describe("ConfigurationsProvider", () => {
+  it("does not fetch config while the auth state is still resolving", () => {
+    useAuth.mockReturnValue({ isAuth: false, isLoading: true });
 
-      await waitFor(() => expect(screen.getByTestId("businessType")).toHaveTextContent(businessType));
-    },
-  );
+    renderProvider();
 
-  it("ignores an unknown business type from the config", async () => {
-    renderWithConfig({ businessType: "unknown" });
+    expect(httpClient).not.toHaveBeenCalled();
+  });
 
-    await waitFor(() => expect(screen.getByTestId("businessType")).toHaveTextContent("null"));
+  it("fetches config once the auth state has resolved", async () => {
+    useAuth.mockReturnValue({ isAuth: false, isLoading: false });
+    parseJsonResponse.mockResolvedValueOnce(PUBLIC_CONFIG);
+
+    renderProvider();
+
+    await waitFor(() => expect(screen.getByTestId("businessName")).toHaveTextContent("Public Name"));
+    expect(httpClient).toHaveBeenCalledWith("/config", { skipRefresh: true, skipForbiddenRedirect: true });
+  });
+
+  it("refetches config when isAuth transitions from false to true", async () => {
+    useAuth.mockReturnValue({ isAuth: false, isLoading: false });
+    parseJsonResponse.mockResolvedValueOnce(PUBLIC_CONFIG);
+
+    const { rerender } = renderProvider();
+
+    await waitFor(() => expect(screen.getByTestId("businessName")).toHaveTextContent("Public Name"));
+    expect(screen.getByTestId("businessAddress")).toHaveTextContent("none");
+
+    useAuth.mockReturnValue({ isAuth: true, isLoading: false });
+    parseJsonResponse.mockResolvedValueOnce(FULL_CONFIG);
+
+    rerender(buildProviderTree());
+
+    await waitFor(() => expect(screen.getByTestId("businessAddress")).toHaveTextContent("123 Main St"));
+    expect(httpClient).toHaveBeenCalledTimes(2);
+  });
+
+  it("refetches config when isAuth transitions from true to false", async () => {
+    useAuth.mockReturnValue({ isAuth: true, isLoading: false });
+    parseJsonResponse.mockResolvedValueOnce(FULL_CONFIG);
+
+    const { rerender } = renderProvider();
+
+    await waitFor(() => expect(screen.getByTestId("businessAddress")).toHaveTextContent("123 Main St"));
+
+    useAuth.mockReturnValue({ isAuth: false, isLoading: false });
+    parseJsonResponse.mockResolvedValueOnce(PUBLIC_CONFIG);
+
+    rerender(buildProviderTree());
+
+    await waitFor(() => expect(screen.getByTestId("businessAddress")).toHaveTextContent("none"));
+    expect(httpClient).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not refetch on a re-render where isAuth stays the same", async () => {
+    useAuth.mockReturnValue({ isAuth: true, isLoading: false });
+    parseJsonResponse.mockResolvedValueOnce(FULL_CONFIG);
+
+    const { rerender } = renderProvider();
+
+    await waitFor(() => expect(screen.getByTestId("businessAddress")).toHaveTextContent("123 Main St"));
+
+    rerender(buildProviderTree());
+
+    expect(httpClient).toHaveBeenCalledTimes(1);
   });
 });

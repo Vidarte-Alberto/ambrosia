@@ -610,6 +610,13 @@ data class Config(
 )
 
 @Serializable
+data class PublicConfig(
+    val businessType: String,
+    val businessName: String,
+    val businessLogoUrl: String?,
+)
+
+@Serializable
 data class FreelanceClient(
     val id: String,
     val name: String,

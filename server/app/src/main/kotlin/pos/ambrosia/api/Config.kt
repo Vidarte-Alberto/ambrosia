@@ -2,6 +2,7 @@ package pos.ambrosia.api
 
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.auth.authenticate
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -10,8 +11,10 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import pos.ambrosia.models.Config
+import pos.ambrosia.models.PublicConfig
 import pos.ambrosia.services.ConfigService
 import pos.ambrosia.utils.authorizePermission
+import pos.ambrosia.utils.getCurrentUser
 import java.time.ZoneId
 
 private fun areTipPercentagesValid(serializedPercentages: String): Boolean {
@@ -31,13 +34,26 @@ fun Application.configureConfig() {
 }
 
 fun Route.config(configService: ConfigService) {
-    get("") {
-        val config = configService.getConfig()
-        if (config == null) {
-            call.respond(HttpStatusCode.NotFound, "Config not found")
-            return@get
+    authenticate("auth-jwt", optional = true) {
+        get("") {
+            val config = configService.getConfig()
+            if (config == null) {
+                call.respond(HttpStatusCode.NotFound, "Config not found")
+                return@get
+            }
+            if (call.getCurrentUser() == null) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    PublicConfig(
+                        businessType = config.businessType,
+                        businessName = config.businessName,
+                        businessLogoUrl = config.businessLogoUrl,
+                    ),
+                )
+                return@get
+            }
+            call.respond(HttpStatusCode.OK, config)
         }
-        call.respond(HttpStatusCode.OK, config)
     }
     authorizePermission("settings_update") {
         put("") {

@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { useUpload } from "@/components/hooks/useUpload";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { httpClient, parseJsonResponse } from "@/lib/http";
 
 export const ConfigurationsContext = createContext();
@@ -11,6 +12,7 @@ export function ConfigurationsProvider({ children }) {
   const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { upload } = useUpload();
+  const { isAuth, isLoading: isAuthLoading } = useAuth();
 
   const readBusinessTypeFromCookie = () => {
     if (typeof document === "undefined") return null;
@@ -48,8 +50,9 @@ export function ConfigurationsProvider({ children }) {
   };
 
   useEffect(() => {
+    if (isAuthLoading) return;
     fetchConfig();
-  }, []);
+  }, [isAuth, isAuthLoading]);
 
   const updateConfig = async (data) => {
     let logoUrl = null;
