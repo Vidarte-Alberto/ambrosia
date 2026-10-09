@@ -1,6 +1,8 @@
 package pos.ambrosia.utest
 
+import io.ktor.server.engine.applicationEnvironment
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.core.dao.id.EntityID
 import org.jetbrains.exposed.v1.core.eq
@@ -9,6 +11,7 @@ import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.db.tables.InvoiceEntity
 import pos.ambrosia.db.tables.InvoicePaymentsTable
 import pos.ambrosia.db.tables.InvoicesTable
 import pos.ambrosia.db.tables.PaymentEntity
@@ -24,19 +27,22 @@ import pos.ambrosia.services.WalletRateService
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.FakeLightningBackend
 import pos.ambrosia.utils.InvalidTimeEntryException
+import pos.ambrosia.utils.testJwtConfig
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FreelanceInvoiceServiceTest {
     private lateinit var databaseFile: File
+    private val environment = applicationEnvironment { config = testJwtConfig() }
     private val fakeLightningBackend = FakeLightningBackend("freelance-payment-hash", incomingPaymentReceivedSat = 25_000)
-    private val freelanceInvoiceService = FreelanceInvoiceService(fakeLightningBackend, WalletRateService())
+    private val freelanceInvoiceService = FreelanceInvoiceService(environment, fakeLightningBackend, WalletRateService())
 
     @Before
     fun setUp() {
@@ -108,6 +114,14 @@ class FreelanceInvoiceServiceTest {
                     ),
                 )
             }
+
+        val rawPayoutSnapshot =
+            transaction {
+                InvoiceEntity.findById(UUID.fromString(createdFreelanceInvoice.id))?.payoutSnapshot
+            }
+        assertNotNull(rawPayoutSnapshot)
+        assertTrue(rawPayoutSnapshot.contains(":"))
+        assertFailsWith<SerializationException> { Json.decodeFromString<FreelanceInvoicePayoutSnapshot>(rawPayoutSnapshot) }
 
         val payoutSnapshot =
             Json.decodeFromString<FreelanceInvoicePayoutSnapshot>(assertNotNull(createdFreelanceInvoice.payoutSnapshot))
@@ -296,7 +310,7 @@ class FreelanceInvoiceServiceTest {
     @Test
     fun `rejects unpaid lightning invoice payment`() {
         val unpaidLightningBackend = FakeLightningBackend("unpaid-freelance-payment-hash", incomingPaymentIsPaid = false)
-        val unpaidFreelanceInvoiceService = FreelanceInvoiceService(unpaidLightningBackend, WalletRateService())
+        val unpaidFreelanceInvoiceService = FreelanceInvoiceService(environment, unpaidLightningBackend, WalletRateService())
         val currencyId = ExposedTestDb.seedCurrency("USD")
         val clientId = ExposedTestDb.seedFreelanceClient(currencyId = currencyId, paymentMethod = "lightning")
         val projectId = ExposedTestDb.seedFreelanceProject(clientId = clientId, hourlyRateCents = 10_000)

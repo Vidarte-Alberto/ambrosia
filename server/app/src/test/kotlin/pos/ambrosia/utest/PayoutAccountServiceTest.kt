@@ -1,26 +1,32 @@
 package pos.ambrosia.utest
 
+import io.ktor.server.engine.applicationEnvironment
+import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.junit.After
 import org.junit.Before
+import pos.ambrosia.db.tables.PayoutAccountEntity
 import pos.ambrosia.models.PayoutAccountUpsert
 import pos.ambrosia.services.ActiveLightningBackend
 import pos.ambrosia.services.PayoutAccountService
 import pos.ambrosia.utils.ExposedTestDb
 import pos.ambrosia.utils.FakeLightningBackend
 import pos.ambrosia.utils.LightningBackendUnavailableException
+import pos.ambrosia.utils.testJwtConfig
 import java.io.File
 import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PayoutAccountServiceTest {
     private lateinit var databaseFile: File
-    private val payoutAccountService = PayoutAccountService()
+    private val environment = applicationEnvironment { config = testJwtConfig() }
+    private val payoutAccountService = PayoutAccountService(environment)
 
     private val validBankRequest =
         PayoutAccountUpsert(
@@ -225,5 +231,29 @@ class PayoutAccountServiceTest {
         assertFalse(payoutAccountService.deletePayoutAccount("not-a-uuid"))
         assertFalse(payoutAccountService.deletePayoutAccount(UUID.randomUUID().toString()))
         assertFalse(payoutAccountService.deletePayoutAccount(deletedPayoutAccountId))
+    }
+
+    @Test
+    fun `addPayoutAccount encrypts bank fields at rest and decrypts on read`() {
+        val currencyId = ExposedTestDb.seedCurrency("USD")
+        val maxLengthIban = "DE" + "0".repeat(32)
+        val payoutAccountId =
+            payoutAccountService.addPayoutAccount(
+                validBankRequest.copy(currencyId = currencyId, accountNumber = null, iban = maxLengthIban),
+            )
+        assertNotNull(payoutAccountId)
+
+        val rawAccountHolder =
+            transaction {
+                PayoutAccountEntity.findById(UUID.fromString(payoutAccountId))?.accountHolder
+            }
+        assertNotNull(rawAccountHolder)
+        assertNotEquals("Jane Doe", rawAccountHolder)
+        assertTrue(rawAccountHolder.contains(":"))
+
+        val payoutAccount = payoutAccountService.getPayoutAccountById(payoutAccountId)
+        assertNotNull(payoutAccount)
+        assertEquals("Jane Doe", payoutAccount.accountHolder)
+        assertEquals(maxLengthIban, payoutAccount.iban)
     }
 }

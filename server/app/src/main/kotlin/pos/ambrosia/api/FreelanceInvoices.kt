@@ -21,7 +21,7 @@ import pos.ambrosia.utils.ResourceNotFoundException
 import pos.ambrosia.utils.authorizePermission
 
 fun Application.configureFreelanceInvoices() {
-    val freelanceInvoiceService = FreelanceInvoiceService()
+    val freelanceInvoiceService = FreelanceInvoiceService(environment)
     routing { route("/freelance/invoices") { freelanceInvoices(freelanceInvoiceService) } }
 }
 

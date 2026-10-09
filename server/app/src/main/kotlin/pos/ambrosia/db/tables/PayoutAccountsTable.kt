@@ -8,14 +8,14 @@ import java.util.UUID
 
 object PayoutAccountsTable : SQLiteUUIDTable("payout_accounts") {
     val type = varchar("type", 20)
-    val accountHolder = varchar("account_holder", 255).nullable()
-    val bankName = varchar("bank_name", 255).nullable()
-    val accountNumber = varchar("account_number", 255).nullable()
+    val accountHolder = text("account_holder").nullable()
+    val bankName = text("bank_name").nullable()
+    val accountNumber = text("account_number").nullable()
     val currencyId = optReference("currency_id", CurrencyTable)
-    val swift = varchar("swift", 50).nullable()
-    val iban = varchar("iban", 50).nullable()
-    val clabe = varchar("clabe", 50).nullable()
-    val lightningAddress = varchar("lightning_address", 255).nullable()
+    val swift = text("swift").nullable()
+    val iban = text("iban").nullable()
+    val clabe = text("clabe").nullable()
+    val lightningAddress = text("lightning_address").nullable()
     val isDeleted = bool("is_deleted").default(false)
     val createdAt = varchar("created_at", 50)
 }

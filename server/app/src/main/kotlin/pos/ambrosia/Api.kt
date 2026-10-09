@@ -70,6 +70,8 @@ import pos.ambrosia.api.configureWallet
 import pos.ambrosia.api.handler
 import pos.ambrosia.config.AppConfig
 import pos.ambrosia.db.DatabaseConnection
+import pos.ambrosia.db.tables.InvoiceEntity
+import pos.ambrosia.db.tables.PayoutAccountEntity
 import pos.ambrosia.db.tables.UserEntity
 import pos.ambrosia.services.AdminNotificationService
 import pos.ambrosia.services.TokenService
@@ -87,6 +89,8 @@ class Api {
             configurePendingImportCleanup()
         }
         configureUserPiiEncryptionBackfill()
+        configurePayoutAccountPiiEncryptionBackfill()
+        configureInvoicePayoutSnapshotEncryptionBackfill()
         handler()
         install(ContentNegotiation) { json() }
         configureCors()
@@ -268,8 +272,11 @@ fun Application.configurePendingImportCleanup() {
     logger.info("Cleared device sessions and push subscriptions after a data import")
 }
 
+private fun Application.piiFieldEncryptionKey(): SecretKeySpec =
+    SecretsCipher.deriveFieldEncryptionKey(environment.config.property("secret").getString())
+
 fun Application.configureUserPiiEncryptionBackfill() {
-    val fieldEncryptionKey = SecretsCipher.deriveFieldEncryptionKey(environment.config.property("secret").getString())
+    val fieldEncryptionKey = piiFieldEncryptionKey()
 
     transaction {
         UserEntity.all().forEach { user ->
@@ -281,6 +288,64 @@ fun Application.configureUserPiiEncryptionBackfill() {
             user.phone?.let { storedPhone ->
                 if (!isAlreadyEncrypted(storedPhone, fieldEncryptionKey)) {
                     user.phone = SecretsCipher.encrypt(storedPhone, fieldEncryptionKey)
+                }
+            }
+        }
+    }
+}
+
+fun Application.configurePayoutAccountPiiEncryptionBackfill() {
+    val fieldEncryptionKey = piiFieldEncryptionKey()
+
+    transaction {
+        PayoutAccountEntity.all().forEach { payoutAccount ->
+            payoutAccount.accountHolder?.let { storedAccountHolder ->
+                if (!isAlreadyEncrypted(storedAccountHolder, fieldEncryptionKey)) {
+                    payoutAccount.accountHolder = SecretsCipher.encrypt(storedAccountHolder, fieldEncryptionKey)
+                }
+            }
+            payoutAccount.bankName?.let { storedBankName ->
+                if (!isAlreadyEncrypted(storedBankName, fieldEncryptionKey)) {
+                    payoutAccount.bankName = SecretsCipher.encrypt(storedBankName, fieldEncryptionKey)
+                }
+            }
+            payoutAccount.accountNumber?.let { storedAccountNumber ->
+                if (!isAlreadyEncrypted(storedAccountNumber, fieldEncryptionKey)) {
+                    payoutAccount.accountNumber = SecretsCipher.encrypt(storedAccountNumber, fieldEncryptionKey)
+                }
+            }
+            payoutAccount.swift?.let { storedSwift ->
+                if (!isAlreadyEncrypted(storedSwift, fieldEncryptionKey)) {
+                    payoutAccount.swift = SecretsCipher.encrypt(storedSwift, fieldEncryptionKey)
+                }
+            }
+            payoutAccount.iban?.let { storedIban ->
+                if (!isAlreadyEncrypted(storedIban, fieldEncryptionKey)) {
+                    payoutAccount.iban = SecretsCipher.encrypt(storedIban, fieldEncryptionKey)
+                }
+            }
+            payoutAccount.clabe?.let { storedClabe ->
+                if (!isAlreadyEncrypted(storedClabe, fieldEncryptionKey)) {
+                    payoutAccount.clabe = SecretsCipher.encrypt(storedClabe, fieldEncryptionKey)
+                }
+            }
+            payoutAccount.lightningAddress?.let { storedLightningAddress ->
+                if (!isAlreadyEncrypted(storedLightningAddress, fieldEncryptionKey)) {
+                    payoutAccount.lightningAddress = SecretsCipher.encrypt(storedLightningAddress, fieldEncryptionKey)
+                }
+            }
+        }
+    }
+}
+
+fun Application.configureInvoicePayoutSnapshotEncryptionBackfill() {
+    val fieldEncryptionKey = piiFieldEncryptionKey()
+
+    transaction {
+        InvoiceEntity.all().forEach { invoice ->
+            invoice.payoutSnapshot?.let { storedPayoutSnapshot ->
+                if (!isAlreadyEncrypted(storedPayoutSnapshot, fieldEncryptionKey)) {
+                    invoice.payoutSnapshot = SecretsCipher.encrypt(storedPayoutSnapshot, fieldEncryptionKey)
                 }
             }
         }
