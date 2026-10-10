@@ -46,7 +46,7 @@ export function OrdersFilterBar({
         />
         <div className="flex flex-col sm:flex-row gap-3 lg:contents">
           <Select
-            aria-label="Rows per page"
+            aria-label={ordersTranslations("filter.rowsPerPage")}
             label={ordersTranslations("filter.rowsPerPage")}
             selectedKeys={[pagination.rowsPerPage.toString()]}
             onSelectionChange={(keys) => pagination.onChange(Array.from(keys)[0])}

@@ -31,10 +31,10 @@ export function RolesCard({ role, canManageRoles, onEdit, onDelete }) {
         {canManageRoles && (
           <div className="flex gap-2 shrink-0">
             <RequirePermission allOf={["roles_update"]}>
-              <EditButton aria-label="Edit Role" onPress={() => onEdit(role)} />
+              <EditButton aria-label={roleTranslations("roles.actions.edit")} onPress={() => onEdit(role)} />
             </RequirePermission>
             <RequirePermission allOf={["roles_delete"]}>
-              <DeleteButton aria-label="Delete Role" onPress={() => onDelete(role)} />
+              <DeleteButton aria-label={roleTranslations("roles.actions.delete")} onPress={() => onDelete(role)} />
             </RequirePermission>
           </div>
         )}

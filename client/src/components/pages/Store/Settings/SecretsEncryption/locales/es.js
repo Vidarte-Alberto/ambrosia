@@ -8,6 +8,7 @@ const secretsEncryptionCardEs = {
     confirmButton: "Entrar",
     cancelButton: "Cancelar",
     hideButton: "Cerrar",
+    lockedBadgeLabel: "Secretos bloqueados",
     statusLoadError: "No se pudo cargar el estado del cifrado de secretos",
     inactiveDescription: "El cifrado de secretos no está activo. Elige una contraseña para proteger los datos de tu conexión Lightning.",
     unlockPasswordLabel: "Contraseña de desbloqueo",

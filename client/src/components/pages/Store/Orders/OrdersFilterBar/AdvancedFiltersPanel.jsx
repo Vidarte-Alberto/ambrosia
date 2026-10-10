@@ -37,7 +37,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Select
-          aria-label="Status"
+          aria-label={ordersTranslations("filter.statusLabel")}
           label={ordersTranslations("filter.statusLabel")}
           selectedKeys={[filters.status ?? "__all__"]}
           onSelectionChange={(keys) => {
@@ -56,7 +56,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         </Select>
 
         <Select
-          aria-label="Payment method"
+          aria-label={ordersTranslations("filter.paymentMethodLabel")}
           label={ordersTranslations("filter.paymentMethodLabel")}
           selectedKeys={[filters.paymentMethod ?? "__all__"]}
           onSelectionChange={(keys) => {
@@ -109,7 +109,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         />
 
         <Select
-          aria-label="Sort by"
+          aria-label={ordersTranslations("filter.sortByLabel")}
           label={ordersTranslations("filter.sortByLabel")}
           selectedKeys={filters.sortBy ? [filters.sortBy] : []}
           onSelectionChange={(keys) => updateFilter("sortBy", Array.from(keys)[0] || null)}
@@ -119,7 +119,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
         </Select>
 
         <Select
-          aria-label="Sort order"
+          aria-label={ordersTranslations("filter.sortOrderLabel")}
           label={ordersTranslations("filter.sortOrderLabel")}
           selectedKeys={filters.sortOrder ? [filters.sortOrder] : []}
           onSelectionChange={(keys) => updateFilter("sortOrder", Array.from(keys)[0] || null)}
