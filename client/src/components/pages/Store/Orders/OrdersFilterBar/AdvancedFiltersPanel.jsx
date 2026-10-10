@@ -4,11 +4,14 @@ import { Button, DateRangePicker, NumberInput, Select, SelectItem } from "@herou
 import { parseDate } from "@internationalized/date";
 import { useTranslations } from "next-intl";
 
+import { usePaymentMethodLabel } from "@/hooks/usePaymentMethodLabel";
+
 const ORDER_STATUSES = ["open", "closed", "paid", "refunded"];
 
 export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange, onApplyFilters, onClearFilters }) {
   const ordersTranslations = useTranslations("orders");
   const statusTranslations = useTranslations("status");
+  const { getPaymentMethodLabel } = usePaymentMethodLabel();
 
   const updateFilter = (key, value) => {
     onFiltersChange({ [key]: value === "" ? null : value });
@@ -66,7 +69,7 @@ export function AdvancedFiltersPanel({ filters, paymentMethods, onFiltersChange,
           </SelectItem>
           {paymentMethods.map((method) => (
             <SelectItem key={method.name} value={method.name}>
-              {method.name}
+              {getPaymentMethodLabel(method.name)}
             </SelectItem>
           ))}
         </Select>
